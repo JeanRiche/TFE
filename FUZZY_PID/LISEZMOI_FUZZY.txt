@@ -1,0 +1,110 @@
+FUZZY-PID SUR LA BASE COMMUNE V2 (6 octobre 2026)
+=================================================
+
+Ces fichiers s'ajoutent au dossier de la base commune v2.1 (celui ou se
+trouvent deja Buck_Commun.slx, charger_scenario.m, banc_commun.py,
+scenario_S*.mat, predictions_banc_pid_fige.json et boite_gains_elm.json).
+Copie-les dans ce dossier. L'ancien dossier FUZZY (FUZZY.zip) ne sert plus :
+ne melange pas ses fichiers avec ceux-ci.
+
+A LIRE D'ABORD : criteres_fuzzy_pid.txt
+  Reglages et previsions ecrits avant tout calcul (commit separe, avant le
+  banc), puis les resultats face aux previsions.
+
+LE REGULATEUR (decisions de Jean-Riche du 6 octobre 2026)
+- Meme loi que l'ELM-PID et le PINN-PID : loi de Lu a derivee filtree,
+  depart u = 0.5 aux gains de Ziegler-Nichols, boite de boite_gains_elm.json,
+  seule saturation [0.01 ; 0.99].
+- Toutes les 0.5 ms, un systeme flou a deux entrees (erreur moyenne de la
+  fenetre E et sa variation dE) place directement les gains dans la boite
+  (principe de Zhao, Tomizuka et Isaka, 1993). Aucun integrateur sur les
+  gains : pas de derive vers les bornes.
+- Cinq ensembles par entree, points de cassure 0.1, 1 et 10 V (zone morte,
+  bande de retour, ordre des ecarts d'evenement) ; 25 regles ; ET minimum ;
+  conclusions en singletons ; moyenne ponderee.
+- Code a la main dans un bloc MATLAB System (pas de Fuzzy Logic Toolbox),
+  identique au banc Python et verifie par un test de rejeu, comme l'ELM-PID.
+
+ORDRE D'EXECUTION
+-----------------
+Tout se lance depuis le dossier de la base commune (dossier courant MATLAB).
+
+1. (deja fait, ne pas relancer sans raison) python banc_fuzzy_pid.py
+   Une minute environ. Ecrit predictions_banc_fuzzy_pid.json,
+   fuzzy_pid_reglages.mat, reference_rejeu_fuzzy_pid.mat,
+   banc_fuzzy_pid_resultats.json, banc_fuzzy_pid.png et
+   fuzzy_pid_surfaces.png. La sortie attendue est dans
+   banc_fuzzy_pid_sortie_console.txt : relancer doit redonner les memes
+   chiffres.
+2. MATLAB : Tester_Fuzzy_PID_Rejeu
+   Rejoue dans le bloc fuzzy_pid_adaptatif.m, hors Simulink, le systeme flou
+   seul (225 points) et ce que le banc a calcule sur S1, S7b, S8b et S9.
+   Une demi-minute a deux minutes.
+   Fin attendue : "RESULTAT : le bloc fuzzy_pid_adaptatif.m reproduit
+   banc_fuzzy_pid.py."
+3. MATLAB : Construction_Fuzzy_PID
+   Copie Buck_Commun.slx en Buck_Commun_Fuzzy_PID.slx et remplace le bloc
+   PID par le bloc Fuzzy-PID (une seule entree : l'erreur). Auto-tests T1
+   (20 ms de S1, 0.05 V au plus, gains a 19 ms egaux au banc) et T2 (20 ms
+   de S8b, 0.5 V au plus). Une a trois minutes.
+   Fin attendue : "Buck_Commun_Fuzzy_PID.slx est construit et ses
+   auto-tests sont passes."
+4. python verifier_modele_fuzzy_pid.py
+   Controle sans MATLAB que seul le bloc PID a ete remplace. Fin attendue :
+   "RESULTAT : Buck_Commun_Fuzzy_PID.slx est conforme."
+5. MATLAB : Simuler_Fuzzy_PID
+   Onze essais, comparaison au banc, resultats_Buck_Commun_Fuzzy_PID.mat.
+   Dix a vingt minutes (bloc MATLAB en execution interpretee).
+
+Envoie-moi la sortie console des etapes 2 a 5. Si une etape s'arrete sur
+une erreur, envoie-la telle quelle sans passer a la suivante.
+
+ATTENTION : aucun de ces scripts MATLAB n'a pu etre execute pendant leur
+ecriture (pas de MATLAB dans l'environnement). Le banc Python, lui, a
+tourne. Le test de rejeu (etape 2) est la pour attraper toute difference
+entre le bloc et le banc avant Simulink.
+
+CE QUE L'ETAPE 5 DOIT DONNER (banc)
+-----------------------------------
+- Tous les evenements reviennent dans la bande, y compris S8b et S9.
+- S1 : pas de depassement (0.01 %), etabli a 5.89 ms, IAE 1.49 mV.s,
+  iL crete 20.1 A au demarrage.
+- S3 : ecarts maximaux 5.52 et 5.73 V (comme R0), retours en 0.88 ms.
+- S8b : depassement 30.2 % au demarrage, IAE 26.67 mV.s, oscillation
+  residuelle jusqu'a 0.95 V crete a crete en fin de fenetre (pompage entre
+  Ziegler-Nichols et des gains plus forts) : a comparer en ordre de
+  grandeur, pas en phase.
+- Cout J (1 = Ziegler-Nichols) : Fuzzy-PID 0.831 ; R0 0.917 ;
+  ELM-PID 0.784 ; PINN-PID 0.684 ; meilleur PID fige 0.738 (oracle).
+- Sensibilite : L ou C a +-0.1 % donnent J de 0.823 a 0.831.
+
+CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
+---------------------------------------------
+- Ablation "Kp seul" : J = 0.786, meilleur que le Fuzzy-PID complet. Les
+  regles qui baissent Ki et montent Kd pendant le retour a la consigne
+  (l'heuristique de Zhao) degradent le resultat : demarrage a 5 ohms deux
+  fois plus lent que R0, retours plus lents apres les changements de
+  consigne de S9. Ce n'est pas un candidat : le choisir apres coup serait
+  regler le regulateur sur les essais.
+- Le systeme flou ne connait pas la charge : il revient a Ziegler-Nichols
+  des que l'erreur s'eteint, d'ou le pompage a 98 ohms. C'est la limite
+  d'un ordonnancement de gains face a une adaptation (ELM, PINN).
+- Univers x2 : S8b et S9 ne reviennent plus. Le resultat depend des seuils,
+  fixes a priori : le reglage n'a pas disparu, il est dans les univers.
+
+FICHIERS
+--------
+criteres_fuzzy_pid.txt                 reglages, previsions, resultats
+banc_fuzzy_pid.py                      banc du Fuzzy-PID, ablations
+banc_fuzzy_pid_sortie_console.txt      sortie attendue du banc
+banc_fuzzy_pid_resultats.json          tous les chiffres
+banc_fuzzy_pid.png                     S8b et S9 : tension, gains, courant
+fuzzy_pid_surfaces.png                 les trois surfaces du systeme flou
+predictions_banc_fuzzy_pid.json        ce que Simulink doit retrouver
+fuzzy_pid_reglages.mat                 reglages du bloc
+reference_rejeu_fuzzy_pid.mat          reference du test de rejeu
+fuzzy_pid_adaptatif.m                  bloc MATLAB System du Fuzzy-PID
+Tester_Fuzzy_PID_Rejeu.m               test du bloc hors Simulink
+Construction_Fuzzy_PID.m               construit Buck_Commun_Fuzzy_PID.slx
+verifier_modele_fuzzy_pid.py           controle independant du modele
+Simuler_Fuzzy_PID.m                    onze essais sous Simulink

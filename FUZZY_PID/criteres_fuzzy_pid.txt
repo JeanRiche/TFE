@@ -111,3 +111,65 @@ Previsions (ecrites avant le calcul)
 Si une prevision est fausse, on l'ecrit. On ne change ni les tables, ni
 les univers, ni les criteres sans le declarer comme amendement, avec sa
 raison, avant de le calculer.
+
+Resultats sur le banc (6 octobre 2026, apres l'ecriture de ce qui precede ;
+rien n'a ete change dans les reglages ; sortie complete dans
+banc_fuzzy_pid_sortie_console.txt)
+  Fuzzy-PID : J = 0.831, tous les evenements reviennent dans la bande.
+  R0 0.917 (S8b et S9 pas revenus) ; ELM-PID 0.784 ; PINN-PID 0.684 ;
+  meilleur PID fige 0.738 (oracle). Le Fuzzy-PID ne bat aucune des deux
+  autres methodes.
+  Decomposition : apres 30 ms 0.848 (PID fige 0.710, R0 0.986) ; demarrage
+  0.774 (PID fige 0.831, R0 0.687). Le Fuzzy-PID gagne sur R0 apres 30 ms
+  (S3, S8a, S8b, S9) mais perd au demarrage a 5 ohms : pas de depassement,
+  mais etabli a 5.89 ms contre 2.49 ms pour R0, IAE du demarrage 129.8
+  contre 81.1 mV.s (Ki reduit a l'approche). A 25 et 98 ohms il fait mieux
+  que R0 (56.7 contre 73.7 et 94.3 contre 117.2 mV.s).
+  Controle : tables (ZE, ZE) partout = R0 a l'identique (ecart 0 sur d).
+  Sensibilite L, C a +-0.1 % : J de 0.823 a 0.831, tous les evenements
+  reviennent dans les cinq cas (pas de porte, sortie continue : beaucoup
+  moins sensible que l'ELM-PID).
+
+Face aux previsions
+  P1 FAUSSE. S7a : 33.6 mV contre 32.0 pour R0 (+5 %) ; S7b : 21.2 mV (egal).
+     Cause verifiee : apres 7 ms, le Fuzzy-PID est revenu a
+     Ziegler-Nichols sur S7a (une seule fenetre hors ZN ensuite, a 135 ms) ;
+     la loi est alors celle de R0, mais l'etat a la fin du demarrage est
+     different, et avec la quantification a 48.8 mV le cycle limite depend
+     de cet etat. Ce n'est pas un effet du systeme flou en regime ; c'est la
+     sensibilite deja signalee pour S7a dans Simuler_Scenarios.m.
+  P2 juste. Depassement a 5 ohms 0.01 % (R0 2.4 %, ZN 14 %). Aussi a 25 ohms
+     (0.2 % contre 21 %) et a 98 ohms (30 % contre 42.5 %).
+  P3 juste. Ecart maximal de S3, S4, S5 identique a R0 a 0.01 V pres (le
+     pic arrive avant la premiere decision) ; IAE plus faible sur S3, S5 et
+     sur la deuxieme moitie de S4, plus forte sur la premiere moitie de S4.
+  P4 juste. S8b : crete a crete de fin 0.95 V au pire (ELM-PID 0.03 a
+     0.24 V) ; les gains reviennent a Ziegler-Nichols puis remontent
+     (pompage visible sur banc_fuzzy_pid.png). Les evenements reviennent,
+     mais de justesse : avec les univers x2 (ablation), S8b et S9 ne
+     reviennent plus.
+  P5 juste. J = 0.831 dans [0.80 ; 0.92].
+  P6 FAUSSE, et c'est le resultat principal. Kp seul (Ki et Kd figes a
+     Ziegler-Nichols) : J = 0.786 ; sans dE : 0.793 ; Fuzzy-PID complet :
+     0.831. Les regles qui baissent Ki et montent Kd pendant le retour vers
+     la consigne (le coeur de l'heuristique de Zhao) degradent le resultat
+     au lieu de l'ameliorer. On le voit sur S9 : a chaque changement de
+     consigne (120, 150, 270 ms), Ki tombe a 0.25 fois Ziegler-Nichols et
+     le retour est plus lent (IAE 71.95 et 258.79 mV.s contre 51.22 et
+     231.87 pour R0). Ce qui fait le gain du Fuzzy-PID, c'est Kp qui monte
+     avec |E|. Univers x0.5 : 0.819 ; x2 : 0.837 et S8b, S9 pas revenus.
+     Les ecarts dus aux univers depassent la sensibilite L, C (0.008), comme
+     prevu ; mais Kp seul ne fait pas "presque aussi bien" : il fait mieux.
+
+Ce qu'il faudra ecrire dans le memoire
+  - Ces ablations ne sont pas des candidats : choisir maintenant Kp seul
+    (0.786) serait regler le regulateur sur les essais. Le Fuzzy-PID retenu
+    reste celui de ce fichier, J = 0.831.
+  - Un ordonnancement de gains par (E, dE) ne sait pas que la charge est
+    legere : il revient a Ziegler-Nichols des que l'erreur s'eteint, d'ou le
+    pompage a 98 ohms. L'ELM-PID et le PINN-PID gardent les gains adaptes ;
+    c'est la difference de nature entre ordonnancement et adaptation.
+  - Les seuils (0.1, 1, 10 V) ont ete fixes sans calcul ; le resultat en
+    depend nettement (univers x2 : deux essais ne reviennent plus). Un
+    Fuzzy-PID est donc moins "sans reglage" que ne le dit la litterature :
+    le reglage est deplace dans les univers et dans la table.
