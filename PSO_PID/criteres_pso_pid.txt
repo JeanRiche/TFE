@@ -1,0 +1,108 @@
+PSO-PID (Gaing, 2004) : la methode, ses ecarts declares et les previsions
+Ecrit le 6 octobre 2026, avant tout calcul du PSO-PID sur la base commune
+v2.1. Seule mesure faite avant ce fichier : la duree d'une simulation de
+50 ms sur le banc (0.09 s), pour fixer le budget de calcul.
+
+Reference
+  Z.-L. Gaing, "A particle swarm optimization approach for optimum design
+  of PID controller in AVR system", IEEE Trans. Energy Conversion, vol. 19,
+  no. 2, pp. 384-391, juin 2004.
+
+Decisions de Jean-Riche (6 octobre 2026)
+  a. Structure : le bloc "PID Controller" de Ziegler-Nichols, tel quel
+     (forme Parallel, Forward Euler, N = 64122.9, saturation [0.01 ; 0.99],
+     clamping, conditions initiales 0.5 et 0.01) ; seuls P, I, D changent.
+     Reglage hors ligne : les gains trouves restent fixes ensuite.
+  b. Fonction de cout : celle de l'article.
+  c. Reglage sur des essais distincts des onze essais communs ; les onze
+     essais ne servent qu'a juger.
+  d. Contraintes du meilleur PID fige gardees : marge de phase >= 30 degres
+     et frequence de coupure <= fs/10 aux 12 coins (R = 4, 5, 25, 98 ohms ;
+     Vin = 160, 200, 240 V), calculees comme dans recherche_pid_fige.py.
+  e. Plusieurs graines, dispersion publiee.
+  Et les quatre propositions suivantes (unites de W, definitions, beta,
+  essais de reglage), acceptees le meme jour.
+
+La methode (article)
+  Individu K = [kp, ki, kd] ; population de 50 ; 100 iterations.
+  Cout (eq. 9) : W(K) = (1 - exp(-beta)) (Mp + Ess) + exp(-beta) (ts - tr).
+  Evaluation (eq. 13) : f = 1 / W ; gbest = individu de plus grand f.
+  Vitesse (eq. 14) : v <- w v + c1 rand() (pbest - k) + c2 Rand() (gbest - k),
+    c1 = c2 = 2, rand() et Rand() tires independamment pour chaque individu
+    et chaque gain ; w decroit lineairement de 0.9 a 0.4 (eq. 12) ;
+    |v| <= Vmax = kmax / 2 pour chaque gain (Vmin = -Vmax).
+  Position (eq. 15) : k <- k + v, ramenee dans [kmin ; kmax].
+  Depart (etape 1) : positions tirees uniformement dans [kmin ; kmax],
+    vitesses uniformement dans [-Vmax ; Vmax].
+  Stabilite (etape 2) : un individu qui ne passe pas le test recoit un W
+    "tres grand" (ici 1e6).
+
+Ecarts declares
+  1. Bornes : kmin = 0, kmax = 16 fois le gain de Ziegler-Nichols pour P, I
+     et D (16 : plus grand multiplicateur explore par recherche_pid_fige.py).
+     La recherche se fait sur les multiplicateurs a = P / P_ZN, b = I / I_ZN,
+     c = D / D_ZN dans [0 ; 16] : changement d'echelle lineaire de chaque
+     gain, qui ne change pas l'algorithme (positions et vitesses suivent la
+     meme echelle).
+  2. Test de stabilite : Routh-Hurwitz remplace par les contraintes d du
+     meilleur PID fige (marge >= 30 degres, coupure <= fs/10 aux 12 coins).
+  3. Unites de W. L'article additionne Mp et Ess en pourcents et ts - tr en
+     secondes, pour un procede dont la constante de temps dominante vaut 1 s
+     (generateur). Ici : Mp et Ess en pourcents de la consigne (100 V) ;
+     ts et tr divises par la constante de temps dominante du Buck,
+     tau1 = 1.7280 ms (tableau 1 du document Ziegler-Nichols). En secondes,
+     le terme de temps serait negligeable et la recherche ne verrait que le
+     depassement.
+  4. Definitions (l'article ne les donne pas), celles du banc commun :
+     tr = temps de montee de 10 a 90 V ; ts = instant ou la tension entre
+     pour de bon dans +-1 V (dernier instant hors bande, plus un pas ; 50 ms
+     si elle n'y entre pas) ; Mp = max(0, (Vmax - 100) / 100) en % ;
+     Ess = |erreur moyenne de 30 a 50 ms| en %.
+  5. Essais de reglage (l'article : un seul echelon de consigne). Ici,
+     l'echelon est le demarrage 0 -> 100 V, sur six points de
+     fonctionnement absents des onze essais communs :
+       R = 4.5, 10, 50 ohms  x  Vin = 180, 220 V,
+     50 ms chacun, sans bruit ni quantification ni evenement.
+     Cout d'un individu : moyenne des six W.
+  6. beta : 1.0 pour le reglage retenu (valeur de l'exemple principal de
+     l'article) ; 1.5 calcule et publie a cote, jamais retenu apres coup.
+  7. Hasard : graines 1 a 5 pour chaque beta. Retenu : pour beta = 1.0, le
+     gbest de plus petit W de reglage parmi les cinq graines. Toutes les
+     graines sont jugees et publiees.
+
+Remarque sur l'article (a ecrire dans le memoire)
+  Le tableau II de l'article ne se recalcule pas avec ses equations 9 et
+  13 : pour beta = 1 (Mp = 1.16 %, ts = 0.4025 s, tr = 0.2767 s), f vaut
+  1.28 si Mp est en % et 18.7 si Mp est en fraction, au lieu de 1.458 ;
+  pour beta = 1.5, 2.67 ou 27.8 au lieu de 1.230. On applique les
+  equations, pas les chiffres du tableau.
+
+Ce qu'on juge (onze essais communs, apres le reglage)
+  Meme cout J (13 rapports a Ziegler-Nichols) et meme contrainte (tous les
+  evenements reviennent dans la bande) que pour les autres methodes ; base
+  sans adaptation du PSO-PID : Ziegler-Nichols (J = 1, meme structure).
+  Comparaison au meilleur PID fige (0.738, oracle : regle sur les onze
+  essais eux-memes, sous les memes contraintes).
+
+Previsions (ecrites avant le calcul)
+  P1. Le reglage retenu respecte les contraintes (par construction) et ses
+      gains ne sont pas au bord de la boite [0 ; 16] sur plus d'un gain.
+  P2. Demarrage a 5 ohms (S1) : depassement inferieur a celui de
+      Ziegler-Nichols (14 %) ; W penalise surtout le depassement (poids
+      0.63 pour beta = 1).
+  P3. J sur les onze essais entre 0.74 et 0.95 : meilleur que
+      Ziegler-Nichols, moins bon que le meilleur PID fige.
+  P4. Tous les evenements reviennent dans la bande (la marge de 30 degres
+      aux coins 98 ohms protege la charge legere).
+  P5. Apres 30 ms (perturbations), moins bon que le meilleur PID fige
+      (moyenne des 10 rapports au-dessus de 0.710) : W ne voit aucune
+      perturbation.
+  P6. Cout plat : les cinq graines de beta = 1.0 donnent des W a 2 % les
+      uns des autres, mais au moins un gain varie de plus de 20 % d'une
+      graine a l'autre.
+  P7. beta = 1.5 donne un depassement plus faible et un ts plus long que
+      beta = 1.0 sur les essais de reglage (sens annonce par l'article).
+
+Si une prevision est fausse, on l'ecrit. On ne change ni le cout, ni les
+essais de reglage, ni les contraintes sans le declarer comme amendement,
+avec sa raison, avant de le calculer.
