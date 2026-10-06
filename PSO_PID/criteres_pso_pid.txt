@@ -268,3 +268,124 @@ n'est plus une erreur d'application)
   perturbation (1.97) ; son J (1.69) le place derriere Ziegler-Nichols. Le
   PSO a trouve le minimum de W de facon reproductible (dix recherches au
   meme point) : c'est le critere, pas l'optimiseur, qui fait le resultat.
+
+
+=============================================================================
+PARTIE II : PSO-PID AMELIORE (modifications documentees de la methode)
+Ecrit le 6 octobre 2026, avant toute recherche du PSO-PID ameliore. Seules
+mesures faites avant ce texte, sur les seuls essais de reglage E1 a E4 :
+IAE de Ziegler-Nichols (normalisation) et duree d'une evaluation (0.57 s).
+=============================================================================
+
+Demande de Jean-Riche (6 octobre 2026) : "que l'article soit modifie pour
+avoir les meilleures performances de PSO ; ces modifications doivent etre
+documentees [...] L'objectif est la methode elle-meme, pas d'etre meilleure
+que d'autres methodes."
+
+Diagnostic de la partie I (ce qu'il faut corriger, et ce qu'il ne faut pas)
+  L'essaim n'est pas en cause : dix recherches au meme point (W a 0.2 %
+  pres), aucune au bord, convergence nette. Changer d'essaim (constriction,
+  autre topologie) n'apporterait rien de mesurable. Ce qui limite le
+  resultat est le cout W : il ne voit qu'un echelon de consigne, donc ni le
+  rejet de charge ni celui de Vin, qui font 8 des 13 termes de la
+  specification. Les modifications portent donc sur le cout et sur le
+  traitement des contraintes, pas sur la mecanique de l'essaim.
+
+Modifications et leurs references
+  M1. Cout : IAE sur des essais de reglage avec perturbations.
+      - L'IAE est un des criteres standard cites par Gaing lui-meme (eq. 6,
+        a cote de ISE et ITSE) ; il l'ecarte pour son AVR, sans
+        perturbation de charge.
+      - K. J. Astrom, H. Panagopoulos, T. Hagglund, "Design of PI
+        controllers based on non-convex optimization", Automatica 34(5),
+        585-601, 1998 ; H. Panagopoulos, K. J. Astrom, T. Hagglund, "Design
+        of PID controllers based on constrained optimisation", IEE Proc.
+        Control Theory Appl. 149(1), 32-40, 2002 : le reglage d'un PID se
+        fait sur le rejet de perturbation de charge (IAE / IE), sous
+        contrainte de robustesse ; la consigne se traite a part.
+      - R. A. Krohling, J. P. Rey, "Design of optimal disturbance rejection
+        PID controllers using genetic algorithms", IEEE Trans. Evolutionary
+        Computation 5(1), 78-82, 2001 : optimisation evolutionnaire d'un PID
+        avec le rejet de perturbation dans la formulation.
+      - M. Alipoor, "Particle swarm optimization based design of disturbance
+        rejection PID controllers for time delay systems", IEEE ICIS 2009 :
+        la meme idee avec un essaim.
+      (Textes integraux non consultables ici ; references verifiees par
+      leurs notices.)
+      Mise en oeuvre :
+        Quatre essais de reglage, aucun n'est un des onze essais (points
+        R, Vin distincts, controle automatique dans le script) ; chacun
+        part de 0 V (demarrage), evenements a 40 et 65 ms :
+          E1  7 ohms, 190 V : charge portee a 4.5 ohms sur [40 ; 65) ms,
+              90 ms ;
+          E2  15 ohms, 210 V : Vin 175 V sur [40 ; 65) ms puis 235 V,
+              90 ms ;
+          E3  60 ohms (charge legere), 220 V : consigne +10 V en echelon
+              sur [40 ; 65) ms, 90 ms ;
+          E4  9 ohms, 200 V : bruit de mesure de meme nature que S7b
+              (10 mV, filtre a 10 kHz, AUTRE graine : 7) et CAN 12 bits
+              comme S7a, 60 ms.
+        Pour chaque essai : IAE du demarrage (0 a 30 ms) et IAE de 30 ms a
+        la fin, chacune divisee par celle de Ziegler-Nichols sur le meme
+        essai. J_reglage = 3/13 x moyenne des 4 rapports de demarrage
+          + 10/13 x moyenne des 4 rapports apres 30 ms
+        (meme poids du demarrage que dans la specification J : 3 termes sur
+        13). Ziegler-Nichols ne sert qu'a normaliser (il est refuse par les
+        contraintes : marge -3.1 degres).
+      Point a surveiller (je le signale avant de voir le resultat) : les
+      familles d'essais de reglage (charge, Vin, consigne, bruit) sont
+      celles de la specification. C'est legitime (le concepteur connait le
+      cahier des charges ; ELM a eu ses propres essais de reglage), mais le
+      resultat dira ce que vaut un PSO qui optimise la specification, pas
+      un PSO "aveugle". Les points de fonctionnement, les formes
+      (echelons, pas de rampes), les instants et la graine du bruit
+      different des onze essais.
+  M2. Contraintes : regles de faisabilite de K. Deb, "An efficient
+      constraint handling method for genetic algorithms", Computer Methods
+      in Applied Mechanics and Engineering 186(2-4), 311-338, 2000,
+      appliquees au PSO comme G. Toscano Pulido, C. A. Coello Coello, "A
+      constraint-handling mechanism for particle swarm optimization", IEEE
+      CEC 2004 : pour mettre a jour pbest et gbest, un individu admissible
+      bat un non admissible ; deux admissibles se departagent par
+      J_reglage ; deux non admissibles par la violation
+        viol = max(0, (30 - marge) / 30) + max(0, (fc - fs/10) / (fs/10)).
+      Remplace le W constant de 1e6 de Gaing, qui ne donne aucune direction
+      a un essaim encore hors du domaine admissible. Sans parametre de
+      penalite a regler. (Alternative citee, non utilisee : lagrangien
+      augmente, Kim, Maruta, Sugie, Automatica 44(4), 2008.)
+  M3. Conditions initiales : pendant le reglage, le PID part de celles du
+      bloc (integrateur 0.5, filtre 0.01), comme dans le fonctionnement
+      reel et dans le jugement. L'amendement 2 de la partie I (etat nul)
+      corrigeait un cout qui ne voyait pas le rejet de perturbation : avec
+      M1, la raison disparait, et la fidelite du cout au fonctionnement
+      reel prime.
+  Inchange (Gaing, partie I) : bloc PID, bornes [0 ; 4] fois ZN,
+  contraintes (marge >= 30 degres, coupure <= fs/10 aux 12 coins),
+  population 50, 100 iterations, inertie 0.9 -> 0.4 (eq. 12), c1 = c2 = 2,
+  Vmax = 2, positions ramenees dans les bornes. Le parametre beta disparait
+  avec W. (Constriction de Clerc et Kennedy, IEEE TEC 6(1), 2002 : citee,
+  non utilisee, l'essaim de Gaing convergeant deja de facon
+  reproductible.)
+  Cinq graines (1 a 5). Retenu : la graine de plus petit J_reglage (regle
+  ecrite avant) ; les cinq sont jugees et publiees.
+
+Previsions (ecrites avant la recherche)
+  R1. Les cinq graines donnent J_reglage a 1 % pres et des gains a 10 %
+      pres (cout net, comme en partie I).
+  R2. Ki retenu au moins egal a celui de Ziegler-Nichols (b >= 1) : le
+      rejet de perturbation demande de l'integrale.
+  R3. Sur les onze essais : J entre 0.70 et 0.80, tous les evenements
+      reviennent.
+  R4. Apres 30 ms : moins de 0.80 (partie I : 1.97 ; PID fige 0.710).
+  R5. Demarrage : moins bon que le PSO-PID de la partie I (au-dessus de
+      0.757) : le compromis se deplace vers le rejet.
+  R6. Au moins une contrainte active au gbest : marge <= 31 degres ou
+      coupure >= 0.98 x 2200 Hz.
+  R7. J a 0.03 pres du meilleur PID fige (0.738), qui a ete choisi sur une
+      grille de pas racine de 2 directement sur les onze essais.
+Regle de conclusion (ecrite avant) : si R7 est juste, le PSO a atteint le
+plafond d'un PID a gains fixes dans ces contraintes ; aucune autre
+modification de l'essaim ne peut alors donner mieux que quelques
+centiemes, et on s'arrete la. Si J depasse 0.78, le diagnostic portera sur
+l'ecart entre essais de reglage et specification, sans jamais regler sur
+les onze essais.
