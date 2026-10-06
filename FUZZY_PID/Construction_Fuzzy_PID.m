@@ -39,7 +39,14 @@
 %       (predictions_banc_pid_classique.json), 0.1 V au plus. Controle le
 %       branchement des entrees externes (ordre P, I, D, N ; entree u).
 %   T1  20 ms de S1, Fuzzy-PID : Vout comparee au banc
-%       (predictions_banc_fuzzy_pid.json), 0.1 V au plus ; gains affiches.
+%       (predictions_banc_fuzzy_pid.json) : 0.5 V au plus sur les 20 ms, et
+%       0.01 V au plus de 10 a 20 ms ; gains affiches.
+%       Amendement du 6 octobre 2026 (criteres_fuzzy_pid.txt) : la premiere
+%       version demandait 0.1 V sur tout l'essai. Diagnostic_T1_Fuzzy.m a
+%       montre que le regulateur Simulink calcule exactement ce que suppose
+%       le banc (3.5e-15 sur la commande) ; l'ecart de 1 mV laisse par le
+%       circuit au debut est amplifie a 0.2 V entre 2 et 6 ms (apres le pic,
+%       quand les gains bougent vite), puis s'eteint (0.7 mV apres 10 ms).
 %   T2  20 ms de S8b (98 ohms) : meme comparaison, 0.5 V au plus.
 % Si T0 passe et T1 echoue : le bloc PID ne traite pas des gains variables
 % comme le banc le suppose (voir ecart 3 de criteres_fuzzy_pid.txt) ;
@@ -199,7 +206,7 @@ pred_zn = jsondecode(fileread(fullfile(pwd, 'predictions_banc_pid_classique.json
 pred = jsondecode(fileread(fullfile(pwd, 'predictions_banc_fuzzy_pid.json')));
 reg = load(fullfile(pwd, 'fuzzy_pid_reglages.mat'));
 pas_1ms = round(1e-3 / TC);                       % 220 periodes Tc
-for essai = {{'T0', 'S1', 0.020, 0.1, true}, {'T1', 'S1', 0.020, 0.1, false}, {'T2', 'S8b', 0.020, 0.5, false}}
+for essai = {{'T0', 'S1', 0.020, 0.1, true}, {'T1', 'S1', 0.020, 0.5, false}, {'T2', 'S8b', 0.020, 0.5, false}}
     nom = essai{1}{1}; code = essai{1}{2}; duree = essai{1}{3}; tol = essai{1}{4}; fixes = essai{1}{5};
     charger_scenario(code);
     r = simuler_court(MDL, NOM_SYS, duree, fixes);
@@ -228,6 +235,13 @@ for essai = {{'T0', 'S1', 0.020, 0.1, true}, {'T1', 'S1', 0.020, 0.1, false}, {'
         end
         error(['%s : ecart au banc de %.3f V, au-dela de %.2f V. Si T0 est passe, le bloc PID ne traite pas des ' ...
                'gains variables comme le banc le suppose : envoie cette sortie.'], nom, ecart, tol);
+    end
+    if strcmp(nom, 'T1')                          % amendement : retour au banc apres le demarrage
+        ecart_fin = max(abs(vs(11:n) - vb(11:n)));    % de 10 ms a la fin (instants 10, 11, ... ms)
+        fprintf('       de 10 a %d ms : ecart maximal %.1f mV (0.01 V au plus)\n', n - 1, ecart_fin * 1e3);
+        if ~(ecart_fin <= 0.01)
+            error('T1 : de 10 a %d ms, ecart au banc de %.3f V, au-dela de 0.01 V : envoie cette sortie.', n - 1, ecart_fin);
+        end
     end
     if fixes && max(abs(r.K(end, :) - reg.K_ZN(:)') ./ reg.K_ZN(:)') > 0
         error('T0 : l''ordonnanceur n''a pas sorti les gains de Ziegler-Nichols.');

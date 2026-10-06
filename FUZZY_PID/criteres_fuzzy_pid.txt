@@ -207,3 +207,28 @@ Ce qu'il faudra ecrire dans le memoire
     double le depassement a 5 ohms.
   - Le bruit de mesure passe davantage dans la commande (activite |dd|
     0.0056 contre 0.0031 sur S1).
+
+Amendement 1 (6 octobre 2026, apres le premier passage sous Simulink) :
+tolerance de l'auto-test T1 de Construction_Fuzzy_PID.m
+  Constat (sorties de Jean-Riche) : test de rejeu identique (1e-16) ; T0
+  (gains de Ziegler-Nichols) a 2.3 mV du banc ; T1 (Fuzzy-PID, 20 ms de S1)
+  a 148 mV, au-dela des 0.1 V fixes.
+  Diagnostic (Diagnostic_T1_Fuzzy.m, comparer_diagnostic_T1.py,
+  diagnostic_T1_fuzzy.mat) : avec l'erreur vue par Simulink, la loi du banc
+  redonne la commande de Simulink a 3.5e-15 pres et ses gains a 4e-16 pres :
+  le bloc PID a parametres externes et l'ordonnanceur calculent exactement
+  ce que suppose le banc. L'ecart vient du circuit : 1.1 mV sur l'erreur
+  des 0.1 ms, le meme avec Ziegler-Nichols ; avec Ziegler-Nichols il reste
+  sous 4.1 mV, avec le Fuzzy-PID il monte a 198 mV entre 2 et 4 ms (juste
+  apres le pic, quand De et donc les gains varient vite), 19 mV entre 4 et
+  6 ms, puis 0.7 mV apres 10 ms, comme Ziegler-Nichols. Pic de demarrage :
+  127.33 V sous Simulink, 127.34 V sur le banc. Hypotheses ecartees sur le
+  banc avant le diagnostic : un pas de retard sur les gains (1.7 V d'ecart),
+  D apres le filtre (1.2 V), I apres la somme (16 V).
+  Amendement : T1 accepte 0.5 V sur les 20 ms (comme T2) et exige 0.01 V
+  au plus de 10 a 20 ms. T0 garde 0.1 V. C'est un test de construction, pas
+  un critere de performance : aucun reglage de la methode ne change.
+  Consequence a ecrire : le demarrage du Fuzzy-PID est sensible ; un ecart
+  de 1 mV y devient 0.2 V pendant quelques millisecondes (Ziegler-Nichols :
+  4 mV). Sous Simulink, les ecarts au banc entre 2 et 6 ms de S1 a S9 sont
+  donc attendus.

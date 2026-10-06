@@ -13,7 +13,11 @@
 % Duree : dix a vingt minutes (l'ordonnanceur tourne en execution
 % interpretee, 44 001 appels par essai de 0.2 s).
 % Ce qu'on attend : Simulink retrouve le banc a quelques dizaines de mV
-% pres sur S1 a S6 et S8a ; les gains sont une fonction continue de e et De,
+% pres sur S1 a S6 et S8a, SAUF entre 2 et 6 ms environ, juste apres le pic
+% de demarrage, ou l'ecart atteint 0.2 V (Diagnostic_T1_Fuzzy.m : le
+% regulateur est identique au banc, l'ecart de 1 mV du circuit y est
+% amplifie, puis s'eteint) ; le depassement, l'IAE apres 30 ms et les
+% evenements n'en dependent pas. Les gains sont une fonction continue de e et De,
 % sans seuil ni memoire, et sur le banc L ou C a +-0.1 % ne font bouger J
 % que de 0.877 a 0.890. S7a (quantification) et S7b (bruit) a part : les
 % gains suivent chaque pas de quantification, l'ecart efficace de S7a va
