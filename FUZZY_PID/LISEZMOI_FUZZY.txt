@@ -83,6 +83,44 @@ faux). Deux points ne seront confirmes que par toi :
 - la facon dont le bloc traite des gains qui changent a chaque pas
   (auto-test T1).
 
+LES TROIS MODELES DE BASE AVEC LE FUZZY-PID (nominal, F1, F2)
+-------------------------------------------------------------
+Comme pour l'ELM-PID et le PINN-PID : un modele par scenario de base,
+construit sur TES fichiers, qui se simule seul d'un clic sur Run.
+  PID_Classique_Control.slx                     -> Fuzzy_PID_Control.slx
+  PID_Classique_Control_control_disturbance.slx -> Fuzzy_PID_Control_control_disturbance.slx
+  PID_Classique_Control_load_disturbance.slx    -> Fuzzy_PID_Control_load_disturbance.slx
+Tes trois modeles de base sont dans ce dossier (ceux du 5 octobre, les
+memes que dans les dossiers ELM et PINN ; PAS ceux de l'ancien FUZZY.zip,
+qui sont sur l'ancien circuit). Ils ne sont jamais modifies. Dans chaque
+copie, ton bloc "PID Controller" est garde et recoit P, I, D de
+l'ordonnanceur, exactement comme dans Buck_Commun_Fuzzy_PID.slx.
+A lancer apres l'etape 5 ci-dessus :
+6. MATLAB : Construction_Fuzzy_PID_Trois_Modeles
+   Trois a six minutes. Auto-tests par modele : T0 (gains de
+   Ziegler-Nichols, 0.1 V) et T1 (Fuzzy-PID, 0.5 V sur 20 ms et 0.02 V de
+   10 a 19 ms). Fin attendue : "Les trois modeles sont construits et leurs
+   auto-tests sont passes".
+7. python verifier_modeles_fuzzy_pid_trois.py
+   Fin attendue : "RESULTAT : les trois modeles sont conformes."
+8. MATLAB : Simuler_Fuzzy_PID_Trois_Modeles
+   0.2 s par modele, comparaison aux essais S1, S2 et S3 du banc, une
+   figure par modele (Vout et consigne, rapport cyclique, iL, gains),
+   resultats_Fuzzy_PID_Trois_Modeles.mat. Deux a cinq minutes.
+   Ce qu'on attend (banc) : nominal, depassement 27.3 % et IAE 1.49 mV.s ;
+   F1, IAE 2.43 mV.s et ecart maximal 2.01 V ; F2, IAE 7.94 mV.s, ecarts
+   maximaux 5.52 et 5.66 V. Ecarts au banc possibles entre 2 et 6 ms
+   (amendement 1).
+
+PYTHON (message "A module that was compiled using NumPy 1.x cannot be run
+in NumPy 2.x", vu le 6 octobre dans Spyder)
+  Ce n'est pas une erreur des scripts : dans ton Anaconda, matplotlib a ete
+  compile pour NumPy 1 et NumPy est en version 2. Les verificateurs
+  (bibliotheque standard) ne sont pas touches ; banc_fuzzy_pid.py et
+  comparer_diagnostic_T1.py le sont. Remede, dans l'invite Anaconda :
+    pip install --upgrade matplotlib
+  (ou, pour revenir en arriere : conda install "numpy<2").
+
 CE QUE L'ETAPE 5 DOIT DONNER (banc)
 -----------------------------------
 - Tous les evenements reviennent dans la bande, y compris S8b et S9.
@@ -138,6 +176,11 @@ Tester_Fuzzy_PID_Rejeu.m               test du bloc hors Simulink
 Construction_Fuzzy_PID.m               construit Buck_Commun_Fuzzy_PID.slx
 verifier_modele_fuzzy_pid.py           controle independant du modele
 Simuler_Fuzzy_PID.m                    onze essais sous Simulink
+PID_Classique_Control_control_disturbance.slx   ton modele F1 (base des trois modeles)
+PID_Classique_Control_load_disturbance.slx      ton modele F2 (base des trois modeles)
+Construction_Fuzzy_PID_Trois_Modeles.m construit les trois modeles Fuzzy_PID_Control*.slx
+verifier_modeles_fuzzy_pid_trois.py    controle independant des trois modeles
+Simuler_Fuzzy_PID_Trois_Modeles.m      simulation et comparaison au banc (S1, S2, S3)
 Diagnostic_T1_Fuzzy.m                  trace Simulink de 20 ms de S1 (amendement 1)
 comparer_diagnostic_T1.py              rejoue cette trace dans la loi du banc
 diagnostic_T1_fuzzy.mat                la trace du 6 octobre (sous MATLAB R2024a)

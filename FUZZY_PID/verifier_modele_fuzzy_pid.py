@@ -11,7 +11,10 @@
 #   construit par Construction_Fuzzy_PID.m. Il doit etre identique a
 #   Buck_Commun.slx (deja verifie par verifier_modele_commun.py), sauf :
 #     - bloc "PID Controller" GARDE : seul ControllerParametersSource passe
-#       de internal a external (et ses entrees passent de 1 a 5) ;
+#       de internal a external (et ses entrees passent de 1 a 5) ; Simulink
+#       bascule alors seul quatre aiguillages internes du masque
+#       (ParallelPVariant, IVariant, DVariant, NVariant) de
+#       InternalParameters a ExternalParameters, et seulement ceux-la ;
 #     - quatre blocs ajoutes : "Echantillonneur Erreur Fuzzy" (Zero-Order
 #       Hold a 1/(22000*10) s), "Ordonnanceur Flou Zhao" (MATLAB System,
 #       classe ordonnanceur_flou_zhao, execution interpretee), "Demux Gains
@@ -60,6 +63,8 @@ NOM_ZOHE = "Echantillonneur Erreur Fuzzy"
 NOM_DEMUX = "Demux Gains Fuzzy"
 NOM_N = "Constante N Filtre"
 TYPES_AJOUTES = {NOM_ZOHE: "ZeroOrderHold", NOM_SYS: "MATLABSystem", NOM_DEMUX: "Demux", NOM_N: "Constant"}
+# Aiguillages internes du masque du PID lies a la source de P, I, D et N (changent seuls avec elle)
+VARIANTES_PID = ("ParallelPVariant", "IVariant", "DVariant", "NVariant")
 print("Dossier de travail :", DOSSIER)
 
 # Valeurs par defaut internes de Simulink pour les reglages compares
@@ -195,7 +200,17 @@ for nom in sorted(bs):
         if a.get("ControllerParametersSource") != "internal" or b.get("ControllerParametersSource") != "external":
             pb.append(f"PID : ControllerParametersSource {a.get('ControllerParametersSource')!r} -> "
                       f"{b.get('ControllerParametersSource')!r} au lieu de 'internal' -> 'external'.")
-        diff = [k for k in diff if k != "ControllerParametersSource"]
+        # Aiguillages internes du masque que Simulink bascule seul avec la source des parametres :
+        # un par parametre devenu externe, et seulement de InternalParameters a ExternalParameters.
+        bascules = [k for k in diff if k in VARIANTES_PID]
+        for k in bascules:
+            if a.get(k) != "InternalParameters" or b.get(k) != "ExternalParameters":
+                pb.append(f"PID : {k} {a.get(k)!r} -> {b.get(k)!r} au lieu de 'InternalParameters' -> "
+                          "'ExternalParameters'.")
+        if bascules:
+            notes.append("PID : aiguillages internes du masque bascules par Simulink avec la source des parametres "
+                         "(InternalParameters -> ExternalParameters) : " + ", ".join(sorted(bascules)) + ".")
+        diff = [k for k in diff if k != "ControllerParametersSource" and k not in VARIANTES_PID]
     if diff:
         pb.append(f"Bloc {nom!r} modifie : " + ", ".join(f"{k} {a.get(k)!r} -> {b.get(k)!r}" for k in diff))
 if len(pb) == n_pb:
