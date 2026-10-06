@@ -54,7 +54,7 @@ with open(os.path.join(DOSSIER_PSO, "recherche_pso_pid.py"), encoding="utf-8") a
     _SRC = f.read()
 exec(_SRC[:_SRC.index("\n# %% ETAPE 2 :")])       # banc commun, PIDParallele, frequentiel, essaim de la partie I
 
-RECALCULER = False                            # True : refaire les cinq recherches
+RECALCULER = True                             # True : refaire les cinq recherches
 FICHIER_AM = os.path.join(DOSSIER_PSO, "recherche_pso_pid_ameliore.json")
 GRAINES_AM = (1, 2, 3, 4, 5)
 POIDS_DEM = 3.0 / 13.0                        # poids du demarrage (3 termes sur 13 dans J)

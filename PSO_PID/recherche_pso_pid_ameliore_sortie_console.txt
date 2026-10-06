@@ -1,0 +1,5 @@
+Dossier de travail : /home/user/TFE/PSO_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Essais de reglage : E1 R = 7 ohms, Vin = 190 V, 90 ms ; E2 R = 15 ohms, Vin = 210 V, 90 ms ; E3 R = 60 ohms, Vin = 220 V, 90 ms ; E4 R = 9 ohms, Vin = 200 V, 60 ms
+IAE de Ziegler-Nichols (mV.s, demarrage / apres 30 ms) : E1 87.02 / 35.69 ; E2 92.63 / 3.12 ; E3 166.05 / 28.58 ; E4 84.05 / 1.43
+Ziegler-Nichols : marge minimale -3.1 degres, coupure 1154 Hz, refuse par les contraintes (il ne sert qu'a normaliser).
