@@ -1,0 +1,4 @@
+Dossier de travail : /home/user/TFE/PSO_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Points de reglage : R4.5_V180, R4.5_V220, R10_V180, R10_V220, R50_V180, R50_V220 ; tau1 = 1.7280 ms.
+Ziegler-Nichols : marge minimale -3.1 degres, coupure 1154 Hz, REFUSE par les contraintes.
