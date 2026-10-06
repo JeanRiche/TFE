@@ -106,3 +106,27 @@ Previsions (ecrites avant le calcul)
 Si une prevision est fausse, on l'ecrit. On ne change ni le cout, ni les
 essais de reglage, ni les contraintes sans le declarer comme amendement,
 avec sa raison, avant de le calculer.
+
+Amendement 1 (6 octobre 2026, avant toute recherche ; seul calcul fait :
+les contraintes, sans aucun cout ni aucun essai)
+  Constat : dans la boite [0 ; 16]^3 de l'ecart 1, 0.05 % des points
+  respectent les contraintes d (1 sur 2000 tires au hasard, graine 123) ;
+  la coupure <= fs/10 en exclut 94 %. Avec 50 individus, la probabilite
+  qu'au moins un soit admissible au depart vaut 2.5 %, et la penalite
+  constante de l'article (W tres grand) ne donne aucune direction :
+  l'essaim errerait au hasard. Ce n'est pas un defaut du PSO, c'est une
+  boite mal choisie (par moi).
+  Etendue de la zone admissible (grille de pas 0.5 sur [0 ; 16]^3, 35 937
+  points, contraintes seules) : a de 0 a 2.5, b de 0 a 3, c de 0 a 3.5 ;
+  0.14 % de la grille.
+  Amendement : kmax = 4 pour les trois multiplicateurs (plus petite
+  puissance de 2 qui contient toute la zone admissible), donc Vmax = 2.
+  Dans [0 ; 4]^3, 6.9 % des points sont admissibles ; probabilite d'au
+  moins un individu admissible au depart : 97 %. Tout le reste de la
+  methode est inchange (penalite constante de l'article comprise). Comme
+  dans l'article, les bornes sont un choix du concepteur ; elles sont
+  tirees ici des seules contraintes, jamais du cout ni des onze essais.
+  Prevision P1 lue avec la nouvelle boite : gains pas au bord de [0 ; 4]
+  sur plus d'un gain.
+  Correctif du script (sans effet sur la methode) : si aucun individu
+  n'est admissible, le compte rendu le dit au lieu de s'arreter.
