@@ -1,0 +1,117 @@
+PSO-PID : REGLAGE HORS LIGNE PAR ESSAIM DE PARTICULES (Gaing, 2004)
+SUR LE PID CLASSIQUE (6 octobre 2026)
+=====================================================================
+
+DOSSIER COMPLET ET AUTONOME : il contient la base commune v2.1 (modele
+Buck_Commun.slx, tes trois modeles de base, essais, banc Python) et tout le
+PSO-PID. Dezippe-le dans un dossier vide, fais de ce dossier le dossier
+courant MATLAB, et lance les etapes ci-dessous. Ne garde pas les dossiers
+ELM, PINN ou FUZZY sur le chemin MATLAB en meme temps (memes noms de
+fichiers de base). L'ancien PSO.zip (ancien circuit) ne sert plus.
+
+A LIRE D'ABORD : criteres_pso_pid.txt
+  La methode de l'article, les ecarts declares, les deux amendements (avec
+  leur raison), les previsions ecrites avant chaque calcul et les resultats.
+
+LA METHODE (decisions de Jean-Riche du 6 octobre 2026)
+- Article : Z.-L. Gaing, IEEE Trans. Energy Conversion, 2004 : essaim de 50,
+  100 iterations, inertie de 0.9 a 0.4, c1 = c2 = 2, Vmax = moitie de la
+  plage, cout W = (1 - e^-beta)(Mp + Ess) + e^-beta (ts - tr).
+- Le PID est TON bloc "PID Controller" de Ziegler-Nichols ; seuls P, I, D
+  changent, et restent fixes ensuite (reglage hors ligne).
+- Reglage sur six demarrages qui ne sont pas dans les onze essais
+  (R = 4.5, 10, 50 ohms ; Vin = 180, 220 V) ; les onze essais ne servent
+  qu'a juger. Contraintes du meilleur PID fige (marge >= 30 degres,
+  coupure <= fs/10 aux 12 coins).
+- Corrections de l'application, signalees et declarees :
+    amendement 1 : bornes [0 ; 4] fois ZN au lieu de [0 ; 16] (la boite
+    [0 ; 16] ne contenait que 0.05 % de gains admissibles) ;
+    amendement 2 : pendant le reglage, le PID part de l'etat nul, comme la
+    reponse indicielle de l'article (avec l'integrateur precharge a 0.5, W
+    poussait Ki a zero et le PSO-PID donnait J = 5.03 ; resultats gardes
+    sous le suffixe _v1).
+- Defaut de l'article signale : son tableau II ne se recalcule pas avec ses
+  equations 9 et 13.
+
+ORDRE D'EXECUTION
+-----------------
+0. (facultatif) python verifier_modele_commun.py
+1. (deja fait, ne pas relancer sans raison) python recherche_pso_pid.py
+   RECALCULER = False : reprend recherche_pso_pid.json et recalcule le cout
+   de chaque gbest pour controle (une minute environ). RECALCULER = True :
+   refait les dix recherches (une heure et demie a trois heures).
+2. (deja fait) python banc_pso_pid.py
+   Une minute. Sortie attendue : banc_pso_pid_sortie_console.txt.
+3. MATLAB : Construction_PSO_PID
+   Copie Buck_Commun.slx en Buck_Commun_PSO_PID.slx et y ecrit P, I, D.
+   Quelques secondes.
+4. python verifier_pso_pid.py
+   Fin attendue : "RESULTAT : Buck_Commun_PSO_PID.slx est conforme."
+5. MATLAB : Simuler_PSO_PID
+   Onze essais, comparaison au banc. Six a dix minutes.
+6. MATLAB : Construction_PSO_PID_Trois_Modeles
+   Tes trois modeles de base -> PSO_PID_Control.slx,
+   PSO_PID_Control_control_disturbance.slx, PSO_PID_Control_load_disturbance.slx
+   (seuls P, I, D changent ; auto-test de 20 ms par modele, 0.05 V au plus).
+7. python verifier_modeles_pso_pid_trois.py
+   Fin attendue : "RESULTAT : les trois modeles sont conformes."
+8. MATLAB : Simuler_PSO_PID_Trois_Modeles
+   Nominal, F1, F2 compares a S1, S2, S3 du banc ; une figure par modele.
+
+Envoie-moi la sortie console des etapes 3 a 8. Si une etape s'arrete sur
+une erreur, envoie-la telle quelle sans passer a la suivante.
+Aucun script MATLAB n'a pu etre execute ici (pas de MATLAB) ; les
+verificateurs Python ont ete testes sur des modeles fabriques (conformes et
+faux).
+
+CE QUE L'ETAPE 5 DOIT DONNER (banc)
+-----------------------------------
+- Gains : P = 0.063572, I = 19.1561, D = 2.6043e-5, N = 64122.9.
+- Tous les evenements reviennent dans la bande.
+- S1 : depassement 4.2 % (ZN 14 %) ; S8b : depassement 12.5 %, IAE
+  23.3 mV.s ; S5 : IAE 23.6 mV.s (ZN 3.9).
+- Cout J : PSO-PID 1.692 ; Ziegler-Nichols 1.000 ; meilleur PID fige 0.738
+  (oracle). Rappel : ELM-PID 0.784, PINN-PID 0.684, Fuzzy-PID 0.877.
+- Gains fixes : Simulink doit retrouver le banc a quelques dizaines de mV
+  pres, comme le PID classique et le PID fige.
+
+CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
+---------------------------------------------
+- Applique correctement, le PSO-PID de Gaing donne le meilleur demarrage
+  des references a gains fixes (0.757 ; PID fige 0.831) et le plus mauvais
+  rejet de perturbation (1.97 apres 30 ms). Son J (1.69) le place derriere
+  Ziegler-Nichols.
+- La cause est le critere, pas l'optimiseur : W ne juge que la reponse a un
+  echelon de consigne ; l'integrale y coute du depassement, l'optimum garde
+  le plus petit Ki qui annule l'erreur statique dans la fenetre de mesure
+  (6 % de ZN), trop lent pour rejeter une variation de Vin ou de charge.
+  Dix recherches arrivent au meme point : le resultat est reproductible.
+- L'histoire de l'application est un resultat en soi : boite trop large
+  (amendement 1), puis integrateur precharge qui faisait disparaitre l'erreur
+  statique et donnait J = 5.03 (amendement 2). Un reglage hors ligne ne vaut
+  que par la fidelite de son cout au fonctionnement reel.
+
+FICHIERS
+--------
+Base commune v2.1 (copies, ne pas modifier)
+Buck_Commun.slx, PID_Classique_Control.slx, PID_Classique_Control_control_disturbance.slx,
+PID_Classique_Control_load_disturbance.slx, verifier_modele_commun.py, charger_scenario.m,
+scenario_S1.mat ... scenario_S9.mat, scenarios_communs.json, banc_commun.py,
+predictions_banc_pid_classique.json, predictions_banc_pid_fige.json,
+banc_elm_pid_resultats.json, banc_pinn_pid_resultats.json, banc_fuzzy_pid_resultats.json
+
+PSO-PID
+criteres_pso_pid.txt                   methode, ecarts, amendements, previsions, resultats
+recherche_pso_pid.py                   les dix recherches (beta 1 et 1.5, graines 1 a 5)
+recherche_pso_pid.json                 leur compte rendu (gbest, historique)
+recherche_pso_pid_sortie_console.txt   sortie de la recherche
+banc_pso_pid.py                        jugement sur les onze essais, previsions
+banc_pso_pid_sortie_console.txt        sortie attendue du jugement
+banc_pso_pid_resultats.json            tous les chiffres
+banc_pso_pid.png                       S1, S8b, S9 : ZN, PID fige, PSO-PID
+pso_pid_convergence.png                convergence (fig. 4 et 14 de l'article)
+predictions_banc_pso_pid.json          gains retenus et ce que Simulink doit retrouver
+Construction_PSO_PID.m, verifier_pso_pid.py, Simuler_PSO_PID.m
+Construction_PSO_PID_Trois_Modeles.m, verifier_modeles_pso_pid_trois.py,
+Simuler_PSO_PID_Trois_Modeles.m
+*_v1*                                  premiere recherche (avant l'amendement 2), J = 5.03

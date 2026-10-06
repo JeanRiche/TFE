@@ -221,3 +221,50 @@ Previsions pour la recherche amendee (ecrites avant de la lancer)
   Q4. Depassement de S1 (integrateur a 0.5, comme dans les essais) au-dessus
       de celui des demarrages de reglage : le precharge ajoute de
       l'avance au demarrage.
+
+Resultats de la recherche amendee (6 octobre 2026 ; sorties completes dans
+recherche_pso_pid_sortie_console.txt et banc_pso_pid_sortie_console.txt)
+  Recherche (95 minutes) : les dix recherches arrivent au meme endroit.
+    beta = 1   : a = 0.671 a 0.677, b = 0.063 a 0.064, c = 3.53 a 3.56,
+                 W = 0.4927 a 0.4938 (0.2 % d'ecart) ;
+    beta = 1.5 : a = 0.661 a 0.679, b = 0.059, c = 3.46 a 3.56.
+    Kd reste pousse jusqu'a la limite de coupure (2143 a 2198 Hz) ; marge de
+    phase 68.6 a 68.8 degres. Plus aucun piege au bord b = 0.
+  Retenu (regle ecrite avant) : beta = 1, graine 3 ;
+    P = 0.063572, I = 19.1561, D = 2.6043e-5 (x ZN : 0.677, 0.0636, 3.556).
+    Sur les six demarrages de reglage (depuis l'etat nul) : Mp de 0.01 a
+    0.85 %, Ess nulle, ts de 1.1 a 4.3 ms.
+  Jugement sur les onze essais : J = 1.692 ; tous les evenements reviennent.
+    Demarrage 0.757 (meilleur que le PID fige, 0.831, et que ZN) ; apres
+    30 ms, 1.972 (ZN 1.000, PID fige 0.710). Depassement de S1 4.2 % (ZN
+    14 %), de S8b 12.5 % (ZN 82 %). Rejet des perturbations lent : S5 IAE
+    23.6 mV.s (ZN 3.9), S8a 23.3 (ZN 12.1), S4 36.7 (ZN 23.6). Dix
+    recherches : J de 1.686 a 1.759.
+
+Face aux previsions de l'amendement 2
+  Q1 FAUSSE : Ki = 0.064 fois Ziegler-Nichols, pas 0.25 au moins.
+  Q2 moitie juste : tous les evenements reviennent, mais J = 1.69, pas entre
+     0.74 et 0.95.
+  Q3 juste : apres 30 ms, 1.97 (PID fige 0.71).
+  Q4 juste : depassement de S1 4.2 % avec l'integrateur a 0.5, contre 0.01 a
+     0.85 % sur les demarrages de reglage partis de l'etat nul.
+  Previsions d'origine relues : P1, P2, P4, P5, P7 justes ; P3 fausse
+  (J = 1.69) ; P6 fausse (les graines donnent presque le meme point : le
+  cout n'est pas plat).
+
+Pourquoi le PSO-PID reste moins bon que Ziegler-Nichols (et pourquoi ce
+n'est plus une erreur d'application)
+  W ne juge qu'une reponse a un echelon de consigne. L'action integrale y
+  coute du depassement et ne sert qu'a annuler l'erreur statique avant la
+  fenetre ou Ess est mesuree (30 a 50 ms) : l'optimum prend donc le plus
+  petit Ki qui y parvient (6 % de Ziegler-Nichols). Ce Ki suffit pour la
+  consigne mais rend lent le rejet d'une variation de Vin ou de charge, que
+  W ne voit jamais. C'est la limite connue des criteres de suivi de
+  consigne (IAE, ISE, ITSE, et W de Gaing, qui les remplace) : ils reglent
+  la reponse a la consigne, pas le rejet de perturbation. L'article ne
+  traite d'ailleurs que la reponse indicielle de l'AVR.
+  A ecrire : applique correctement, le PSO-PID de Gaing donne le meilleur
+  demarrage des references a gains fixes (0.757) et le plus mauvais rejet de
+  perturbation (1.97) ; son J (1.69) le place derriere Ziegler-Nichols. Le
+  PSO a trouve le minimum de W de facon reproductible (dix recherches au
+  meme point) : c'est le critere, pas l'optimiseur, qui fait le resultat.
