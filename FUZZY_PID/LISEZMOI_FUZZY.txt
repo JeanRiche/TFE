@@ -1,11 +1,20 @@
 FUZZY-PID SUR LA BASE COMMUNE V2 (6 octobre 2026)
 =================================================
 
-Ces fichiers s'ajoutent au dossier de la base commune v2.1 (celui ou se
-trouvent deja Buck_Commun.slx, charger_scenario.m, banc_commun.py,
-scenario_S*.mat, predictions_banc_pid_fige.json et boite_gains_elm.json).
-Copie-les dans ce dossier. L'ancien dossier FUZZY (FUZZY.zip) ne sert plus :
-ne melange pas ses fichiers avec ceux-ci.
+DOSSIER COMPLET ET AUTONOME : il contient la base commune v2.1 (modele
+Buck_Commun.slx, essais, banc Python) et tout le Fuzzy-PID. Dezippe-le dans
+un dossier vide, fais de ce dossier le dossier courant MATLAB, et lance les
+etapes ci-dessous. Rien d'autre a copier.
+L'ancien dossier FUZZY (FUZZY.zip) ne sert plus : ne melange pas ses
+fichiers avec ceux-ci. Ne mets pas non plus ce dossier sur le chemin MATLAB
+en meme temps que le dossier de l'ELM ou du PINN : les scripts refusent
+deux exemplaires du meme fichier (Buck_Commun.slx, charger_scenario.m...).
+
+Controle fait le 6 octobre 2026 : Buck_Commun.slx de ce dossier est celui
+de la base commune (identique dans tes dossiers ELM et PINN) ;
+verifier_modele_commun.py le declare conforme (snubber de la diode
+supprime) face a PID_Classique_Control.slx. Le banc du Fuzzy-PID relance
+dans une copie vierge de ce dossier redonne la meme sortie, au chiffre pres.
 
 A LIRE D'ABORD : criteres_fuzzy_pid.txt
   Reglages et previsions ecrits avant tout calcul (commit separe, avant le
@@ -27,8 +36,11 @@ LE REGULATEUR (decisions de Jean-Riche du 6 octobre 2026)
 
 ORDRE D'EXECUTION
 -----------------
-Tout se lance depuis le dossier de la base commune (dossier courant MATLAB).
+Tout se lance depuis ce dossier (dossier courant MATLAB).
 
+0. (facultatif) python verifier_modele_commun.py
+   Controle que Buck_Commun.slx est conforme. Fin attendue :
+   "RESULTAT : Buck_Commun.slx est conforme."
 1. (deja fait, ne pas relancer sans raison) python banc_fuzzy_pid.py
    Une minute environ. Ecrit predictions_banc_fuzzy_pid.json,
    fuzzy_pid_reglages.mat, reference_rejeu_fuzzy_pid.mat,
@@ -94,7 +106,22 @@ CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
 
 FICHIERS
 --------
-criteres_fuzzy_pid.txt                 reglages, previsions, resultats
+Base commune v2.1 (copies, ne pas modifier)
+Buck_Commun.slx                        modele commun (PID de Ziegler-Nichols)
+PID_Classique_Control.slx              ton modele de base (Rs = inf), pour le verificateur
+verifier_modele_commun.py              controle de Buck_Commun.slx
+charger_scenario.m                     charge un essai dans le workspace
+scenario_S1.mat ... scenario_S9.mat    les onze essais
+scenarios_communs.json                 liste des essais
+banc_commun.py                         banc Python commun, version 2.1
+predictions_banc_pid_classique.json    Ziegler-Nichols sur le banc
+predictions_banc_pid_fige.json         meilleur PID fige (gains)
+boite_gains_elm.json                   boite des gains, commune aux trois methodes
+banc_elm_pid_resultats.json            resultats de l'ELM-PID (rappel de son J)
+banc_pinn_pid_resultats.json           resultats du PINN-PID (rappel de son J)
+
+Fuzzy-PID
+criteres_fuzzy_pid.txt                reglages, previsions, resultats
 banc_fuzzy_pid.py                      banc du Fuzzy-PID, ablations
 banc_fuzzy_pid_sortie_console.txt      sortie attendue du banc
 banc_fuzzy_pid_resultats.json          tous les chiffres
