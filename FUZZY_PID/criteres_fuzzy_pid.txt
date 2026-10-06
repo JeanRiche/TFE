@@ -232,3 +232,27 @@ tolerance de l'auto-test T1 de Construction_Fuzzy_PID.m
   de 1 mV y devient 0.2 V pendant quelques millisecondes (Ziegler-Nichols :
   4 mV). Sous Simulink, les ecarts au banc entre 2 et 6 ms de S1 a S9 sont
   donc attendus.
+
+Validation sous Simulink (6 octobre 2026, sorties de Jean-Riche, MATLAB R2024a)
+  Tester_Fuzzy_PID_Rejeu : identique (1e-16 sur le systeme flou et les gains,
+  quatre essais).
+  Construction_Fuzzy_PID : T0 2.3 mV, T1 148 mV (0.4 mV de 10 a 19 ms),
+  T2 70 mV ; verifier_modele_fuzzy_pid.py : conforme.
+  Simuler_Fuzzy_PID, onze essais, Simulink face au banc :
+    IAE a 0.2 % pres sur S1 a S6, S7b, S8a, S8b, S9 ; ecart efficace a
+    0.2 % pres ; tous les evenements reviennent, memes temps de retour a
+    0.01 ms pres ; depassement de S1 27.33 % (banc 27.34 %).
+    S7a (quantification) : IAE +4.8 %, ecart efficace 36.4 mV contre 34.3
+    (dans la plage 34 a 40 mV que donne le banc avec L ou C a 0.1 % pres).
+    Ecart maximal sur Vout prise toutes les ms : 148 a 156 mV, au
+    demarrage seulement (amendement 1) ; S8a 8.8 mV, S8b 70 mV.
+  Trois modeles de base (Construction_Fuzzy_PID_Trois_Modeles,
+  verifier_modeles_fuzzy_pid_trois.py, Simuler_Fuzzy_PID_Trois_Modeles) :
+    T0 10 a 15 mV, T1 139 a 149 mV (0.7 mV de 10 a 19 ms) ; trois modeles
+    conformes, calcul de F1 intact ; nominal IAE 1.49 mV.s (banc 1.49),
+    F1 2.43 (2.43), F2 7.96 (7.94, +0.2 % : charge de 5.001 ohms hors de la
+    fenetre, prevu).
+  Conclusion : le modele Simulink du Fuzzy-PID reproduit le banc ; les
+  chiffres du banc (J = 0.877) valent pour Simulink. Estimation de J sous
+  Simulink a partir des IAE ci-dessus : 0.881 (seul S7a bouge) ; le calcul
+  exact demande les IAE du demarrage, dans resultats_Buck_Commun_Fuzzy_PID.mat.
