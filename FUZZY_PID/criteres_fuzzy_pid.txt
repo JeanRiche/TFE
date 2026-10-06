@@ -1,0 +1,113 @@
+Fuzzy-PID, etape 1 : le regulateur, ses reglages et les previsions
+Ecrit le 6 octobre 2026, avant tout calcul du Fuzzy-PID sur le banc commun.
+Seul calcul fait avant ce fichier : la relance de banc_elm_pid.py, pour
+verifier que le banc tourne (R0 0.917, ELM-PID 0.784, meilleur PID fige
+0.738, au chiffre pres).
+
+Decisions de Jean-Riche (6 octobre 2026)
+  1. Architecture de Zhao, Tomizuka et Isaka (1993) : le systeme flou donne
+     directement la position des gains dans la boite, pas des increments.
+     Aucun integrateur sur les gains, donc aucune derive vers les bornes
+     (defaut de l'ancienne version, section 6.3 de son document).
+  2. Decision toutes les 0.5 ms (fenetres de 110 periodes Tc), comme
+     l'ELM-PID et le PINN-PID.
+  3. Systeme flou code a la main, identique dans le banc Python et dans le
+     bloc MATLAB System (pas de bloc Fuzzy Logic Controller).
+  4. Univers fixes par les seuils du protocole, sans reglage sur les essais.
+
+Ce qui est commun aux trois methodes (inchange)
+  Loi de Lu a derivee filtree (eq. 13-14), depart u = 0.5 aux gains de
+  Ziegler-Nichols en forme incrementale, boite de boite_gains_elm.json, seule
+  saturation [0.01 ; 0.99]. Gains ecrits theta dans [0 ; 1] (0 au bord bas de
+  la boite, 1 au bord haut). Ziegler-Nichols est le coin (Kp min, Ki max,
+  Kd min) : theta_ZN = (0, 1, 0). Le Fuzzy-PID ne peut donc que monter Kp
+  (jusqu'a x2.38), baisser Ki (jusqu'a x0.25) et monter Kd (jusqu'a x2.38).
+
+Le systeme flou
+  Entrees, a la fin de la fenetre n :
+    E  = ebar(n), erreur moyenne de la fenetre (e = consigne - mesure, V) ;
+    dE = ebar(n) - ebar(n-1) (V par fenetre ; dE = 0 a la premiere fenetre).
+  Les gains calcules a la fin de la fenetre n servent pendant la fenetre
+  n + 1. Pendant la premiere fenetre : Ziegler-Nichols.
+  Cinq ensembles par entree, NG NP ZE PP PG, memes points de cassure en
+  volts pour E et dE, tires du protocole :
+    0.1 V : zone morte de l'ELM-PID et seuil de declenchement du PINN-PID ;
+    1 V   : bande de retour des evenements ;
+    10 V  : ordre de grandeur des ecarts des evenements (S3 5.5 V, S4 10.5 V
+            et 11.5 V, banc commun).
+    ZE : trapeze (-1 ; -0.1 ; 0.1 ; 1)       NP, PP : triangles (+-0.1 ; +-1 ; +-10)
+    NG, PG : trapezes ouverts (+-1 ; +-10 ; au-dela)
+  La somme des appartenances vaut 1 partout (partition). Pour |E| <= 0.1 V
+  et |dE| <= 0.1 V, seule la regle (ZE, ZE) est active.
+  Pour dE, reprendre les seuils de l'erreur est un choix declare : une
+  variation de 0.1 V d'une fenetre a la suivante est jugee nulle, une
+  variation de 10 V est jugee grande.
+  Inference : ET = minimum (Mamdani), 25 regles, conclusions en singletons
+  0, 0.5 et 1 (Z, M, G), defuzzification par moyenne ponderee.
+  Ecart avec l'ancienne version (Mamdani a centroide) : avec des triangles
+  de sortie, le centroide n'atteint jamais le bord de l'univers ; le coin
+  de Ziegler-Nichols (0, 1, 0) serait inatteignable et le regime etabli ne
+  serait plus R0. Les singletons rendent ce coin atteignable et le calcul
+  exact, identique dans Python et MATLAB. C'est un Sugeno d'ordre 0 a ET
+  minimum : on l'ecrit tel quel dans le memoire.
+
+Les tables (lignes E = NG NP ZE PP PG, colonnes dE = NG NP ZE PP PG)
+  Principe de Zhao, table propre a ce travail (pas la table de l'article) :
+  Kp fort loin de la consigne ; Kd fort et Ki reduit quand l'erreur revient
+  vers zero (E et dE de signes opposes), pour freiner le depassement ; Ki
+  plein quand l'erreur s'eloigne ou stagne ; Ziegler-Nichols au repos.
+
+  theta_p (0 = ZN, 1 = 2.38 ZN)     theta_i (1 = ZN, 0 = 0.25 ZN)     theta_d (0 = ZN, 1 = 2.38 ZN)
+       NG  NP  ZE  PP  PG                NG  NP  ZE  PP  PG                NG  NP  ZE  PP  PG
+  NG   G   G   G   G   G            NG   G   G   G   M   Z            NG   Z   Z   Z   M   G
+  NP   M   M   M   M   M            NP   G   G   G   M   Z            NP   Z   Z   Z   M   G
+  ZE   M   Z   Z   Z   M            ZE   G   G   G   G   G            ZE   M   Z   Z   Z   M
+  PP   M   M   M   M   M            PP   Z   M   G   G   G            PP   G   M   Z   Z   Z
+  PG   G   G   G   G   G            PG   Z   M   G   G   G            PG   G   M   Z   Z   Z
+
+  Regle (ZE, ZE) : (0, 1, 0), c'est-a-dire Ziegler-Nichols. Consequence :
+  tant que |ebar| et sa variation restent sous 0.1 V, le Fuzzy-PID est R0 a
+  l'identique.
+
+Variantes calculees (liste fixee avant le calcul)
+  Fuzzy-PID : ce fichier.
+  R0 : meme loi, gains figes (deja calcule pour l'ELM-PID).
+  Controle : Fuzzy-PID avec la table (ZE, ZE) partout = R0 a l'identique.
+  Ablations : Kp seul (theta_i = 1 et theta_d = 0 en permanence) ; sans dE
+  (dE force a 0) ; univers x0.5 et x2 (les trois seuils divises ou
+  multiplies par 2).
+  Sensibilite : L ou C a +-0.1 %, comme pour l'ELM-PID.
+  Les ablations ne sont pas des candidats : aucune ne remplacera le
+  Fuzzy-PID apres coup.
+
+Ce qu'on mesure : le meme cout J (13 rapports a Ziegler-Nichols) et la
+meme contrainte (tous les evenements reviennent dans la bande) que pour
+l'ELM-PID et le PINN-PID, avec les grandeurs du banc commun 2.1.
+
+Previsions (ecrites avant le calcul)
+  P1. Regime etabli : le Fuzzy-PID est R0. S7a et S7b : ecart efficace a
+      1 % de R0 (32.0 et 21.2 mV) ; le bruit filtre sur 0.5 ms reste sous
+      0.1 V.
+  P2. Demarrage a 5 ohms (S1) : depassement au plus celui de R0 (2.4 %) ;
+      Kd monte et Ki baisse pendant l'approche.
+  P3. S3, S4, S5 : l'ecart maximal ne baisse pas de plus de 10 % (le pic
+      arrive avant que la premiere decision s'applique, 0.5 a 1 ms apres
+      l'evenement) ; l'IAE baisse un peu (retour plus rapide).
+  P4. Charge legere (S8a, S8b, S9). Le systeme flou ne sait pas que la
+      charge est legere : quand l'erreur repasse sous 0.1 V, il revient a
+      Ziegler-Nichols, dont la marge est negative a 98 ohms (-2.7 degres).
+      L'oscillation doit donc reprendre, jusqu'a ce que ebar sorte de la
+      zone ZE et fasse remonter Kp : pompage entre Ziegler-Nichols et des
+      gains plus forts. Prevision : sur S8b, une oscillation residuelle
+      bornee, crete a crete de fin entre 0.2 et 2 V (ELM-PID : 0.03 a
+      0.24 V) ; les evenements de S8b reviennent ou non selon que cette
+      amplitude reste sous 1 V, sans prevision ferme ; S9 de meme.
+  P5. Cout J entre 0.80 et 0.92 (R0 0.917, ELM-PID 0.784, PINN-PID 0.684,
+      meilleur PID fige 0.738). Le Fuzzy-PID ne bat pas l'ELM-PID.
+  P6. Ablations : Kp seul fait presque aussi bien que le Fuzzy-PID complet
+      (ecart de J sous 0.02) ; univers x0.5 et x2 changent J de plus que
+      la sensibilite L, C a +-0.1 %.
+
+Si une prevision est fausse, on l'ecrit. On ne change ni les tables, ni
+les univers, ni les criteres sans le declarer comme amendement, avec sa
+raison, avant de le calculer.
