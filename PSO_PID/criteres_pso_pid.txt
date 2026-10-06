@@ -389,3 +389,56 @@ modification de l'essaim ne peut alors donner mieux que quelques
 centiemes, et on s'arrete la. Si J depasse 0.78, le diagnostic portera sur
 l'ecart entre essais de reglage et specification, sans jamais regler sur
 les onze essais.
+
+Resultats du PSO-PID ameliore (6 octobre 2026 ; sorties completes dans
+recherche_pso_pid_ameliore_sortie_console.txt et
+banc_pso_pid_ameliore_sortie_console.txt)
+  Recherche (35 minutes, cinq graines) :
+    J_reglage de 0.5939 a 0.6015 ; a = 2.34 a 2.55, b = 1.18 a 1.93,
+    c = 2.57 a 2.92 ; marge 30.0 a 31.9 degres (contrainte de marge active
+    partout), coupure 2100 a 2199 Hz. Pour information : J_reglage du
+    meilleur PID fige 0.660, du PSO-PID de la partie I 1.609 (le classement
+    du reglage est celui du jugement).
+  Retenu (regle ecrite avant) : graine 3 ;
+    P = 0.239585, I = 412.0556, D = 1.913247e-05 (x ZN : 2.551, 1.369, 2.613).
+  Jugement sur les onze essais : J = 0.714 ; tous les evenements reviennent.
+    Apres 30 ms 0.672 (PID fige 0.710, partie I 1.972) ; demarrage 0.855
+    (PID fige 0.831, partie I 0.757). S5 IAE 2.46 mV.s (partie I 23.6, ZN
+    3.87) ; S4 16.5 (partie I 36.7) ; depassement S1 7.1 %, S8b 73.6 % (PID
+    fige 70.3 %, ZN 82.4 %). Cinq graines : J de 0.714 a 0.730, toutes
+    meilleures que le meilleur PID fige.
+
+Face aux previsions de la partie II
+  R1 FAUSSE : J_reglage a 1.3 % pres (pas 1 %), et b varie de 1.18 a 1.93.
+     Le minimum est une vallee allongee le long de la frontiere marge =
+     30 degres, presque plate en Ki ; en 100 iterations l'essaim de Gaing
+     ameliore encore le gbest aux iterations 82 a 100 : convergence
+     incomplete sur cette vallee. L'effet sur le jugement reste petit
+     (J de 0.714 a 0.730).
+  R2 juste : b = 1.37.
+  R3 juste : J = 0.714, tous les evenements reviennent.
+  R4 juste : apres 30 ms 0.672.
+  R5 juste : demarrage 0.855, plus lent que la partie I (0.757).
+  R6 juste : marge 30.0 degres (contrainte active).
+  R7 juste : 0.714, a 0.024 du meilleur PID fige.
+
+Lecture (et ce que cela change pour le memoire)
+  1. La correction du cout suffit : meme essaim, memes bornes, memes
+     contraintes, J passe de 1.692 a 0.714. Le PSO trouvait deja le
+     minimum de son cout ; c'est le cout de Gaing qui etait faux pour un
+     convertisseur soumis a des perturbations de charge et de Vin.
+  2. Le PSO-PID ameliore fait mieux que le "meilleur PID fige" (0.714
+     contre 0.738) sans avoir vu les onze essais. Ce dernier etait le
+     meilleur point d'une grille de pas racine de 2, choisi directement sur
+     les onze essais : ce n'est donc pas un plafond exact des gains fixes,
+     et il faut l'appeler "meilleur PID fige sur grille" dans le memoire.
+  3. Regle de conclusion ecrite avant : R7 juste, on s'arrete. La
+     dispersion des graines (0.714 a 0.730) borne ce qu'apporteraient plus
+     d'iterations ou un autre essaim : un ou deux centiemes, pas plus. La
+     limite qui reste est celle de la structure (gains fixes, marge de 30
+     degres active a 98 ohms) : un PID fige ne peut pas etre a la fois
+     rapide a 5 ohms et amorti a 98 ohms (depassement de S8b 74 %).
+  4. Ce que ce resultat ne dit pas : les essais de reglage reprennent les
+     familles de la specification (signale avant le calcul). Le PSO-PID
+     ameliore est un PSO qui optimise la specification sur d'autres
+     points de fonctionnement, pas un PSO aveugle.

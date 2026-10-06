@@ -9,6 +9,12 @@ courant MATLAB, et lance les etapes ci-dessous. Ne garde pas les dossiers
 ELM, PINN ou FUZZY sur le chemin MATLAB en meme temps (memes noms de
 fichiers de base). L'ancien PSO.zip (ancien circuit) ne sert plus.
 
+DEUX VERSIONS DANS CE DOSSIER
+  Partie I  : PSO-PID de Gaing, applique correctement (J = 1.692).
+  Partie II : PSO-PID AMELIORE, modifications documentees par la
+              litterature (J = 0.714). Voir la section "PSO-PID AMELIORE"
+              a la fin de ce fichier.
+
 A LIRE D'ABORD : criteres_pso_pid.txt
   La methode de l'article, les ecarts declares, les deux amendements (avec
   leur raison), les previsions ecrites avant chaque calcul et les resultats.
@@ -115,3 +121,48 @@ Construction_PSO_PID.m, verifier_pso_pid.py, Simuler_PSO_PID.m
 Construction_PSO_PID_Trois_Modeles.m, verifier_modeles_pso_pid_trois.py,
 Simuler_PSO_PID_Trois_Modeles.m
 *_v1*                                  premiere recherche (avant l'amendement 2), J = 5.03
+
+
+PSO-PID AMELIORE (partie II de criteres_pso_pid.txt)
+====================================================
+Modifications (et references) : M1 cout IAE avec rejet de charge, de Vin,
+de consigne et bruit, sur quatre essais de reglage E1 a E4 distincts des
+onze essais (Gaing eq. 6 ; Astrom, Panagopoulos, Hagglund 1998 ;
+Panagopoulos et al. 2002 ; Krohling, Rey 2001 ; Alipoor 2009) ; M2 regles
+de faisabilite de Deb (2000), comme Toscano Pulido et Coello Coello (2004) ;
+M3 reglage avec les conditions initiales du bloc. Essaim de Gaing inchange.
+Resultat : P = 0.239585, I = 412.0556, D = 1.913247e-05 ; J = 0.714, tous
+les evenements reviennent (meilleur PID fige sur grille 0.738).
+
+ORDRE D'EXECUTION (meme principe que la partie I)
+1. (deja fait) python recherche_pso_pid_ameliore.py    (RECALCULER = False :
+   controle des cinq recherches, une minute ; True : 35 a 70 minutes)
+2. (deja fait) python banc_pso_pid_ameliore.py          (une minute)
+3. MATLAB : Construction_PSO_PID_Ameliore      -> Buck_Commun_PSO_PID_Ameliore.slx
+4. python verifier_pso_pid_ameliore.py
+   Fin attendue : "RESULTAT : Buck_Commun_PSO_PID_Ameliore.slx est conforme."
+5. MATLAB : Simuler_PSO_PID_Ameliore            (six a dix minutes)
+6. MATLAB : Construction_PSO_PID_Ameliore_Trois_Modeles
+   -> PSO_PID_Ameliore_Control.slx, ..._control_disturbance.slx,
+      ..._load_disturbance.slx
+7. python verifier_modeles_pso_pid_ameliore_trois.py
+   Fin attendue : "RESULTAT : les trois modeles sont conformes."
+8. MATLAB : Simuler_PSO_PID_Ameliore_Trois_Modeles
+Les verificateurs ont ete testes ici sur des modeles fabriques (conformes
+et faux). Envoie-moi la sortie console des etapes 3 a 8.
+
+CE QUE L'ETAPE 5 DOIT DONNER (banc)
+- S1 : depassement 7.1 % ; S5 : IAE 2.46 mV.s ; S8b : depassement 73.6 %.
+- Cout J : PSO-PID ameliore 0.714 ; Gaing corrige 1.692 ; ZN 1.000 ;
+  meilleur PID fige sur grille 0.738.
+
+FICHIERS DE LA PARTIE II
+recherche_pso_pid_ameliore.py, recherche_pso_pid_ameliore.json,
+recherche_pso_pid_ameliore_sortie_console.txt, banc_pso_pid_ameliore.py,
+banc_pso_pid_ameliore_sortie_console.txt, banc_pso_pid_ameliore_resultats.json,
+banc_pso_pid_ameliore.png (S1, S5, S8b, S9), pso_pid_ameliore_convergence.png,
+predictions_banc_pso_pid_ameliore.json, Construction_PSO_PID_Ameliore.m,
+verifier_pso_pid_ameliore.py, Simuler_PSO_PID_Ameliore.m,
+Construction_PSO_PID_Ameliore_Trois_Modeles.m,
+verifier_modeles_pso_pid_ameliore_trois.py,
+Simuler_PSO_PID_Ameliore_Trois_Modeles.m

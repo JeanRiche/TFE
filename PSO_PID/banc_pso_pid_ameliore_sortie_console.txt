@@ -1,0 +1,95 @@
+Dossier de travail : /home/user/TFE/PSO_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+
+==============================================================================
+ ETAPE 1 : les cinq recherches et le reglage retenu
+==============================================================================
+  recherche   J_reglage    a (P)    b (I)    c (D)   marge  coupure
+  graine=1      0.59673   2.3962   1.1815   2.5673   31.1d    2122Hz
+  graine=2      0.59493   2.3434   1.3631   2.5941   30.6d    2100Hz
+  graine=3      0.59387   2.5512   1.3686   2.6128   30.0d    2175Hz
+  graine=4      0.59792   2.3492   1.6428   2.8098   31.9d    2157Hz
+  graine=5      0.60152   2.4147   1.9336   2.9222   31.6d    2199Hz
+
+  Retenu : graine=3 ; P = 0.239585, I = 412.0556, D = 1.913247e-05 (x ZN : 2.5512, 1.3686, 2.6128).
+  Rapports a Ziegler-Nichols sur les essais de reglage (demarrage / apres 30 ms) :
+    E1 : 0.917 / 0.857
+    E2 : 0.860 / 0.357
+    E3 : 0.828 / 0.203
+    E4 : 0.902 / 0.619
+  Pour information, J_reglage du meilleur PID fige : 0.6598
+  Pour information, J_reglage du PSO-PID partie I : 1.6094
+
+==============================================================================
+ ETAPE 2 : jugement sur les onze essais communs
+==============================================================================
+                                  Ziegler-Nichols  meilleur PID fige   PSO-PID partie I   PSO-PID ameliore
+  cout J                                    1.000              0.738              1.692              0.714
+  evenements non revenus                   S8b,S9                  -                  -                  -
+  S1 depassement %                           14.0                8.8                4.2                7.1
+  S1 IAE mV.s                                1.49               1.49               1.50               1.49
+  S1 ecart efficace mV                       10.0               10.0               10.0               10.0
+  S1 iL crete dem. A                         24.1               23.2               21.0               23.0
+  S2 IAE mV.s                                2.84               2.15               2.96               2.04
+  S2 ecart efficace mV                       79.5               60.5               80.2               56.9
+  S3 IAE mV.s                                8.67               5.93              12.38               5.46
+  S3 ecart efficace mV                      359.4              302.2              379.4              296.6
+  S4 IAE mV.s                               23.61              17.67              36.74              16.54
+  S4 ecart efficace mV                      845.8              787.7              917.7              781.6
+  S5 IAE mV.s                                3.87               2.49              23.64               2.46
+  S5 ecart efficace mV                       91.3               47.6              332.8               42.3
+  S6 IAE mV.s                                1.65               1.56               5.74               1.55
+  S6 ecart efficace mV                       11.9               10.5               55.1               10.5
+  S7a IAE mV.s                               4.16               4.66               6.13               4.03
+  S7a ecart efficace mV                      29.7               33.6               44.8               28.7
+  S7b IAE mV.s                               2.93               3.50               5.39               3.14
+  S7b ecart efficace mV                      21.3               25.7               39.6               23.0
+  S8a depassement %                          52.2               41.6                5.6               43.5
+  S8a IAE mV.s                              12.07               2.46              23.33               2.46
+  S8a ecart efficace mV                     173.6               49.2              328.3               43.2
+  S8b depassement %                          82.4               70.3               12.5               73.6
+  S8b IAE mV.s                              77.19               2.46              23.26               2.46
+  S8b ecart efficace mV                     854.6               49.5              327.3               43.5
+  S8b iL crete dem. A                        12.0               11.4                8.1               11.6
+  S9 IAE mV.s                              531.80             278.25             312.23             283.25
+  S9 ecart efficace mV                     6394.1             6245.4             6264.3             6260.0
+  activite |dd| (S1)                       0.0031             0.0084             0.0097             0.0081
+
+  Decomposition de J (10 IAE apres 30 ms ; 3 IAE de demarrage) :
+    Ziegler-Nichols      apres 30 ms 1.000 ; demarrage 1.000
+    meilleur PID fige    apres 30 ms 0.710 ; demarrage 0.831
+    PSO-PID partie I     apres 30 ms 1.972 ; demarrage 0.757
+    PSO-PID ameliore     apres 30 ms 0.672 ; demarrage 0.855
+
+  Rapports a ZN, terme par terme (S1, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9 ; demarrages S1, S8a, S8b) :
+    Ziegler-Nichols       1.00  1.00  1.00  1.00  1.00  1.00  1.00  1.00  1.00  1.00  1.00  1.00  1.00
+    meilleur PID fige     1.00  0.68  0.75  0.64  0.95  1.12  1.20  0.20  0.03  0.52  0.94  0.79  0.76
+    PSO-PID partie I      1.00  1.43  1.56  6.11  3.48  1.47  1.84  1.93  0.30  0.59  1.13  0.76  0.37
+    PSO-PID ameliore      1.00  0.63  0.70  0.64  0.94  0.97  1.07  0.20  0.03  0.53  0.93  0.83  0.80
+
+  Les cinq recherches jugees sur les onze essais (aucune n'est choisie apres coup) :
+    graine=1   J = 0.722 ; tous revenus
+    graine=2   J = 0.724 ; tous revenus
+    graine=3   J = 0.714 ; tous revenus   <- retenu
+    graine=4   J = 0.730 ; tous revenus
+    graine=5   J = 0.727 ; tous revenus
+
+  Rappel des autres methodes (J sur les memes onze essais) : ELM-PID 0.784 ; PINN-PID 0.684 ; Fuzzy-PID 0.877
+
+==============================================================================
+ ETAPE 3 : previsions de criteres_pso_pid.txt, partie II
+==============================================================================
+  R1 FAUSSE : J_reglage de 0.59387 a 0.60152 ; gains x ZN de [2.343, 1.182, 2.567] a [2.551, 1.934, 2.922]
+  R2 juste : b = 1.369
+  R3 juste : J = 0.714 ; tous les evenements reviennent
+  R4 juste : apres 30 ms 0.672
+  R5 juste : demarrage 0.855 (partie I 0.757)
+  R6 juste : marge 30.0 degres, coupure 2175 Hz (limite 2200)
+  R7 juste : J 0.714, meilleur PID fige 0.738
+
+==============================================================================
+ ETAPE 4 : fichiers pour Simulink, resultats et figures
+==============================================================================
+  predictions_banc_pso_pid_ameliore.json ecrit.
+  banc_pso_pid_ameliore_resultats.json ecrit.
+  banc_pso_pid_ameliore.png et pso_pid_ameliore_convergence.png ecrits. Duree totale : 42 s.
