@@ -1,0 +1,138 @@
+FUZZY-PID : ORDONNANCEMENT FLOU DE ZHAO, TOMIZUKA ET ISAKA (1993)
+SUR LE PID CLASSIQUE (6 octobre 2026)
+==================================================================
+
+DOSSIER COMPLET ET AUTONOME : il contient la base commune v2.1 (modele
+Buck_Commun.slx, essais, banc Python) et tout le Fuzzy-PID. Dezippe-le dans
+un dossier vide, fais de ce dossier le dossier courant MATLAB, et lance les
+etapes ci-dessous. Rien d'autre a copier.
+Ne garde pas les dossiers ELM ou PINN sur le chemin MATLAB en meme temps :
+les scripts refusent deux exemplaires du meme fichier (Buck_Commun.slx,
+charger_scenario.m...). L'ancien dossier FUZZY (FUZZY.zip) ne sert plus.
+
+A LIRE D'ABORD : criteres_fuzzy_pid.txt
+  La methode de l'article, les quatre ecarts declares, les previsions
+  (commit separe, avant tout calcul), puis les resultats face aux
+  previsions.
+
+LA METHODE (decisions de Jean-Riche du 6 octobre 2026)
+- Article : Zhao, Tomizuka, Isaka, "Fuzzy gain scheduling of PID
+  controllers", IEEE Trans. SMC, vol. 23, no. 5, 1993, applique tel quel :
+  e et De en entree, sept ensembles, 49 regles (tableaux I, II, III),
+  produit, sorties Small / Big logarithmiques, alpha en singletons,
+  Ki = Kp^2 / (alpha Kd), plages de l'eq. 12.
+- Rien de l'ELM-PID : le PID est TON bloc "PID Controller" de
+  Ziegler-Nichols, garde tel quel ; seuls P, I et D deviennent des entrees
+  externes, recalculees a chaque periode Tc par l'ordonnanceur flou.
+- Quatre ecarts declares : Ku et Tu equivalents (Ku = 0.15652,
+  Tu = 0.6238 ms, qui redonnent exactement tes gains de Ziegler-Nichols) ;
+  echelles E_M = 100 V et DE_M = 0.37244 V par periode (pente de ta
+  reponse indicielle) ; filtre N, saturation et clamping du bloc gardes ;
+  De(0) = 0.
+- Superviseur et commutation vers un PID fixe (section IV) : hors de la
+  methode.
+- Ordonnanceur code a la main dans un bloc MATLAB System (pas de Fuzzy
+  Logic Toolbox), identique au banc Python et verifie par un test de rejeu.
+
+ORDRE D'EXECUTION
+-----------------
+Tout se lance depuis ce dossier (dossier courant MATLAB).
+
+0. (facultatif) python verifier_modele_commun.py
+   Fin attendue : "RESULTAT : Buck_Commun.slx est conforme."
+1. (deja fait, ne pas relancer sans raison) python banc_fuzzy_pid.py
+   Deux minutes environ. La sortie attendue est dans
+   banc_fuzzy_pid_sortie_console.txt : relancer doit redonner les memes
+   chiffres.
+2. MATLAB : Tester_Fuzzy_PID_Rejeu
+   Rejoue l'ordonnanceur hors Simulink : 255 points du systeme flou, puis
+   S1, S7a, S8b et S9 pas par pas. Une demi-minute a deux minutes.
+   Fin attendue : "RESULTAT : le bloc ordonnanceur_flou_zhao.m reproduit
+   banc_fuzzy_pid.py."
+3. MATLAB : Construction_Fuzzy_PID
+   Copie Buck_Commun.slx en Buck_Commun_Fuzzy_PID.slx, passe P, I, D, N du
+   PID en entrees externes et branche l'ordonnanceur. Auto-tests :
+     T0  gains forces a Ziegler-Nichols -> doit redonner le PID classique
+         du banc (0.1 V au plus) : controle du branchement ;
+     T1  20 ms de S1 avec l'ordonnanceur (0.1 V au plus) ;
+     T2  20 ms de S8b (0.5 V au plus).
+   Deux a quatre minutes. Fin attendue : "Buck_Commun_Fuzzy_PID.slx est
+   construit et ses auto-tests sont passes."
+   Si T0 passe et T1 echoue, le bloc PID traite des gains variables
+   autrement que le banc ne le suppose : envoie la sortie, ne va pas plus
+   loin.
+4. python verifier_modele_fuzzy_pid.py
+   Controle sans MATLAB que seul ce qui est prevu a change. Fin attendue :
+   "RESULTAT : Buck_Commun_Fuzzy_PID.slx est conforme."
+5. MATLAB : Simuler_Fuzzy_PID
+   Onze essais, comparaison au banc, resultats_Buck_Commun_Fuzzy_PID.mat.
+   Dix a vingt minutes.
+
+Envoie-moi la sortie console des etapes 2 a 5. Si une etape s'arrete sur
+une erreur, envoie-la telle quelle sans passer a la suivante.
+
+ATTENTION : aucun script MATLAB n'a pu etre execute pendant leur ecriture
+(pas de MATLAB dans l'environnement). Le banc Python a tourne, le
+verificateur a ete teste sur des modeles fabriques (un conforme, deux
+faux). Deux points ne seront confirmes que par toi :
+- les noms des entrees du bloc PID a parametres externes (le script les
+  cherche sous le masque : u, P, I, D, N ; s'il ne les trouve pas, il
+  s'arrete en donnant les noms trouves) ;
+- la facon dont le bloc traite des gains qui changent a chaque pas
+  (auto-test T1).
+
+CE QUE L'ETAPE 5 DOIT DONNER (banc)
+-----------------------------------
+- Tous les evenements reviennent dans la bande, y compris S8b et S9.
+- S1 : depassement 27.3 % (ZN 14.0 %), etabli a 3.35 ms, iL crete 26.5 A.
+- S8b : IAE 4.25 mV.s (ZN 77.19), ecart efficace 110.6 mV.
+- S7a : 34.3 mV d'ecart efficace (34 a 40 mV selon L ou C a 0.1 % pres :
+  comparer l'ordre de grandeur) ; S7b : 27.4 mV.
+- Cout J : Fuzzy-PID 0.877 ; Ziegler-Nichols 1.000 ; meilleur PID fige
+  0.738 (oracle). Rappel, autre structure : ELM-PID 0.784, PINN-PID 0.684
+  (leur base sans adaptation, R0, vaut 0.917).
+
+CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
+---------------------------------------------
+- Le gain du Fuzzy-PID vient de ses gains au repos (Ki 0.66, Kd 1.98 fois
+  Ziegler-Nichols), plus prudents que Ziegler-Nichols, qui stabilisent la
+  charge legere. Ce n'est pas une adaptation a la charge.
+- Au demarrage, l'ordonnancement de Ki double le depassement (27 % contre
+  14 %) ; avec Ki garde a Ziegler-Nichols, il retombe a 15 %.
+- Sur les perturbations (S3, S4, S5), le pic ne change pas, comme l'article
+  le laisse prevoir.
+- Le bruit de mesure passe davantage dans la commande.
+- Comparaison avec l'ELM et le PINN : en absolu (J) et par rapport a sa
+  propre base sans adaptation (Fuzzy-PID 1.000 -> 0.877 ; ELM-PID
+  0.917 -> 0.784 ; PINN-PID 0.917 -> 0.684).
+
+FICHIERS
+--------
+Base commune v2.1 (copies, ne pas modifier)
+Buck_Commun.slx                        modele commun (PID de Ziegler-Nichols)
+PID_Classique_Control.slx              ton modele de base (Rs = inf), pour le verificateur
+verifier_modele_commun.py              controle de Buck_Commun.slx
+charger_scenario.m                     charge un essai dans le workspace
+scenario_S1.mat ... scenario_S9.mat    les onze essais
+scenarios_communs.json                 liste des essais
+banc_commun.py                         banc Python commun, version 2.1
+predictions_banc_pid_classique.json    Ziegler-Nichols sur le banc (auto-test T0)
+predictions_banc_pid_fige.json         meilleur PID fige (gains)
+banc_elm_pid_resultats.json            resultats de l'ELM-PID (rappel de son J)
+banc_pinn_pid_resultats.json           resultats du PINN-PID (rappel de son J)
+
+Fuzzy-PID
+criteres_fuzzy_pid.txt                 methode, ecarts, previsions, resultats
+banc_fuzzy_pid.py                      banc du Fuzzy-PID, sensibilite, diagnostic
+banc_fuzzy_pid_sortie_console.txt      sortie attendue du banc
+banc_fuzzy_pid_resultats.json          tous les chiffres
+banc_fuzzy_pid.png                     S1, S8b, S9 : tension, gains, courant
+fuzzy_pid_surfaces.png                 K'p, K'd et alpha en fonction de e' et De'
+predictions_banc_fuzzy_pid.json        ce que Simulink doit retrouver
+fuzzy_pid_reglages.mat                 nombres de l'ordonnanceur (plages, echelles, tables)
+reference_rejeu_fuzzy_pid.mat          reference du test de rejeu
+ordonnanceur_flou_zhao.m               bloc MATLAB System de l'ordonnanceur
+Tester_Fuzzy_PID_Rejeu.m               test du bloc hors Simulink
+Construction_Fuzzy_PID.m               construit Buck_Commun_Fuzzy_PID.slx
+verifier_modele_fuzzy_pid.py           controle independant du modele
+Simuler_Fuzzy_PID.m                    onze essais sous Simulink

@@ -1,0 +1,164 @@
+Dossier de travail : /home/user/TFE/FUZZY_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Ku = 0.156517, Tu = 0.62380 ms ; Kp de 0.050085 a 0.093910 (0.533 a 1.000 fois P) ; Kd de 7.8108e-06 a 1.4645e-05 (1.067 a 2.000 fois D).
+Echelles : E_M = 100.0 V, DE_M = 0.37244 V par periode Tc.
+Controle du systeme flou : quatre points calcules a la main retrouves.
+Gains au repos (ZO, ZO) : Kp 0.991 P, Ki 0.661 I, Kd 1.983 D.
+
+==============================================================================
+ ETAPE 2 : les references
+==============================================================================
+  Meilleur PID fige : J = 0.738 (recherche_pid_fige.py : 0.738).
+  Controle : Fuzzy-PID a gains forces contre PID classique, ecart maximal sur d : 0.0e+00.
+
+==============================================================================
+ ETAPE 3 : le Fuzzy-PID (Zhao) sur les onze essais
+==============================================================================
+
+  Ziegler-Nichols (meme PID, gains fixes) : J = 1.000 ; pas revenus : S8b, S9
+    S1   depassement  14.0 %, etabli  3.40 ms, IAE    1.49 mV.s, efficace    10.0 mV, |dd| 0.0031, iL crete  24.1 A
+    S2   depassement  14.0 %, etabli  3.40 ms, IAE    2.84 mV.s, efficace    79.5 mV, |dd| 0.0032, iL crete  24.1 A
+    S3   depassement  14.0 %, etabli  3.40 ms, IAE    8.67 mV.s, efficace   359.4 mV, |dd| 0.0032, iL crete  24.1 A
+    S4   depassement  14.0 %, etabli  3.40 ms, IAE   23.61 mV.s, efficace   845.8 mV, |dd| 0.0032, iL crete  24.1 A
+    S5   depassement  14.0 %, etabli  3.40 ms, IAE    3.87 mV.s, efficace    91.3 mV, |dd| 0.0031, iL crete  24.1 A
+    S6   depassement  14.0 %, etabli  3.40 ms, IAE    1.65 mV.s, efficace    11.9 mV, |dd| 0.0031, iL crete  24.1 A
+    S7a  depassement  14.0 %, etabli  3.38 ms, IAE    4.16 mV.s, efficace    29.7 mV, |dd| 0.0060, iL crete  24.1 A
+    S7b  depassement  14.0 %, etabli  3.41 ms, IAE    2.93 mV.s, efficace    21.3 mV, |dd| 0.0046, iL crete  24.1 A
+    S8a  depassement  52.2 %, etabli  7.44 ms, IAE   12.07 mV.s, efficace   173.6 mV, |dd| 0.0031, iL crete  13.2 A
+    S8b  depassement  82.4 %, etabli 16.21 ms, IAE   77.19 mV.s, efficace   854.6 mV, |dd| 0.0035, iL crete  12.0 A
+    S9   depassement  14.0 %, etabli  3.40 ms, IAE  531.80 mV.s, efficace  6394.1 mV, |dd| 0.0035, iL crete  24.1 A
+
+  Fuzzy-PID : J = 0.877 ; tous les evenements reviennent
+    S1   depassement  27.3 %, etabli  3.35 ms, IAE    1.49 mV.s, efficace    10.0 mV, |dd| 0.0056, iL crete  26.5 A ; apres 30 ms : Kp 0.98-0.99, Ki 0.66-0.67, Kd 1.93-1.98 (x ZN)
+    S2   depassement  27.3 %, etabli  3.35 ms, IAE    2.43 mV.s, efficace    70.5 mV, |dd| 0.0057, iL crete  26.5 A ; apres 30 ms : Kp 0.56-0.99, Ki 0.13-0.67, Kd 1.86-1.98 (x ZN)
+    S3   depassement  27.3 %, etabli  3.35 ms, IAE    7.94 mV.s, efficace   345.1 mV, |dd| 0.0057, iL crete  26.5 A ; apres 30 ms : Kp 0.57-0.99, Ki 0.17-0.67, Kd 1.78-1.98 (x ZN)
+    S4   depassement  27.3 %, etabli  3.35 ms, IAE   22.38 mV.s, efficace   836.4 mV, |dd| 0.0058, iL crete  26.5 A ; apres 30 ms : Kp 0.55-0.99, Ki 0.12-0.76, Kd 1.65-1.98 (x ZN)
+    S5   depassement  27.3 %, etabli  3.35 ms, IAE    4.05 mV.s, efficace   100.3 mV, |dd| 0.0056, iL crete  26.5 A ; apres 30 ms : Kp 0.92-0.99, Ki 0.60-0.67, Kd 1.88-1.98 (x ZN)
+    S6   depassement  27.3 %, etabli  3.35 ms, IAE    1.71 mV.s, efficace    12.4 mV, |dd| 0.0056, iL crete  26.5 A ; apres 30 ms : Kp 0.97-0.99, Ki 0.66-0.67, Kd 1.92-1.98 (x ZN)
+    S7a  depassement  27.0 %, etabli  3.98 ms, IAE    4.72 mV.s, efficace    34.3 mV, |dd| 0.0130, iL crete  26.3 A ; apres 30 ms : Kp 0.83-0.99, Ki 0.49-0.66, Kd 1.87-1.98 (x ZN)
+    S7b  depassement  26.1 %, etabli  3.55 ms, IAE    3.71 mV.s, efficace    27.4 mV, |dd| 0.0082, iL crete  26.3 A ; apres 30 ms : Kp 0.88-0.99, Ki 0.55-0.67, Kd 1.88-1.98 (x ZN)
+    S8a  depassement  58.7 %, etabli  3.15 ms, IAE    4.12 mV.s, efficace   107.6 mV, |dd| 0.0057, iL crete  13.2 A ; apres 30 ms : Kp 0.90-0.99, Ki 0.58-0.67, Kd 1.87-1.98 (x ZN)
+    S8b  depassement  81.0 %, etabli  4.95 ms, IAE    4.25 mV.s, efficace   110.6 mV, |dd| 0.0057, iL crete  11.8 A ; apres 30 ms : Kp 0.90-0.99, Ki 0.58-0.67, Kd 1.87-1.98 (x ZN)
+    S9   depassement  27.3 %, etabli  3.35 ms, IAE  276.11 mV.s, efficace  6233.5 mV, |dd| 0.0048, iL crete  26.5 A ; apres 30 ms : Kp 0.55-0.99, Ki 0.17-1.81, Kd 1.08-1.98 (x ZN)
+
+  Evenements, Fuzzy-PID (Ziegler-Nichols entre parentheses) :
+    S2   a   50.0 ms : ecart max   2.01 V (  2.01), IAE    0.94 mV.s (   1.14), crete a crete en fin  0.03 V ( 0.03), retour en 0.20 ms
+    S2   a   70.0 ms : ecart max   1.11 V (  1.11), IAE    1.32 mV.s (   1.53), crete a crete en fin  0.03 V ( 0.03), retour en 0.03 ms
+    S3   a   50.0 ms : ecart max   5.52 V (  5.52), IAE    3.36 mV.s (   3.64), crete a crete en fin  0.03 V ( 0.03), retour en 1.31 ms
+    S3   a   70.0 ms : ecart max   5.66 V (  5.73), IAE    4.40 mV.s (   4.85), crete a crete en fin  0.03 V ( 0.03), retour en 1.34 ms
+    S4   a   50.0 ms : ecart max  10.47 V ( 10.47), IAE    6.43 mV.s (   6.44), crete a crete en fin  0.03 V ( 0.03), retour en 1.58 ms
+    S4   a   70.0 ms : ecart max  11.23 V ( 11.52), IAE    7.25 mV.s (   7.40), crete a crete en fin  0.03 V ( 0.03), retour en 1.66 ms
+    S4   a  100.0 ms : ecart max   6.89 V (  6.90), IAE    4.11 mV.s (   4.78), crete a crete en fin  0.03 V ( 0.03), retour en 1.36 ms
+    S4   a  120.0 ms : ecart max   6.61 V (  6.61), IAE    4.42 mV.s (   4.82), crete a crete en fin  0.03 V ( 0.03), retour en 1.32 ms
+    S5   a   50.0 ms : ecart max   0.95 V (  1.06), IAE    0.95 mV.s (   0.90), crete a crete en fin  0.02 V ( 0.02), reste dans la bande
+    S5   a   70.0 ms : ecart max   1.16 V (  1.13), IAE    1.00 mV.s (   0.97), crete a crete en fin  0.03 V ( 0.03), retour en 0.63 ms
+    S5   a  100.0 ms : ecart max   0.84 V (  0.79), IAE    0.66 mV.s (   0.65), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+    S5   a  120.0 ms : ecart max   0.68 V (  0.74), IAE    1.26 mV.s (   1.17), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+    S6   a   50.0 ms : ecart max   0.07 V (  0.08), IAE    0.27 mV.s (   0.23), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+    S6   a   70.0 ms : ecart max   0.06 V (  0.07), IAE    0.28 mV.s (   0.29), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+    S6   a  100.0 ms : ecart max   0.07 V (  0.08), IAE    0.27 mV.s (   0.23), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+    S6   a  120.0 ms : ecart max   0.06 V (  0.07), IAE    0.72 mV.s (   0.72), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+    S8a  a   50.0 ms : ecart max   1.14 V (  1.35), IAE    0.91 mV.s (   5.22), crete a crete en fin  0.02 V ( 0.61), retour en 0.61 ms
+    S8a  a   70.0 ms : ecart max   1.40 V (  1.43), IAE    1.06 mV.s (   3.01), crete a crete en fin  0.03 V ( 0.06), retour en 0.62 ms
+    S8a  a  100.0 ms : ecart max   0.98 V (  0.98), IAE    0.68 mV.s (   1.09), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+    S8a  a  120.0 ms : ecart max   0.76 V (  0.93), IAE    1.29 mV.s (   2.59), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+    S8b  a   50.0 ms : ecart max   1.19 V (  3.80), IAE    0.94 mV.s (  36.71), crete a crete en fin  0.02 V ( 7.50), retour en 0.61 ms
+    S8b  a   70.0 ms : ecart max   1.46 V (  4.05), IAE    1.14 mV.s (  19.26), crete a crete en fin  0.03 V ( 0.89), retour en 0.62 ms
+    S8b  a  100.0 ms : ecart max   1.03 V (  1.28), IAE    0.70 mV.s (   2.06), crete a crete en fin  0.03 V ( 0.05), retour en 0.45 ms
+    S8b  a  120.0 ms : ecart max   0.78 V (  0.97), IAE    1.30 mV.s (  15.50), crete a crete en fin  0.03 V ( 0.56), reste dans la bande
+    S9   a   50.0 ms : ecart max   0.28 V (  0.26), IAE    0.52 mV.s (   0.50), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+    S9   a   90.0 ms : ecart max   0.30 V (  0.31), IAE    0.51 mV.s (   4.89), crete a crete en fin  0.03 V ( 0.55), reste dans la bande
+    S9   a  120.0 ms : ecart max  50.01 V ( 49.76), IAE   28.28 mV.s (  47.02), crete a crete en fin  0.02 V ( 0.54), retour en 1.88 ms
+    S9   a  150.0 ms : ecart max 100.01 V (100.05), IAE  213.85 mV.s ( 221.17), crete a crete en fin  0.02 V ( 0.02), retour en 5.71 ms
+    S9   a  210.0 ms : ecart max   0.85 V (  1.95), IAE    0.92 mV.s (  69.84), crete a crete en fin  0.02 V ( 3.81), reste dans la bande
+    S9   a  270.0 ms : ecart max  50.01 V ( 49.12), IAE   30.05 mV.s ( 175.54), crete a crete en fin  0.02 V ( 7.44), retour en 2.51 ms
+    S9   a  330.0 ms : ecart max   1.62 V (  4.96), IAE    1.23 mV.s (  12.10), crete a crete en fin  0.03 V ( 0.03), retour en 0.64 ms
+    S9   a  370.0 ms : ecart max   0.21 V (  0.21), IAE    0.56 mV.s (   0.57), crete a crete en fin  0.03 V ( 0.03), reste dans la bande
+
+==============================================================================
+ ETAPE 4 : sensibilite (L ou C a +-0.1 % ; echelles E_M et DE_M x0.5 et x2)
+==============================================================================
+  variante              J  non revenus  S1 dep. %  S7a eff  S8b IAE   S9 IAE
+  nominal           0.877  -                 27.3     34.3     4.25   276.11
+  L - 0.1 %         0.890  -                 27.4     39.9     4.26   276.05
+  L + 0.1 %         0.885  -                 27.3     37.8     4.26   276.16
+  C - 0.1 %         0.885  -                 27.3     37.6     4.26   275.86
+  C + 0.1 %         0.887  -                 27.3     39.5     4.25   276.34
+  E_M x0.5          0.894  -                 27.9     38.1     4.30   276.34
+  E_M x2            0.866  -                 25.1     36.1     4.23   274.98
+  DE_M x0.5         0.903  -                 32.4     36.8     4.54   276.14
+  DE_M x2           0.873  -                 26.5     35.5     4.12   279.35
+
+  J entre 0.877 et 0.890 selon L ou C a +-0.1 %.
+
+==============================================================================
+ ETAPE 4c : diagnostic apres coup : quel gain ordonnance fait quoi (S1 et S8b)
+==============================================================================
+  Ajoute apres le premier calcul, pour expliquer le depassement de S1 et la stabilisation de S8b.
+  Un gain 'fige' garde la valeur de Ziegler-Nichols ; les autres suivent l'ordonnanceur.
+  figes : aucun  S1 depassement  27.3 %, IAE   1.49 mV.s, revenu ; S8b depassement  81.0 %, IAE   4.25 mV.s, revenu
+  figes : P      S1 depassement  24.9 %, IAE   1.49 mV.s, revenu ; S8b depassement  81.7 %, IAE   4.13 mV.s, revenu
+  figes : I      S1 depassement  15.1 %, IAE   1.49 mV.s, revenu ; S8b depassement  69.0 %, IAE   4.99 mV.s, revenu
+  figes : D      S1 depassement  27.2 %, IAE   1.49 mV.s, revenu ; S8b depassement 101.7 %, IAE   7.92 mV.s, revenu
+  figes : PI     S1 depassement  13.1 %, IAE   1.49 mV.s, revenu ; S8b depassement  70.8 %, IAE   4.78 mV.s, revenu
+  figes : PD     S1 depassement  24.9 %, IAE   1.49 mV.s, revenu ; S8b depassement  94.1 %, IAE   7.44 mV.s, revenu
+  figes : ID     S1 depassement  15.9 %, IAE   1.49 mV.s, revenu ; S8b depassement  83.5 %, IAE 206.31 mV.s, PAS REVENU
+
+==============================================================================
+ ETAPE 5 : Fuzzy-PID face aux references, et previsions
+==============================================================================
+                                   Ziegler-Nichols   meilleur PID fige           Fuzzy-PID
+  cout J                                     1.000               0.738               0.877
+  evenements non revenus                    S8b,S9                   -                   -
+  S1 depassement %                            14.0                 8.8                27.3
+  S1 IAE mV.s                                 1.49                1.49                1.49
+  S1 ecart efficace mV                        10.0                10.0                10.0
+  S1 iL crete dem. A                          24.1                23.2                26.5
+  S2 IAE mV.s                                 2.84                2.15                2.43
+  S2 ecart efficace mV                        79.5                60.5                70.5
+  S3 IAE mV.s                                 8.67                5.93                7.94
+  S3 ecart efficace mV                       359.4               302.2               345.1
+  S4 IAE mV.s                                23.61               17.67               22.38
+  S4 ecart efficace mV                       845.8               787.7               836.4
+  S5 IAE mV.s                                 3.87                2.49                4.05
+  S5 ecart efficace mV                        91.3                47.6               100.3
+  S6 IAE mV.s                                 1.65                1.56                1.71
+  S6 ecart efficace mV                        11.9                10.5                12.4
+  S7a IAE mV.s                                4.16                4.66                4.72
+  S7a ecart efficace mV                       29.7                33.6                34.3
+  S7b IAE mV.s                                2.93                3.50                3.71
+  S7b ecart efficace mV                       21.3                25.7                27.4
+  S8a depassement %                           52.2                41.6                58.7
+  S8a IAE mV.s                               12.07                2.46                4.12
+  S8a ecart efficace mV                      173.6                49.2               107.6
+  S8b depassement %                           82.4                70.3                81.0
+  S8b IAE mV.s                               77.19                2.46                4.25
+  S8b ecart efficace mV                      854.6                49.5               110.6
+  S8b iL crete dem. A                         12.0                11.4                11.8
+  S9 IAE mV.s                               531.80              278.25              276.11
+  S9 ecart efficace mV                      6394.1              6245.4              6233.5
+  activite |dd| (S1)                        0.0031              0.0084              0.0056
+
+  Decomposition de J (moyenne des 10 IAE apres 30 ms ; moyenne des 3 IAE de demarrage) :
+    Ziegler-Nichols      apres 30 ms 1.000 ; demarrage 1.000
+    meilleur PID fige    apres 30 ms 0.710 ; demarrage 0.831
+    Fuzzy-PID            apres 30 ms 0.827 ; demarrage 1.041
+
+  Rappel, autre structure (loi de Lu ; R0 = cette loi sans adaptation) : ELM-PID 0.784 (R0 0.917) ; PINN-PID 0.684 (R0 0.917)
+
+  Previsions de criteres_fuzzy_pid.txt :
+    P1 FAUSSE : depassement S1 entre 2 et 10 % : 27.34 % (ZN 13.99 %)
+    P2 FAUSSE : ecart maximal de S3, S4, S5 a +-10 % de Ziegler-Nichols : 1.00, 0.99, 1.00, 0.97, 1.00, 1.00, 0.89, 1.03, 1.05, 0.92
+    P3 juste : S7a, S7b au moins 5 % au-dessus de ZN : 34.3 mV (29.7), 27.4 mV (21.3)
+    P4 FAUSSE : S8b et S9 pas tous revenus : S8b revenu, S9 revenu
+    P5 juste : J entre 0.85 et 1.10 : 0.877
+
+==============================================================================
+ ETAPE 6 : fichiers pour Simulink et MATLAB
+==============================================================================
+  predictions_banc_fuzzy_pid.json ecrit.
+  fuzzy_pid_reglages.mat ecrit (reglages du bloc).
+  reference_rejeu_fuzzy_pid.mat ecrit (S1, S7a, S8b, S9, et 255 points du systeme flou).
+  banc_fuzzy_pid_resultats.json ecrit.
+  banc_fuzzy_pid.png ecrit.
+  fuzzy_pid_surfaces.png ecrit. Duree totale : 128 s.

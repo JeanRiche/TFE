@@ -142,3 +142,68 @@ Previsions (ecrites avant le calcul)
 Si une prevision est fausse, on l'ecrit. On ne change ni les tables, ni
 les plages, ni les echelles sans le declarer comme amendement, avec sa
 raison, avant de le calculer.
+
+Resultats sur le banc (6 octobre 2026, apres l'ecriture de ce qui precede ;
+rien n'a ete change dans la methode ; sortie complete dans
+banc_fuzzy_pid_sortie_console.txt)
+  Fuzzy-PID : J = 0.877, tous les evenements reviennent dans la bande.
+  Ziegler-Nichols (meme PID, gains fixes) : J = 1.000, S8b et S9 pas
+  revenus. Meilleur PID fige (oracle) : 0.738.
+  Decomposition : apres 30 ms 0.827 (ZN 1.000, PID fige 0.710) ; demarrage
+  1.041 (ZN 1.000, PID fige 0.831). Tout le gain vient de l'apres-
+  demarrage ; le demarrage est un peu moins bon que Ziegler-Nichols.
+  Controle : gains forces a Ziegler-Nichols = PID classique du banc a
+  l'identique (ecart 0 sur d).
+  Sensibilite : L ou C a +-0.1 % : J de 0.877 a 0.890 ; E_M x0.5 / x2 :
+  0.894 / 0.866 ; DE_M x0.5 / x2 : 0.903 / 0.873. Tous les evenements
+  reviennent dans les neuf cas.
+  Rappel, sans melange : ELM-PID 0.784 et PINN-PID 0.684 sont sur la loi de
+  Lu, dont la version sans adaptation (R0) vaut deja 0.917. Gain propre de
+  chaque methode sur sa base : Fuzzy-PID 1.000 -> 0.877 ; ELM-PID 0.917 ->
+  0.784 ; PINN-PID 0.917 -> 0.684.
+
+Face aux previsions
+  P1 FAUSSE. Depassement a 5 ohms 27.3 % (ZN 14.0 %), au lieu de 2 a 10 %.
+     Etabli a 3.35 ms (ZN 3.40 ms). Diagnostic (etape 4c, fait apres coup) :
+     c'est l'ordonnancement de Ki qui le cause ; avec Ki garde a
+     Ziegler-Nichols, le depassement retombe a 15.1 %. Pendant la montee,
+     la commande est en butee (0.99) ; K'p diminue et alpha augmente des
+     que De devient fortement negatif, donc Ki = Kp^2 / (alpha Kd) tombe a
+     0.24 fois Ziegler-Nichols (de 0.2 a 0.4 fois jusqu'au passage de la
+     consigne). Explication probable, non demontree : une fois la consigne
+     depassee, c'est l'integrale qui doit faire redescendre la commande, et
+     elle le fait d'autant plus lentement que Ki est faible. Les regles de
+     l'article (alpha = 5 pres de la consigne : integrale faible) visent
+     a eviter l'accumulation de l'integrale pendant la montee ; ici, le
+     clamping l'evite deja pendant la butee.
+  P2 FAUSSE de peu. Ecart maximal de S3, S4, S5 entre 0.89 et 1.05 fois
+     Ziegler-Nichols : un seul evenement hors de +-10 % (S5 a 50 ms,
+     0.95 V contre 1.06 V, en mieux). Le sens de la prevision tient : le
+     pic des perturbations ne change pas.
+  P3 juste. S7a 34.3 mV (ZN 29.7), S7b 27.4 mV (ZN 21.3) : le bruit passe
+     davantage (Kd presque double au repos ; les gains suivent chaque pas
+     de quantification). S7a est en plus tres sensible (34 a 40 mV selon
+     L ou C a 0.1 % pres).
+  P4 FAUSSE, et c'est le resultat principal. S8b et S9 reviennent dans la
+     bande ; S8b : IAE 4.25 mV.s contre 77.19 pour Ziegler-Nichols (PID
+     fige 2.46). Ma prevision supposait qu'il fallait plus de Kp ; le
+     diagnostic montre que ce sont Ki plus faible (0.66 fois ZN au repos)
+     et Kd plus fort (1.98 fois ZN) qui stabilisent la charge legere :
+     l'un ou l'autre suffit, et avec Ki et Kd tous deux gardes a
+     Ziegler-Nichols, S8b ne revient plus. Ce n'est donc pas une
+     adaptation a la charge : ce sont les gains de repos de la regle
+     (ZO, ZO), les memes a toutes les charges.
+  P5 juste. J = 0.877.
+
+Ce qu'il faudra ecrire dans le memoire
+  - La methode est appliquee telle que publiee, avec quatre ecarts
+    declares (Ku et Tu equivalents, echelles, bloc PID de Ziegler-Nichols
+    avec filtre et clamping, De(0) = 0).
+  - Son apport vient surtout de ses gains au repos, plus prudents que
+    Ziegler-Nichols (Ki plus faible, Kd plus fort), pas d'une reaction aux
+    evenements. Sur les perturbations, le pic ne change pas, comme
+    l'article le laisse prevoir (fin de la section IV).
+  - Au demarrage, l'ordonnancement de Ki va contre le but recherche : il
+    double le depassement a 5 ohms.
+  - Le bruit de mesure passe davantage dans la commande (activite |dd|
+    0.0056 contre 0.0031 sur S1).
