@@ -130,3 +130,56 @@ les contraintes, sans aucun cout ni aucun essai)
   sur plus d'un gain.
   Correctif du script (sans effet sur la methode) : si aucun individu
   n'est admissible, le compte rendu le dit au lieu de s'arreter.
+
+Resultats (6 octobre 2026, apres l'ecriture de ce qui precede ; rien n'a ete
+change dans la methode depuis l'amendement 1 ; sorties completes dans
+recherche_pso_pid_sortie_console.txt et banc_pso_pid_sortie_console.txt)
+  Recherche (81 minutes, 4 coeurs). Deux points d'arrivee seulement :
+    A : a = 0.616, b = 0.0019, c = 3.568 (W = 0.979 pour beta = 1),
+        atteint par les graines 1, 2, 3, 5 (beta = 1) et 1 (beta = 1.5) ;
+    B : a = 0.684, b = 0 (au bord), c = 3.545 (W = 1.855 pour beta = 1),
+        atteint par la graine 4 (beta = 1) et les graines 2 a 5 (beta = 1.5).
+    Dans les deux, Ki vaut 0.2 % ou 0 % de Ziegler-Nichols (presque plus
+    d'action integrale) et Kd est pousse jusqu'a la limite de coupure
+    (2200 Hz) ; marge de phase 69 a 70 degres.
+  Retenu (regle ecrite avant) : beta = 1, graine 1, point A ;
+    P = 0.057888, I = 0.5853, D = 2.6127e-5.
+    Sur les six demarrages de reglage : Mp de 0 a 1 %, Ess de 0.52 a 0.71 %,
+    ts de 1.1 a 4.2 ms.
+  Jugement sur les onze essais : J = 5.028 (Ziegler-Nichols 1, meilleur PID
+    fige 0.738) ; evenements pas revenus : S5, S8a, S8b, S9. Apres 30 ms,
+    6.344 ; demarrage, 0.640 (meilleur que le PID fige, 0.831). Depassement
+    de S1 : 0 %. Les dix recherches donnent J = 5.02 a 5.04 (point A) ou
+    10.66 a 10.67 (point B).
+
+Face aux previsions
+  P1 juste : contraintes respectees, aucun gain au bord de [0 ; 4] pour le
+     point retenu (b = 0.0019 est a 0.05 % de la plage du bord : juste au
+     sens de la regle, mais l'integrale est en pratique supprimee).
+  P2 juste : depassement de S1 0 % (ZN 14 %).
+  P3 FAUSSE, et c'est le resultat principal : J = 5.03, pas entre 0.74 et
+     0.95.
+  P4 FAUSSE : S5, S8a, S8b et S9 ne reviennent pas dans la bande.
+  P5 juste, bien au-dela de la prevision : apres 30 ms, 6.34 (PID fige
+     0.71).
+  P6 FAUSSE : les W des cinq graines (beta = 1) ne sont pas a 2 % (0.979 a
+     1.855) ; l'essaim reste piege au point B (bord b = 0) dans 5 recherches
+     sur 10 ; et les gains du point A ne varient pas d'une graine a l'autre
+     (moins de 0.1 %) : le cout n'est pas plat, il a deux minima nets.
+  P7 FAUSSE : beta = 1.5 donne le meme point A que beta = 1 quand il
+     l'atteint (graine 1) ; le sens annonce par l'article n'apparait pas.
+
+Pourquoi (lisible sur les seules donnees de reglage)
+  Le cout W de l'article met au meme prix 1 % de depassement et 1 %
+  d'erreur statique. Sur un demarrage, l'action integrale cree le
+  depassement (14 % avec Ziegler-Nichols) ; la supprimer ne coute que
+  0.5 a 0.7 % d'erreur statique, parce que l'integrateur du bloc part de
+  0.5 (condition initiale du PID de reference), presque le rapport cyclique
+  du regime etabli (0.45 a 0.56 aux points de reglage) : l'action
+  proportionnelle suffit a combler le reste. L'optimum de W est donc un PD
+  deguise. Sur les onze essais, il ne peut plus rejeter une variation de Vin
+  ou de charge : l'erreur reste de l'ordre de 0.8 V et les evenements ne
+  reviennent pas dans +-1 V. Ce n'est pas un defaut de l'essaim (il trouve
+  bien le minimum de W), c'est le cout de l'article, transpose sans le
+  corriger, qui ne mesure ni le rejet de perturbation ni l'erreur statique
+  hors du point de fonctionnement initial.
