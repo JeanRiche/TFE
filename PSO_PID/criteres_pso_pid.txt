@@ -183,3 +183,41 @@ Pourquoi (lisible sur les seules donnees de reglage)
   bien le minimum de W), c'est le cout de l'article, transpose sans le
   corriger, qui ne mesure ni le rejet de perturbation ni l'erreur statique
   hors du point de fonctionnement initial.
+
+Amendement 2 (6 octobre 2026, apres le jugement de la premiere recherche ;
+decide avec Jean-Riche : "on se refere a l'article, mais la ou ca pose un
+probleme, on le signale et on corrige")
+  Erreur d'application (la mienne, pas celle de l'article) : chez Gaing,
+  W se calcule sur la reponse indicielle de la boucle (fonction de
+  transfert), c'est-a-dire depuis l'etat nul du PID. Mes six demarrages de
+  reglage partaient, eux, de l'integrateur precharge a 0.5 et du filtre a
+  0.01 (conditions initiales du bloc de Ziegler-Nichols). Le precharge
+  fournit presque le rapport cyclique du regime etabli : l'erreur statique
+  sans action integrale n'etait plus que de 0.5 a 0.7 %, et W poussait Ki a
+  zero.
+  Controle fait sur les seuls demarrages de reglage (beta = 1), avant de
+  relancer :
+                           integrateur a 0.5      etat nul (article)
+    point A (Ki 0.2 %)     W =  0.98 (Ess 0.6 %)  W = 13.8 (Ess 5.6 %)
+    point B (Ki = 0)       W =  1.88 (Ess 0.8 %)  W = 15.1 (Ess 7.4 %)
+    meilleur PID fige      W = 18.0               W = 11.8
+  Depuis l'etat nul, supprimer l'integrale ne paie plus.
+  Amendement : pendant le reglage seulement, le PID part de l'etat nul
+  (integrateur 0, filtre 0), comme dans l'article. Le bloc de Simulink et
+  le jugement sur les onze essais gardent les conditions initiales de la
+  base commune (0.5 et 0.01) : elles ne jouent que sur le premier
+  demarrage, pas sur les perturbations. Tout le reste est inchange (W,
+  unites, essais de reglage, contraintes, bornes [0 ; 4], beta, graines).
+  La premiere recherche est gardee pour le memoire, sous
+  recherche_pso_pid_v1_integrateur_precharge.json, banc_pso_pid_v1_*.
+
+Previsions pour la recherche amendee (ecrites avant de la lancer)
+  Q1. Ki du reglage retenu au moins 0.25 fois Ziegler-Nichols (l'integrale
+      revient).
+  Q2. J sur les onze essais entre 0.74 et 0.95 ; tous les evenements
+      reviennent (marge de 30 degres aux coins 98 ohms).
+  Q3. Apres 30 ms, moins bon que le meilleur PID fige (au-dessus de 0.710) :
+      W ne voit toujours aucune perturbation.
+  Q4. Depassement de S1 (integrateur a 0.5, comme dans les essais) au-dessus
+      de celui des demarrages de reglage : le precharge ajoute de
+      l'avance au demarrage.

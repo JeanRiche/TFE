@@ -23,7 +23,10 @@
 #   Cout d'un individu : si la marge de phase minimale aux 12 coins est sous
 #   30 degres ou la coupure maximale au-dessus de fs/10, W = 1e6 ; sinon,
 #   moyenne des six W(K) = (1 - exp(-beta)) (Mp + Ess) + exp(-beta) (ts - tr),
-#   Mp et Ess en %, ts et tr en unites de tau1 = 1.7280 ms.
+#   Mp et Ess en %, ts et tr en unites de tau1 = 1.7280 ms. Pendant ces six
+#   demarrages, le PID part de l'etat nul (amendement 2 : reponse indicielle
+#   de l'article ; la premiere version partait de l'integrateur precharge a
+#   0.5, ce qui poussait Ki a zero).
 #   Deux valeurs de beta (1.0 retenu, 1.5 publie) et cinq graines chacune.
 #
 # DEUX FACONS DE LE LANCER
@@ -93,6 +96,9 @@ T_FIN = 0.050                                 # duree d'un demarrage de reglage 
 K30 = int(round(0.030 / TC))                  # debut de la fenetre de Ess (30 ms)
 # Ecart 5 : essais de reglage
 POINTS_REGLAGE = [(R, V) for R in (4.5, 10.0, 50.0) for V in (180.0, 220.0)]
+# Amendement 2 : pendant le reglage, le PID part de l'etat nul (reponse indicielle de l'article) ;
+# le jugement et Simulink gardent les conditions initiales du bloc (PID_CI_INTEGRATEUR, PID_CI_FILTRE).
+CI_REGLAGE = (0.0, 0.0)                       # (integrateur, filtre) pendant le reglage
 # Ecart 2 : contraintes du meilleur PID fige
 MARGE_MINI = 30.0                             # degres
 FC_MAXI = FSW / 10.0                          # Hz
@@ -119,10 +125,9 @@ class PIDParallele:
     clamping, sortie [0.01 ; 0.99]) avec des gains P, I, D donnes ; memes
     operations que PIDClassique du banc commun."""
 
-    def __init__(self, P, I, D):
+    def __init__(self, P, I, D, ci=None):
         self.P, self.I, self.D = P, I, D
-        self.xI = PID_CI_INTEGRATEUR
-        self.xF = PID_CI_FILTRE
+        self.xI, self.xF = (PID_CI_INTEGRATEUR, PID_CI_FILTRE) if ci is None else ci
 
     def pas(self, e):
         derivee = PID_N * (self.D * e - self.xF)
@@ -195,7 +200,7 @@ def evaluer(x):
     if res["admissible"]:
         res["essais"] = []
         for sc in REGLAGE:
-            sim = simuler(PIDParallele(PID_P * a, PID_I * b, PID_D * c), sc)
+            sim = simuler(PIDParallele(PID_P * a, PID_I * b, PID_D * c, ci=CI_REGLAGE), sc)   # amendement 2
             res["essais"].append(grandeurs_W(sim["v"]))
     return res
 
@@ -279,7 +284,8 @@ if __name__ == "__main__":
                 r = recherche(beta, graine, pool)
                 resultats[cle] = r
                 with open(FICHIER, "w", encoding="utf-8") as f:   # sauvegarde apres chaque recherche
-                    json.dump({"version": 1, "methode": "Gaing 2004, criteres_pso_pid.txt", "recherches": resultats},
+                    json.dump({"version": 2, "methode": "Gaing 2004, criteres_pso_pid.txt (amendements 1 et 2)",
+                               "recherches": resultats},
                               f, indent=1, allow_nan=False)
                 print(f"  {cle} : {'' if r['admissible'] else 'AUCUN INDIVIDU ADMISSIBLE ; '}W = {r['W_gbest']:.5f}, gains x ZN ({r['gbest'][0]:.4f}, {r['gbest'][1]:.4f}, "
                       f"{r['gbest'][2]:.4f}), marge {r['marge_min']:.1f} degres, coupure {r['fc_max']:.0f} Hz "
