@@ -108,12 +108,12 @@ Lecture (pour le memoire)
      70 ms) est le meme pour les cinq methodes : le rapport cyclique sature
      aussitot, et c'est le filtre LC qui fixe cette pointe. Les methodes se
      distinguent par le retour : oscillation, deuxieme bosse et temps de
-     retour (PSO 0.5 a 0.9 ms ; PINN 0.6 a 0.8 ; ELM 0.5 a 1.3 ; Fuzzy et
+     retour (PSO 0.5 a 0.9 ms ; PINN 0.55 a 0.75 ; ELM 0.5 a 1.3 ; Fuzzy et
      ZN 1.2 a 1.7 ms). Dans le memoire, ne pas attribuer l'ecart maximal
      aux regulateurs.
   3. Une paire inversee par rapport a J, a dire : sur S4 (rejet de
      perturbation), le PSO-PID est premier ; sur J, le PINN-PID l'est,
-     grace au demarrage (0.651 contre 0.757 pour le PSO-PID), qu'il doit a
+     grace au demarrage (0.651 contre 0.855 pour le PSO-PID), qu'il doit a
      la forme incrementale de sa loi plus qu'a son adaptation. Apres 30 ms,
      sur les onze essais, PSO-PID 0.672, PINN-PID 0.694.
   4. Reserve sur le PSO-PID : son cout de reglage contient des echelons de
