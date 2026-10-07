@@ -256,6 +256,19 @@ depart.
   Q1 a Q7 justes.
 
 
+Validation Simulink (7 octobre 2026, sorties envoyees par Jean-Riche)
+  Tester_ELM_PID_Rejeu : le bloc MATLAB reproduit le banc pas par pas sur
+  S1, S3, S7b, S8b, S9 (ecart au plus 7.5e-10 sur u, 7.7e-10 en relatif
+  sur les gains, aucune decision de fenetre differente).
+  Construction_ELM_PID : T1 2.3 mV, gains a 19 ms a 0.1 % du banc ; T2
+  28.4 mV. verifier_modele_elm_pid.py : conforme.
+  Simuler_ELM_PID, onze essais : memes decisions d'adaptation que le banc
+  partout sauf S7a (mesure quantifiee : un arrondi de 1e-15 V change une
+  decision du CAN ; Simulink 0 fenetre adaptee, banc 2) ; IAE a 0.2 % pres
+  (S7a -2.9 %, S8b -0.7 %), memes retours dans la bande, gains a 0.35 %
+  pres (S7a excepte). Les modifications M1 a M3 sont validees dans
+  Simulink.
+
 9. LECTURE (pour le memoire)
 ----------------------------
   1. L'ELM-PID adapte ses gains dans les trois cas de base et sur tous les
