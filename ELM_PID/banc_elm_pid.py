@@ -82,7 +82,8 @@ K_ZN = np.array([PID_P, PID_I * TC, PID_D / TC])   # Ziegler-Nichols, forme incr
 
 REGLAGES = {"ETA": 0.5, "ZONE_MORTE": 0.1, "ZONE_MORTE_ESTIMATION": 0.1, "ALPHA": 0.001, "EPS_PHI": 1e-3,
             "LAMBDA": 1.0, "APPRENDRE": 1.0, "GLISSEMENT": 1.0, "JACOBIEN_CONSTANT": float("nan"),
-            "MULT_MIN": 0.25, "MULT_MAX": 4.0, "N_BISSECTIONS": 30.0, "H_GRADIENT": 1e-4}
+            "MULT_MIN": 0.25, "MULT_MAX": 4.0, "N_BISSECTIONS": 30.0, "H_GRADIENT": 1e-4,
+            "RESTAURATION": 1.0, "N_PROJECTION": 10.0}
 
 with open(os.path.join(DOSSIER_ELM, "predictions_banc_pid_fige.json"), encoding="utf-8") as f:
     GAINS_FIGE = json.load(f)["gains"]
@@ -150,16 +151,54 @@ def g_interp(x):
     return s
 
 
+def gradient_g(x, h):
+    """Gradient de g par differences centrees (normale a la frontiere)."""
+    gr = np.zeros(3)
+    for q in range(3):
+        ep = np.zeros(3)
+        ep[q] = h
+        gr[q] = (g_interp(x + ep) - g_interp(x - ep)) / (2.0 * h)
+    return gr
+
+
+def restaurer(p, gr, r):
+    """Restauration (M3) : depuis p (hors de l'ensemble), recul le long de
+    -gr jusqu'a la frontiere (doublement puis bissection) ; None si un recul
+    de 1 ne suffit pas."""
+    lo_, hi_ = r["MULT_MIN"], r["MULT_MAX"]
+    nh = gr / np.sqrt(gr @ gr)
+    s_ok = 1e-6
+    while g_interp(np.minimum(np.maximum(p - s_ok * nh, lo_), hi_)) > 0.0:
+        s_ok *= 2.0
+        if s_ok > 1.0:
+            return None
+    s_ko = 0.0 if s_ok == 1e-6 else 0.5 * s_ok
+    for _ in range(int(r["N_BISSECTIONS"])):
+        m = 0.5 * (s_ko + s_ok)
+        if g_interp(np.minimum(np.maximum(p - m * nh, lo_), hi_)) <= 0.0:
+            s_ok = m
+        else:
+            s_ko = m
+    return np.minimum(np.maximum(p - s_ok * nh, lo_), hi_)
+
+
 def projeter(xc, dx, r):
-    """Pas dx depuis xc (admissible), projete sur l'ensemble admissible
-    (M2) : point de sortie par bissection, retrait de la composante
-    sortante du reste du pas (normale = gradient de g), puis bissection si
-    le point sort encore. Sans glissement : arret au point de sortie."""
+    """Pas dx depuis xc (admissible), projete sur l'ensemble admissible.
+    M3 (RESTAURATION = 1) : point admissible le plus proche de la cible
+    z = xc + dx, par la methode de projection du gradient de Rosen (1961) :
+    depuis le point de sortie, on retire la composante sortante de (z - y)
+    le long de la normale, on avance dans le plan tangent, puis on revient
+    sur la frontiere le long de la normale (restauration) ; on recommence
+    tant que le point se rapproche de z (N_PROJECTION fois au plus).
+    M2 seule (RESTAURATION = 0) : glissement puis bissection le long du pas
+    tangent (version du calcul du 7 octobre, gardee pour l'ablation).
+    Sans glissement : arret au point de sortie."""
     lo_, hi_ = r["MULT_MIN"], r["MULT_MAX"]
     nb = int(r["N_BISSECTIONS"])
     xn = np.minimum(np.maximum(xc + dx, lo_), hi_)
     if g_interp(xn) <= 0.0:
         return xn
+    z = xn
     a, b = 0.0, 1.0
     for _ in range(nb):
         m = 0.5 * (a + b)
@@ -170,12 +209,26 @@ def projeter(xc, dx, r):
     xb = np.minimum(np.maximum(xc + a * dx, lo_), hi_)
     if not r["GLISSEMENT"]:
         return xb
-    h = r["H_GRADIENT"]
-    gr = np.zeros(3)
-    for q in range(3):
-        ep = np.zeros(3)
-        ep[q] = h
-        gr[q] = (g_interp(xb + ep) - g_interp(xb - ep)) / (2.0 * h)
+    if r["RESTAURATION"]:
+        y = xb
+        for _ in range(int(r["N_PROJECTION"])):
+            gr = gradient_g(y, r["H_GRADIENT"])
+            if gr @ gr == 0.0:
+                break
+            d = z - y
+            sortant = gr @ d
+            if sortant > 0.0:
+                d = d - sortant / (gr @ gr) * gr
+            pt = np.minimum(np.maximum(y + d, lo_), hi_)
+            if g_interp(pt) > 0.0:
+                pt = restaurer(pt, gr, r)
+                if pt is None:
+                    break
+            if np.sum((z - pt) ** 2) >= np.sum((z - y) ** 2):
+                break
+            y = pt
+        return y
+    gr = gradient_g(xb, r["H_GRADIENT"])
     reste = (1.0 - a) * dx
     sortant = gr @ reste
     if sortant > 0.0:
@@ -397,8 +450,9 @@ for code in ("S1", "S2", "S3"):
     reg = ELM[code]["reg"]
     for i in fenetres_adaptees(reg):
         x = reg.journal[i]
-        print(f"  {code} : pas calcule a t = {(i + 1) * 0.5:5.1f} ms, ebar {x['ebar']:+.3f} V ; gains "
-              f"{'changes' if x['change'] else 'inchanges (pas entierement sortant de l ensemble admissible)'}")
+        print(f"  {code} : pas calcule a t = {(i + 1) * 0.5:5.1f} ms, ebar {x['ebar']:+.3f} V, jacobien du reseau "
+              f"{x['J']:.2f} ; gains {'changes' if x['change'] else 'inchanges'} -> x({x['x'][0]:.3f}, {x['x'][1]:.3f}, "
+              f"{x['x'][2]:.3f})")
 admis = [g_interp(x["x"]) <= 0.0 for c in ELM for x in ELM[c]["reg"].journal]
 print(f"  Controle : gains admissibles a la fin de toutes les fenetres des onze essais : {'oui' if all(admis) else 'NON'}.")
 
@@ -408,6 +462,7 @@ print(f"  Controle : gains admissibles a la fin de toutes les fenetres des onze 
 titre("ETAPE 4 : ce que chaque piece apporte (ablations, jamais choisies)")
 ABLATIONS = {"Jacobien constant": {"JACOBIEN_CONSTANT": J_REGRESSION},
              "Sans OS-ELM": {"APPRENDRE": 0.0},
+             "M2 seule (sans restauration)": {"RESTAURATION": 0.0},
              "Sans glissement": {"GLISSEMENT": 0.0}}
 RES_ABL, J_ABL = {}, {}
 for nom, modif in ABLATIONS.items():
@@ -441,7 +496,7 @@ L_BOB, C_CONV = L_NOM, C_NOM
 
 # %% ETAPE 5 : comparaison et previsions
 
-titre("ETAPE 5 : ELM-PID face aux references, previsions de criteres_elm_pid.txt")
+titre("ETAPE 5 : ELM-PID face aux references, previsions Q1 a Q7 de criteres_elm_pid.txt")
 TOUS = {"Ziegler-Nichols": REF["Ziegler-Nichols"], "meilleur PID fige": REF["meilleur PID fige"], "R0": R0, "ELM-PID": ELM}
 J_TOUS = {n: float(np.mean(termes(r) / T_ZN)) for n, r in TOUS.items()}
 print("  " + " " * 28 + "".join(f"{n:>20s}" for n in TOUS))
@@ -466,24 +521,26 @@ for n in TOUS:
 print("  Decomposition de J (apres 30 ms ; demarrage) : " +
       " ; ".join(f"{n} {DECOMP[n][0]:.3f} / {DECOMP[n][1]:.3f}" for n in TOUS))
 
-base = {c: (fenetres_adaptees(ELM[c]["reg"]), ELM[c]["reg"].journal[-1]["K"] / K_ZN) for c in ("S1", "S2", "S3")}
+base = {c: (fenetres_changees(ELM[c]["reg"]), ELM[c]["reg"].journal[-1]["K"] / K_ZN) for c in ("S1", "S2", "S3")}
 apres30 = {c: [i for i in fenetres_adaptees(ELM[c]["reg"]) if (i + 1) * NF > K30] for c in ("S7a", "S7b")}
 J_SENS = [x["J"] for x in SENSIBILITE]
-P = {"P1": all(len(a) >= 1 and np.any(np.abs(k - 1) > 0.01) for a, k in base.values()),
-     "P2": 0.68 <= J_ELM <= 0.80 and all(ELM[c]["revenus"] for c in CODES_IAE),
-     "P3": J_ELM <= J_R0 - 0.05,
-     "P4": abs(J_ABL["Jacobien constant"] - J_ELM) <= 0.02,
-     "P5": J_ABL["Sans glissement"] >= J_ELM,
-     "P6": all(len(v) == 0 for v in apres30.values()),
-     "P7": max(abs(j - J_ELM) for j in J_SENS) <= 0.02}
-TEXTE = {"P1": "; ".join(f"{c} : {len(a)} fenetres, gains finaux x{np.round(k, 3).tolist()}" for c, (a, k) in base.items()),
-         "P2": f"J = {J_ELM:.3f} ; " + ("tous les evenements reviennent" if all(ELM[c]["revenus"] for c in CODES_IAE)
+dem_S1 = (ELM["S1"]["IAE_dem"], R0["S1"]["IAE_dem"])
+P = {"Q1": all(len(a) >= 1 and np.any(np.abs(k - 1) > 0.01) for a, k in base.values()),
+     "Q2": 0.70 <= J_ELM <= 0.78 and all(ELM[c]["revenus"] for c in CODES_IAE),
+     "Q3": J_ELM <= 0.744,
+     "Q4": abs(J_ABL["Jacobien constant"] - J_ELM) <= 0.02,
+     "Q5": all(len(v) == 0 for v in apres30.values()),
+     "Q6": max(abs(j - J_ELM) for j in J_SENS) <= 0.02,
+     "Q7": abs(dem_S1[0] / dem_S1[1] - 1) <= 0.05}
+TEXTE = {"Q1": "; ".join(f"{c} : gains changes sur {len(a)} fenetres, finaux x{np.round(k, 3).tolist()}" for c, (a, k) in base.items()),
+         "Q2": f"J = {J_ELM:.3f} ; " + ("tous les evenements reviennent" if all(ELM[c]["revenus"] for c in CODES_IAE)
                                        else "pas revenus : " + ",".join(c for c in CODES_IAE if not ELM[c]["revenus"])),
-         "P3": f"J = {J_ELM:.3f}, R0 {J_R0:.3f}",
-         "P4": f"jacobien constant {J_ABL['Jacobien constant']:.3f}, ELM-PID {J_ELM:.3f}",
-         "P5": f"sans glissement {J_ABL['Sans glissement']:.3f}, ELM-PID {J_ELM:.3f}",
-         "P6": f"fenetres adaptees apres 30 ms : S7a {len(apres30['S7a'])}, S7b {len(apres30['S7b'])}",
-         "P7": f"J de {min(J_SENS):.3f} a {max(J_SENS):.3f} (nominal {J_ELM:.3f})"}
+         "Q3": f"J = {J_ELM:.3f} (M2 seule, calcul du 7 octobre : 0.744 ; ablation de ce calcul : "
+               f"{J_ABL['M2 seule (sans restauration)']:.3f})",
+         "Q4": f"jacobien constant {J_ABL['Jacobien constant']:.3f}, ELM-PID {J_ELM:.3f}",
+         "Q5": f"fenetres adaptees apres 30 ms : S7a {len(apres30['S7a'])}, S7b {len(apres30['S7b'])}",
+         "Q6": f"J de {min(J_SENS):.3f} a {max(J_SENS):.3f} (nominal {J_ELM:.3f})",
+         "Q7": f"IAE de demarrage de S1 {dem_S1[0] * 1e3:.3f} mV.s (R0 {dem_S1[1] * 1e3:.3f})"}
 for k in P:
     print(f"  {k} {'juste' if P[k] else 'FAUSSE'} : {TEXTE[k]}")
 

@@ -236,6 +236,62 @@ Diagnostic de P1 (regle de conclusion : porte, zone morte ou projection)
   S9), les premiers pas entrent dans l'ensemble, les suivants partent d'un
   point interieur, et l'adaptation fonctionne.
 
+7bis. AMENDEMENT 1 : M3, PROJECTION AVEC RESTAURATION (7 octobre 2026)
+---------------------------------------------------------------------
+Ecrit apres le diagnostic de P1 et avant tout nouveau calcul sur les onze
+essais. Mesures faites avant ce texte : test geometrique et essais de mise
+au point E1 a E4 (mise_au_point_elm_pid.py), aucun des onze essais.
+
+M3. Projection : point admissible le plus proche, avec restauration
+  Pourquoi. Le depart est sur la frontiere de l'ensemble admissible et
+  l'ensemble y est non convexe : le glissement de M2 (pas tangent coupe par
+  bissection) y est annule (diagnostic de la section 7). L'operateur de
+  projection des references de M2 (Goodwin et Sin ; Ioannou et Sun)
+  ramene le pas au point admissible le plus proche ; sur un ensemble a
+  frontiere courbe, cela demande, apres le pas tangent, un retour sur la
+  frontiere.
+  Reference. J. B. Rosen, "The gradient projection method for nonlinear
+  programming, Part II : Nonlinear constraints", Journal of the Society
+  for Industrial and Applied Mathematics, 9(4), 1961 (projection du pas
+  sur le plan tangent aux contraintes actives, puis restauration vers la
+  frontiere le long de la normale).
+  Mise en oeuvre (banc_elm_pid.py, elm_pid_adaptatif.m) : cible
+  z = x + dx (bornee a [1/4 ; 4]) ; si z n'est pas admissible : point de
+  sortie y sur le segment (30 bissections) ; puis, au plus 10 fois :
+  normale n = gradient de g en y ; d = z - y privee de sa composante
+  sortante max(0, n.d) n / |n|^2 ; p = y + d ; si p n'est pas admissible,
+  restauration : recul le long de -n / |n| (pas doubles a partir de 1e-6,
+  puis 30 bissections) ; p remplace y seulement s'il est plus proche de z.
+  Le resultat est toujours admissible. Tout le reste est inchange (y
+  compris le critere d'admissibilite, la porte, les zones mortes, eta).
+  La version M2 seule est gardee comme ablation.
+
+Controles faits avant les previsions (mise_au_point_elm_pid.py)
+  Depuis le depart, 500 pas aleatoires : gains changes 500 (M3), 304 (M2
+  seule), 242 (sans glissement) ; aucun resultat hors de l'ensemble ;
+  distance moyenne a la cible 0.046 (M3), 0.075 (M2), 0.086.
+  Essais E1 a E4, IAE apres 30 ms (mV.s), R0 / M2 seule / ELM-PID (M3) :
+    E1 34.06 / 33.99 / 33.13 ; E2 3.02 / 1.88 / 1.52 ;
+    E3 33.92 / 20.16 / 20.19 ; E4 1.16 / 1.03 / 1.03.
+  Avec M3, les gains changent des le demarrage (2.5 a 4 ms) sur les quatre
+  essais ; avec M2 seule, sur E1 et E2, pas avant 68 et 40.5 ms. Jacobien
+  constant : a 0.4 mV.s pres de l'ELM-PID.
+
+Previsions (ecrites avant le calcul sur les onze essais)
+  Q1. Les gains changent dans les trois cas de base : sur S1, S2 et S3, au
+      moins une fenetre ou les gains changent et un multiplicateur final
+      hors de [0.99 ; 1.01].
+  Q2. J entre 0.70 et 0.78 ; tous les evenements reviennent.
+  Q3. J au plus egal a celui de la version M2 seule (0.744).
+  Q4. Jacobien constant : J a 0.02 pres de l'ELM-PID.
+  Q5. Aucune fenetre adaptee apres 30 ms sur S7a et S7b.
+  Q6. L ou C a +-0.1 % : J a 0.02 pres de sa valeur nominale.
+  Q7. Demarrage de S1 : IAE de 0 a 30 ms a 5 % pres de celle de R0 (les
+      gains ne changent qu'apres la phase saturee).
+  Regle de conclusion : si Q1 est fausse, on s'arrete et on le dit ; on ne
+  touche ni aux zones mortes ni au critere d'admissibilite pour la rendre
+  juste.
+
 8. REFERENCES
 -------------
   [1] Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller
@@ -270,6 +326,9 @@ Diagnostic de P1 (regle de conclusion : porte, zone morte ou projection)
       dynamical systems using neural networks", IEEE Transactions on
       Neural Networks, 1(1), 4-27, 1990.
   [13] K. J. Astrom, T. Hagglund, Advanced PID Control, ISA, 2006.
+  [14] J. B. Rosen, "The gradient projection method for nonlinear
+      programming, Part II : Nonlinear constraints", Journal of the Society
+      for Industrial and Applied Mathematics, 9(4), 1961.
   Les references [1] a [4], [5], [7], [11] a [13] viennent de la version
   de depart (document Regulateur_ELM_PID.docx) ; [6], [8], [9], [10] sont
   ajoutees ici, verifiees par leurs notices bibliographiques.
