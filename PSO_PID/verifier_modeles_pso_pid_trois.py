@@ -2,7 +2,7 @@
 # verifier_modeles_pso_pid_trois.py
 #
 # VERSION
-#   1 (6 octobre 2026), PSO-PID (Gaing, 2004), trois modeles construits sur
+#   1 (6 octobre 2026), PSO-PID (essaim de Gaing 2004, modifications M1 a M3 de criteres_pso_pid.txt), trois modeles construits sur
 #   les modeles de base de Jean-Riche. Lecture des fichiers reprise de
 #   verifier_modeles_fuzzy_pid_trois.py.
 #

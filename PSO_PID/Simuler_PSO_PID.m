@@ -1,6 +1,6 @@
 %% SIMULER_PSO_PID.m
 %
-% COPIE DE Simuler_Scenarios.m pour le PSO-PID (Gaing, 2004, reglage hors
+% COPIE DE Simuler_Scenarios.m pour le PSO-PID (essaim de Gaing 2004, modifications M1 a M3 de criteres_pso_pid.txt, reglage hors
 % ligne). Seuls les trois reglages du debut changent : modele
 % Buck_Commun_PSO_PID.slx (Construction_PSO_PID.m), bloc "PID Controller",
 % resultats attendus predictions_banc_pso_pid.json (banc_pso_pid.py).

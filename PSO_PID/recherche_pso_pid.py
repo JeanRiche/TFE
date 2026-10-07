@@ -2,48 +2,42 @@
 # recherche_pso_pid.py
 #
 # VERSION
-#   1 (6 octobre 2026). Remplace l'ancien pso_pid_buck.py (ancien circuit,
-#   modele lineaire de Tustin, cout ITAE sur le seul echelon nominal).
+#   1 (7 octobre 2026).
 #
 # OBJECTIF
 #   Regler hors ligne les gains P, I, D du bloc "PID Controller" de
-#   Ziegler-Nichols par la methode de Gaing (2004) : essaim de particules,
-#   cout W(K) de l'article, sur six demarrages qui ne font pas partie des
-#   onze essais communs. Les onze essais ne servent qu'a juger le resultat
-#   (banc_pso_pid.py). Methode, ecarts declares et previsions :
-#   criteres_pso_pid.txt.
-#
-# LA METHODE, TELLE QU'ELLE EST CODEE ICI
-#   Individu = multiplicateurs (a, b, c) des gains de Ziegler-Nichols
-#   (P = a P_ZN, I = b I_ZN, D = c D_ZN), chacun dans [0 ; 4] (amendement 1
-#   de criteres_pso_pid.txt : [0 ; 16] ne contenait que 0.05 % de points
-#   admissibles). Population 50, 100 iterations, w de 0.9 a 0.4 (eq. 12),
-#   c1 = c2 = 2, |v| <= 2 (moitie de la plage), positions ramenees dans
-#   [0 ; 4] (eq. 15).
-#   Cout d'un individu : si la marge de phase minimale aux 12 coins est sous
-#   30 degres ou la coupure maximale au-dessus de fs/10, W = 1e6 ; sinon,
-#   moyenne des six W(K) = (1 - exp(-beta)) (Mp + Ess) + exp(-beta) (ts - tr),
-#   Mp et Ess en %, ts et tr en unites de tau1 = 1.7280 ms. Pendant ces six
-#   demarrages, le PID part de l'etat nul (amendement 2 : reponse indicielle
-#   de l'article ; la premiere version partait de l'integrateur precharge a
-#   0.5, ce qui poussait Ki a zero).
-#   Deux valeurs de beta (1.0 retenu, 1.5 publie) et cinq graines chacune.
+#   Ziegler-Nichols par essaim de particules (PSO). L'essaim est celui de
+#   Gaing (2004) ; le cout, le traitement des contraintes et les conditions
+#   initiales du reglage suivent les modifications M1 a M3 de
+#   criteres_pso_pid.txt, chacune appuyee sur la litterature :
+#     M1  cout = IAE (critere cite par Gaing, eq. 6) sur quatre essais de
+#         reglage qui contiennent des perturbations de charge, de Vin, de
+#         consigne et du bruit de mesure (Astrom, Panagopoulos, Hagglund
+#         1998 ; Panagopoulos, Astrom, Hagglund 2002 ; Krohling, Rey 2001 ;
+#         Alipoor 2009) ; chaque IAE est rapportee a celle de
+#         Ziegler-Nichols sur le meme essai ; le demarrage pese 3/13 et le
+#         reste 10/13, comme dans le cout J de la specification ;
+#     M2  contraintes (marge de phase >= 30 degres, coupure <= fs/10 aux 12
+#         coins) traitees par les regles de faisabilite de Deb (2000),
+#         appliquees au PSO comme Toscano Pulido et Coello Coello (2004) ;
+#     M3  pendant le reglage, le PID part des conditions initiales du bloc
+#         (integrateur 0.5, filtre 0.01), celles du fonctionnement reel.
+#   Essaim (Gaing 2004) : population 50, 100 iterations, inertie de 0.9 a
+#   0.4 (eq. 12), c1 = c2 = 2, |v| <= 2 (moitie de la plage), positions
+#   ramenees dans [0 ; 4] fois les gains de Ziegler-Nichols (eq. 15).
+#   Cinq graines. Les onze essais communs ne servent qu'a juger
+#   (banc_pso_pid.py).
 #
 # DEUX FACONS DE LE LANCER
-#   RECALCULER = False (reglage fourni) : les recherches deja presentes dans
-#   recherche_pso_pid.json sont reprises ; le script recalcule seulement le
-#   cout de chaque gbest et s'arrete s'il differe (controle du fichier sur
-#   ta machine). Une minute environ.
-#   RECALCULER = True : les dix recherches sont refaites (une a trois heures
-#   selon la machine et le nombre de coeurs). Sur une autre machine, les
-#   arrondis peuvent faire diverger l'essaim apres quelques iterations : le
-#   gbest peut alors differer un peu, c'est la nature de la methode.
+#   RECALCULER = False (reglage fourni) : reprend recherche_pso_pid.json et
+#   recalcule le cout de chaque gbest pour controle (une minute).
+#   RECALCULER = True : refait les cinq recherches (35 a 70 minutes selon la
+#   machine). Sur une autre machine, les arrondis peuvent faire diverger
+#   l'essaim apres quelques iterations : le gbest peut differer un peu.
 #
 # CE QUE PRODUIT CE SCRIPT
-#   recherche_pso_pid.json : pour chaque (beta, graine) : gbest, son cout et
-#   ses grandeurs sur les six demarrages, l'historique du gbest et de la
-#   moyenne et de l'ecart type de f = 1/W dans la population (comme la fig.
-#   14 de l'article).
+#   recherche_pso_pid.json : pour chaque graine, gbest, cout, rapports a
+#   Ziegler-Nichols sur les essais de reglage, historique de convergence.
 #
 # BIBLIOTHEQUES NECESSAIRES (pip install numpy scipy matplotlib)
 #
@@ -60,13 +54,12 @@
 
 import os                                     # chemins de fichiers
 import json                                   # lecture et ecriture au format texte
-import math                                   # exponentielle
 import time                                   # duree d'execution
 import multiprocessing as mp                  # evaluation en parallele des individus
 import numpy as np                            # calcul numerique
 from scipy.signal import cont2discrete        # modele moyen discretise (marges)
 
-RECALCULER = False                            # True : refaire les dix recherches
+RECALCULER = False                            # True : refaire les cinq recherches
 
 try:                                          # dossier du script (ou dossier courant dans un notebook)
     DOSSIER_PSO = os.path.dirname(os.path.abspath(__file__))
@@ -81,53 +74,33 @@ exec(SOURCE_BANC[:SOURCE_BANC.index(MARQUE)])  # constantes, Circuit, simuler, P
 
 FICHIER = os.path.join(DOSSIER_PSO, "recherche_pso_pid.json")
 
-# Methode de l'article
+# Essaim (Gaing 2004)
 N_POP, N_ITER = 50, 100                       # population, iterations
 W_MAX, W_MIN = 0.9, 0.4                       # inertie (eq. 12)
 C1 = C2 = 2.0                                 # constantes d'acceleration
-K_MIN, K_MAX = 0.0, 4.0                       # bornes des multiplicateurs (ecart 1, amendement 1 : 16 -> 4)
+K_MIN, K_MAX = 0.0, 4.0                       # bornes des multiplicateurs de ZN (ecart E1 de criteres_pso_pid.txt)
 V_MAX = K_MAX / 2.0                           # vitesse maximale (moitie de la plage)
-W_PENALITE = 1e6                              # W "tres grand" d'un individu refuse
-BETAS = (1.0, 1.5)                            # 1.0 retenu, 1.5 publie (ecart 6)
-GRAINES = (1, 2, 3, 4, 5)                     # ecart 7
-# Ecarts 3 et 4 : unites et definitions
-TAU1 = 1.7280e-3                              # constante de temps dominante du Buck (s)
-T_FIN = 0.050                                 # duree d'un demarrage de reglage (s)
-K30 = int(round(0.030 / TC))                  # debut de la fenetre de Ess (30 ms)
-# Ecart 5 : essais de reglage
-POINTS_REGLAGE = [(R, V) for R in (4.5, 10.0, 50.0) for V in (180.0, 220.0)]
-# Amendement 2 : pendant le reglage, le PID part de l'etat nul (reponse indicielle de l'article) ;
-# le jugement et Simulink gardent les conditions initiales du bloc (PID_CI_INTEGRATEUR, PID_CI_FILTRE).
-CI_REGLAGE = (0.0, 0.0)                       # (integrateur, filtre) pendant le reglage
-# Ecart 2 : contraintes du meilleur PID fige
+GRAINES = (1, 2, 3, 4, 5)
+# Contraintes (base commune : celles du meilleur PID fige)
 MARGE_MINI = 30.0                             # degres
 FC_MAXI = FSW / 10.0                          # Hz
-
-
-def essai_reglage(R, V):
-    """Demarrage 0 -> 100 V de 50 ms, charge R, entree V, sans bruit,
-    quantification ni evenement (meme format que les essais communs)."""
-    n = int(round(T_FIN / TC)) + 1
-    return {"code": f"R{R:g}_V{V:g}", "nom": f"reglage {R:g} ohms, {V:g} V", "duree": T_FIN, "R0": R, "q": 1e-9,
-            "evenements": [], "t": np.arange(n) * TC, "dvref": np.zeros(n), "vin": np.full(n, V),
-            "gx": np.zeros(n), "bruit": np.zeros(n)}
-
-
-REGLAGE = [essai_reglage(R, V) for R, V in POINTS_REGLAGE]
-for sc in REGLAGE:                            # aucun point de reglage ne doit etre un point des onze essais
-    for s in SCENARIOS:
-        if abs(s["R0"] - sc["R0"]) < 1e-9 and np.any(np.abs(s["vin"] - sc["vin"][0]) < 1e-9):
-            raise RuntimeError(f"Le point de reglage {sc['code']} apparait dans l'essai {s['code']}.")
+# Cout (M1)
+POIDS_DEM = 3.0 / 13.0                        # poids du demarrage (3 termes sur 13 dans J)
+K30 = int(round(0.030 / TC))                  # fin du demarrage (comme J)
+GRAINE_BRUIT_REGLAGE = 7                      # bruit du reglage : autre graine que S7b (20261002)
+FC_BRUIT, ECART_BRUIT = 10e3, 0.01            # meme nature que S7b
+PAS_CAN = 2.5 / 4096 * 80                     # meme CAN que S7a (48.8 mV)
 
 
 class PIDParallele:
     """Bloc "PID Controller" de Simulink (forme Parallel, Forward Euler,
     clamping, sortie [0.01 ; 0.99]) avec des gains P, I, D donnes ; memes
-    operations que PIDClassique du banc commun."""
+    operations que PIDClassique du banc commun ; conditions initiales du
+    bloc (M3)."""
 
-    def __init__(self, P, I, D, ci=None):
+    def __init__(self, P, I, D):
         self.P, self.I, self.D = P, I, D
-        self.xI, self.xF = (PID_CI_INTEGRATEUR, PID_CI_FILTRE) if ci is None else ci
+        self.xI, self.xF = PID_CI_INTEGRATEUR, PID_CI_FILTRE
 
     def pas(self, e):
         derivee = PID_N * (self.D * e - self.xF)
@@ -168,126 +141,173 @@ def frequentiel(a, b, c):
     return float(pire), float(fc)
 
 
-# %% ETAPE 2 : le cout W(K) de l'article
 
-def grandeurs_W(v):
-    """Mp (%), Ess (%), tr et ts (s) d'un demarrage (ecart 4)."""
-    e = VREF - v
-    Mp = max(0.0, (float(v.max()) - VREF) / VREF * 100.0)
-    k10 = np.where(v >= 10.0)[0]
-    k90 = np.where(v >= 90.0)[0]
-    tr = float((k90[0] - k10[0]) * TC) if len(k10) and len(k90) else T_FIN
-    hors = np.where(np.abs(e) > BANDE)[0]
-    ts = float((hors[-1] + 1) * TC) if len(hors) else 0.0
-    Ess = abs(float(np.mean(e[K30:]))) / VREF * 100.0
-    return Mp, Ess, tr, ts
+# %% ETAPE 2 : les quatre essais de reglage et le cout (aucun n'est un des onze essais)
+
+def essai_reglage(code, R0, vin0, duree, evenements=(), gx=None, vin=None, dvref=None, bruit=False, q=1e-9):
+    n = int(round(duree / TC)) + 1
+    t = np.arange(n) * TC
+
+    def palier(base, morceaux):
+        y = np.full(n, base, dtype=float)
+        for t0, t1, val in morceaux:
+            y[(t >= t0 - 1e-12) & (t < t1 - 1e-12)] = val
+        return y
+
+    sc = {"code": code, "nom": code, "duree": duree, "R0": R0, "q": q, "evenements": list(evenements), "t": t,
+          "dvref": palier(0.0, dvref or []), "vin": palier(vin0, vin or []), "gx": palier(0.0, gx or []),
+          "bruit": np.zeros(n)}
+    if bruit:
+        blanc = np.random.default_rng(GRAINE_BRUIT_REGLAGE).standard_normal(n)
+        a = np.exp(-2.0 * np.pi * FC_BRUIT * TC)
+        y, etat = np.zeros(n), 0.0
+        for k in range(n):
+            etat = a * etat + (1.0 - a) * blanc[k]
+            y[k] = etat
+        sc["bruit"] = ECART_BRUIT * y / np.std(y)
+    return sc
 
 
-def W_de(g, beta):
-    """Cout de l'eq. 9 pour les grandeurs g = (Mp, Ess, tr, ts) (ecart 3)."""
-    Mp, Ess, tr, ts = g
-    return (1.0 - math.exp(-beta)) * (Mp + Ess) + math.exp(-beta) * (ts - tr) / TAU1
+REGLAGE = [
+    # E1 : 7 ohms, 190 V ; charge portee a 4.5 ohms sur [40 ; 65) ms
+    essai_reglage("E1", 7.0, 190.0, 0.090, (0.040, 0.065), gx=[(0.040, 0.065, 1 / 4.5 - 1 / 7.0)]),
+    # E2 : 15 ohms, 210 V ; Vin 175 V sur [40 ; 65) ms puis 235 V
+    essai_reglage("E2", 15.0, 210.0, 0.090, (0.040, 0.065), vin=[(0.040, 0.065, 175.0), (0.065, 1.0, 235.0)]),
+    # E3 : 60 ohms, 220 V ; echelon de consigne +10 V sur [40 ; 65) ms
+    essai_reglage("E3", 60.0, 220.0, 0.090, (0.040, 0.065), dvref=[(0.040, 0.065, 10.0)]),
+    # E4 : 9 ohms, 200 V ; bruit (10 mV, 10 kHz, autre graine) et CAN 12 bits ensemble
+    essai_reglage("E4", 9.0, 200.0, 0.060, (), bruit=True, q=PAS_CAN),
+]
+for sc in REGLAGE:                         # aucun point de reglage n'est un point des onze essais
+    for s in SCENARIOS:
+        if abs(s["R0"] - sc["R0"]) < 1e-9 and np.any(np.abs(s["vin"] - sc["vin"][0]) < 1e-9):
+            raise RuntimeError(f"Le point de reglage {sc['code']} apparait dans l'essai {s['code']}.")
+
+
+def iae(P, I, D, sc):
+    """IAE du demarrage (0 a 30 ms) et IAE de 30 ms a la fin, conditions
+    initiales du bloc (M3)."""
+    sim = simuler(PIDParallele(P, I, D), sc)
+    e = np.abs(sim["consigne"] - sim["v"])
+    return float(np.sum(e[:K30]) * TC), float(np.sum(e[K30:]) * TC)
+
+
+IAE_ZN = None                                 # normalisation (calculee une fois, dans chaque processus)
+
+
+def iae_zn():
+    global IAE_ZN
+    if IAE_ZN is None:
+        IAE_ZN = np.array([iae(PID_P, PID_I, PID_D, sc) for sc in REGLAGE])
+    return IAE_ZN
+
+
+def violation(marge, fc):
+    """Violation des contraintes (0 si admissible), normalisee (Deb 2000)."""
+    return max(0.0, (MARGE_MINI - marge) / MARGE_MINI) + max(0.0, (fc - FC_MAXI) / FC_MAXI)
 
 
 def evaluer(x):
-    """Grandeurs d'un individu x = (a, b, c) : contraintes, puis, s'il les
-    respecte, les six demarrages. Ne depend pas de beta : le cout se calcule
-    ensuite pour chaque beta."""
+    """Contraintes, puis, si admissible, le cout J_reglage (M1)."""
     a, b, c = (float(t) for t in x)
     marge, fc = frequentiel(a, b, c)
-    res = {"a": a, "b": b, "c": c, "marge_min": marge, "fc_max": fc,
-           "admissible": bool(marge >= MARGE_MINI and fc <= FC_MAXI)}
+    viol = violation(marge, fc)
+    res = {"a": a, "b": b, "c": c, "marge_min": marge, "fc_max": fc, "violation": viol, "admissible": viol == 0.0}
     if res["admissible"]:
-        res["essais"] = []
-        for sc in REGLAGE:
-            sim = simuler(PIDParallele(PID_P * a, PID_I * b, PID_D * c, ci=CI_REGLAGE), sc)   # amendement 2
-            res["essais"].append(grandeurs_W(sim["v"]))
+        r = np.array([iae(PID_P * a, PID_I * b, PID_D * c, sc) for sc in REGLAGE]) / iae_zn()
+        res["ratios"] = r.tolist()
+        res["J"] = float(POIDS_DEM * np.mean(r[:, 0]) + (1.0 - POIDS_DEM) * np.mean(r[:, 1]))
     return res
 
 
-def cout(res, beta):
-    """W moyen sur les six demarrages, ou W_PENALITE si l'individu est refuse."""
-    if not res["admissible"]:
-        return W_PENALITE
-    return float(np.mean([W_de(g, beta) for g in res["essais"]]))
+def meilleur(r1, r2):
+    """Regles de Deb : r1 bat-il r2 ? Admissible bat non admissible ; deux
+    admissibles : plus petit J ; deux non admissibles : plus petite violation."""
+    if r1["admissible"] and r2["admissible"]:
+        return r1["J"] < r2["J"]
+    if r1["admissible"] != r2["admissible"]:
+        return r1["admissible"]
+    return r1["violation"] < r2["violation"]
 
 
-# %% ETAPE 3 : l'essaim (article, etapes 1 a 9)
+# %% ETAPE 3 : l'essaim (Gaing, etapes 1 a 9, comparaisons par les regles de Deb)
 
-def recherche(beta, graine, pool):
-    """Une recherche complete pour (beta, graine) ; renvoie son compte rendu."""
+def recherche(graine, pool):
     rng = np.random.default_rng(graine)
-    x = rng.uniform(K_MIN, K_MAX, (N_POP, 3))                 # etape 1 : positions
-    v = rng.uniform(-V_MAX, V_MAX, (N_POP, 3))                # et vitesses
-    res = pool.map(evaluer, [tuple(r) for r in x])            # etape 2
-    W = np.array([cout(r, beta) for r in res])
-    pbest, W_pbest, res_pbest = x.copy(), W.copy(), list(res)
-    g = int(np.argmin(W_pbest))                               # etape 4 : gbest
-    histo = [{"iter": 0, "W_gbest": float(W_pbest[g]), "f_moy": float(np.mean(1 / W)), "f_ect": float(np.std(1 / W)),
-              "gbest": pbest[g].tolist()}]
+    x = rng.uniform(K_MIN, K_MAX, (N_POP, 3))
+    v = rng.uniform(-V_MAX, V_MAX, (N_POP, 3))
+    res = pool.map(evaluer, [tuple(r) for r in x])
+    pbest, res_pbest = x.copy(), list(res)
+    g = 0
+    for i in range(1, N_POP):
+        if meilleur(res_pbest[i], res_pbest[g]):
+            g = i
+
+    def note(it):
+        adm = [r["J"] for r in res if r["admissible"]]
+        return {"iter": it, "J_gbest": res_pbest[g].get("J"), "violation_gbest": res_pbest[g]["violation"],
+                "gbest": pbest[g].tolist(), "part_admissible": len(adm) / N_POP,
+                "J_med_admissibles": float(np.median(adm)) if adm else None}
+
+    histo = [note(0)]
     for it in range(1, N_ITER + 1):
-        w = W_MAX - (W_MAX - W_MIN) / N_ITER * it              # eq. 12
-        r1 = rng.random((N_POP, 3))                           # rand()
-        r2 = rng.random((N_POP, 3))                           # Rand()
-        v = w * v + C1 * r1 * (pbest - x) + C2 * r2 * (pbest[g] - x)   # etape 5, eq. 14
-        v = np.clip(v, -V_MAX, V_MAX)                         # etape 6
-        x = np.clip(x + v, K_MIN, K_MAX)                      # etape 7, eq. 15
-        res = pool.map(evaluer, [tuple(r) for r in x])        # etapes 2 et 3
-        W = np.array([cout(r, beta) for r in res])
-        mieux = W < W_pbest                                   # etape 4
-        pbest[mieux], W_pbest[mieux] = x[mieux], W[mieux]
-        for i in np.where(mieux)[0]:
-            res_pbest[i] = res[i]
-        g = int(np.argmin(W_pbest))
-        histo.append({"iter": it, "W_gbest": float(W_pbest[g]), "f_moy": float(np.mean(1 / W)),
-                      "f_ect": float(np.std(1 / W)), "gbest": pbest[g].tolist()})
+        w = W_MAX - (W_MAX - W_MIN) / N_ITER * it
+        r1 = rng.random((N_POP, 3))
+        r2 = rng.random((N_POP, 3))
+        v = w * v + C1 * r1 * (pbest - x) + C2 * r2 * (pbest[g] - x)
+        v = np.clip(v, -V_MAX, V_MAX)
+        x = np.clip(x + v, K_MIN, K_MAX)
+        res = pool.map(evaluer, [tuple(r) for r in x])
+        for i in range(N_POP):
+            if meilleur(res[i], res_pbest[i]):
+                pbest[i], res_pbest[i] = x[i].copy(), res[i]
+        for i in range(N_POP):
+            if meilleur(res_pbest[i], res_pbest[g]):
+                g = i
+        histo.append(note(it))
     rg = res_pbest[g]
-    return {"beta": beta, "graine": graine, "gbest": pbest[g].tolist(), "W_gbest": float(W_pbest[g]),
+    return {"graine": graine, "gbest": pbest[g].tolist(), "J_reglage": rg.get("J"), "admissible": rg["admissible"],
             "gains": {"P": PID_P * pbest[g][0], "I": PID_I * pbest[g][1], "D": PID_D * pbest[g][2]},
             "marge_min": rg["marge_min"], "fc_max": rg["fc_max"],
-            "admissible": rg["admissible"],
-            "reglage": [{"essai": sc["code"], "Mp_pct": e[0], "Ess_pct": e[1], "tr_ms": e[2] * 1e3, "ts_ms": e[3] * 1e3,
-                         "W": W_de(e, beta)} for sc, e in zip(REGLAGE, rg.get("essais", []))],
+            "ratios": {sc["code"]: {"demarrage": q[0], "apres_30ms": q[1]}
+                       for sc, q in zip(REGLAGE, rg.get("ratios", []))},
             "historique": histo}
 
 
-# %% ETAPE 4 : les dix recherches (ou leur controle)
+# %% ETAPE 4 : les cinq recherches (ou leur controle)
 
 if __name__ == "__main__":
     T0 = time.time()
-    print(f"Points de reglage : {', '.join(sc['code'] for sc in REGLAGE)} ; tau1 = {TAU1 * 1e3:.4f} ms.")
+    print("Essais de reglage : " + " ; ".join(f"{sc['code']} R = {sc['R0']:g} ohms, Vin = {sc['vin'][0]:g} V, "
+                                               f"{sc['duree'] * 1e3:.0f} ms" for sc in REGLAGE))
+    print("IAE de Ziegler-Nichols (mV.s, demarrage / apres 30 ms) : " +
+          " ; ".join(f"{sc['code']} {q[0] * 1e3:.2f} / {q[1] * 1e3:.2f}" for sc, q in zip(REGLAGE, iae_zn())))
     ZN = evaluer((1.0, 1.0, 1.0))
     print(f"Ziegler-Nichols : marge minimale {ZN['marge_min']:.1f} degres, coupure {ZN['fc_max']:.0f} Hz, "
-          f"{'admissible' if ZN['admissible'] else 'REFUSE par les contraintes'}.")
-    if ZN["admissible"]:
-        for beta in BETAS:
-            print(f"  W de Ziegler-Nichols (beta = {beta}) : {cout(ZN, beta):.4f}")
+          f"{'admissible' if ZN['admissible'] else 'refuse par les contraintes'} (il ne sert qu'a normaliser).")
     resultats = {}
     if os.path.isfile(FICHIER) and not RECALCULER:
         with open(FICHIER, encoding="utf-8") as f:
             resultats = json.load(f)["recherches"]
         print(f"{len(resultats)} recherche(s) reprise(s) de recherche_pso_pid.json.")
     with mp.Pool(min(4, os.cpu_count() or 1)) as pool:
-        for beta in BETAS:
-            for graine in GRAINES:
-                cle = f"beta={beta:g},graine={graine}"
-                if cle in resultats:                          # controle du point repris
-                    r = resultats[cle]
-                    W_recalc = cout(evaluer(tuple(r["gbest"])), beta)
-                    ecart = abs(W_recalc - r["W_gbest"]) / r["W_gbest"]
-                    print(f"  {cle} : repris, W du gbest {r['W_gbest']:.6f}, recalcule {W_recalc:.6f} "
-                          f"(ecart relatif {ecart:.1e})")
-                    if ecart > 1e-9:
-                        raise RuntimeError(f"{cle} : le cout recalcule differe du fichier.")
-                    continue
-                t = time.time()
-                r = recherche(beta, graine, pool)
-                resultats[cle] = r
-                with open(FICHIER, "w", encoding="utf-8") as f:   # sauvegarde apres chaque recherche
-                    json.dump({"version": 2, "methode": "Gaing 2004, criteres_pso_pid.txt (amendements 1 et 2)",
-                               "recherches": resultats},
-                              f, indent=1, allow_nan=False)
-                print(f"  {cle} : {'' if r['admissible'] else 'AUCUN INDIVIDU ADMISSIBLE ; '}W = {r['W_gbest']:.5f}, gains x ZN ({r['gbest'][0]:.4f}, {r['gbest'][1]:.4f}, "
-                      f"{r['gbest'][2]:.4f}), marge {r['marge_min']:.1f} degres, coupure {r['fc_max']:.0f} Hz "
-                      f"({time.time() - t:.0f} s)", flush=True)
+        for graine in GRAINES:
+            cle = f"graine={graine}"
+            if cle in resultats:
+                r = resultats[cle]
+                J_recalc = evaluer(tuple(r["gbest"]))["J"]
+                ecart = abs(J_recalc - r["J_reglage"]) / r["J_reglage"]
+                print(f"  {cle} : repris, J_reglage {r['J_reglage']:.6f}, recalcule {J_recalc:.6f} (ecart {ecart:.1e})")
+                if ecart > 1e-9:
+                    raise RuntimeError(f"{cle} : le cout recalcule differe du fichier.")
+                continue
+            t = time.time()
+            r = recherche(graine, pool)
+            resultats[cle] = r
+            with open(FICHIER, "w", encoding="utf-8") as f:
+                json.dump({"version": 1, "methode": "PSO-PID : essaim de Gaing 2004, modifications M1 a M3 de criteres_pso_pid.txt",
+                           "recherches": resultats}, f, indent=1, allow_nan=False)
+            print(f"  {cle} : J_reglage = {r['J_reglage']:.5f}, gains x ZN ({r['gbest'][0]:.4f}, {r['gbest'][1]:.4f}, "
+                  f"{r['gbest'][2]:.4f}), marge {r['marge_min']:.1f} degres, coupure {r['fc_max']:.0f} Hz "
+                  f"({time.time() - t:.0f} s)", flush=True)
     print(f"Duree totale : {time.time() - T0:.0f} s.")

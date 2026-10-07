@@ -2,7 +2,7 @@
 %
 % OBJECTIF
 % --------
-% Construire Buck_Commun_PSO_PID.slx, le modele du PSO-PID (Gaing, 2004 ;
+% Construire Buck_Commun_PSO_PID.slx, le modele du PSO-PID (essaim de Gaing 2004, modifications M1 a M3 de criteres_pso_pid.txt ;
 % reglage hors ligne). C'est une copie de Buck_Commun.slx dans laquelle on
 % change seulement les gains P, I et D du bloc "PID Controller". Les gains
 % sont lus dans predictions_banc_pso_pid.json, ecrit par

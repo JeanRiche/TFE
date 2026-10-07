@@ -2,7 +2,7 @@
 %
 % OBJECTIF
 % --------
-% Simuler les trois modeles du PSO-PID (Gaing, 2004, gains fixes regles hors
+% Simuler les trois modeles du PSO-PID (essaim de Gaing 2004, modifications M1 a M3 de criteres_pso_pid.txt, gains fixes regles hors
 % ligne) construits sur les modeles de base de Jean-Riche
 % (Construction_PSO_PID_Trois_Modeles.m), mesurer les memes grandeurs que
 % Simuler_PSO_PID.m, comparer chaque modele a l'essai du banc qui lui

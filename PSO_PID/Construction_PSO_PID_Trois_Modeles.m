@@ -2,7 +2,7 @@
 %
 % OBJECTIF
 % --------
-% Construire, pour le PSO-PID (Gaing, 2004, reglage hors ligne), un modele
+% Construire, pour le PSO-PID (essaim de Gaing 2004, modifications M1 a M3 de criteres_pso_pid.txt, reglage hors ligne), un modele
 % Simulink par scenario de base, a partir des trois modeles de Jean-Riche :
 %   PID_Classique_Control.slx                     -> PSO_PID_Control.slx
 %   PID_Classique_Control_control_disturbance.slx -> PSO_PID_Control_control_disturbance.slx

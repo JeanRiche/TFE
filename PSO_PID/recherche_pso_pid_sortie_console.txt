@@ -1,15 +1,11 @@
 Dossier de travail : /home/user/TFE/PSO_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
-Points de reglage : R4.5_V180, R4.5_V220, R10_V180, R10_V220, R50_V180, R50_V220 ; tau1 = 1.7280 ms.
-Ziegler-Nichols : marge minimale -3.1 degres, coupure 1154 Hz, REFUSE par les contraintes.
-  beta=1,graine=1 : W = 0.49384, gains x ZN (0.6714, 0.0638, 3.5402), marge 68.8 degres, coupure 2188 Hz (616 s)
-  beta=1,graine=2 : W = 0.49328, gains x ZN (0.6707, 0.0634, 3.5305), marge 68.8 degres, coupure 2182 Hz (580 s)
-  beta=1,graine=3 : W = 0.49271, gains x ZN (0.6769, 0.0636, 3.5564), marge 68.8 degres, coupure 2197 Hz (549 s)
-  beta=1,graine=4 : W = 0.49373, gains x ZN (0.6743, 0.0642, 3.5558), marge 68.8 degres, coupure 2196 Hz (543 s)
-  beta=1,graine=5 : W = 0.49359, gains x ZN (0.6725, 0.0641, 3.5418), marge 68.8 degres, coupure 2188 Hz (602 s)
-  beta=1.5,graine=1 : W = 0.35572, gains x ZN (0.6764, 0.0592, 3.5427), marge 68.7 degres, coupure 2190 Hz (569 s)
-  beta=1.5,graine=2 : W = 0.35598, gains x ZN (0.6790, 0.0593, 3.5561), marge 68.7 degres, coupure 2198 Hz (588 s)
-  beta=1.5,graine=3 : W = 0.35534, gains x ZN (0.6777, 0.0592, 3.5500), marge 68.7 degres, coupure 2194 Hz (576 s)
-  beta=1.5,graine=4 : W = 0.35926, gains x ZN (0.6609, 0.0594, 3.4616), marge 68.6 degres, coupure 2143 Hz (542 s)
-  beta=1.5,graine=5 : W = 0.35533, gains x ZN (0.6788, 0.0592, 3.5551), marge 68.7 degres, coupure 2197 Hz (513 s)
-Duree totale : 5679 s.
+Essais de reglage : E1 R = 7 ohms, Vin = 190 V, 90 ms ; E2 R = 15 ohms, Vin = 210 V, 90 ms ; E3 R = 60 ohms, Vin = 220 V, 90 ms ; E4 R = 9 ohms, Vin = 200 V, 60 ms
+IAE de Ziegler-Nichols (mV.s, demarrage / apres 30 ms) : E1 87.02 / 35.69 ; E2 92.63 / 3.12 ; E3 166.05 / 28.58 ; E4 84.05 / 1.43
+Ziegler-Nichols : marge minimale -3.1 degres, coupure 1154 Hz, refuse par les contraintes (il ne sert qu'a normaliser).
+  graine=1 : J_reglage = 0.59673, gains x ZN (2.3962, 1.1815, 2.5673), marge 31.1 degres, coupure 2122 Hz (460 s)
+  graine=2 : J_reglage = 0.59493, gains x ZN (2.3434, 1.3631, 2.5941), marge 30.6 degres, coupure 2100 Hz (442 s)
+  graine=3 : J_reglage = 0.59387, gains x ZN (2.5512, 1.3686, 2.6128), marge 30.0 degres, coupure 2175 Hz (415 s)
+  graine=4 : J_reglage = 0.59792, gains x ZN (2.3492, 1.6428, 2.8098), marge 31.9 degres, coupure 2157 Hz (435 s)
+  graine=5 : J_reglage = 0.60152, gains x ZN (2.4147, 1.9336, 2.9222), marge 31.6 degres, coupure 2199 Hz (372 s)
+Duree totale : 2124 s.
