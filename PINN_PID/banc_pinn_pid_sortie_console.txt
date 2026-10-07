@@ -27,22 +27,3 @@ Gradient de l'horizon contre differences finies : ecart relatif maximal 6.7e-08.
     S8b  depassement  44.9 %, IAE    3.27 mV.s, efficace    63.0 mV, |dd| 0.0045 ; fenetres adaptees  33/400, gains changes  33, Ki de 0.87 a 1.63, gains finaux x(2.60, 1.63, 1.25)
     S9   depassement   3.4 %, IAE  341.13 mV.s, efficace  6782.1 mV, |dd| 0.0028 ; fenetres adaptees  74/840, gains changes  74, Ki de 0.55 a 1.04, gains finaux x(2.45, 1.04, 0.98)
   (25 s)
-
-  Plafond (modele physique nominal a la place du PINN) : J = 0.689 ; tous les evenements reviennent
-    S1   depassement   3.5 %, IAE    1.49 mV.s, efficace    10.0 mV, |dd| 0.0027 ; fenetres adaptees   7/400, gains changes   7, Ki de 0.92 a 1.02, gains finaux x(1.29, 0.92, 0.77)
-    S2   depassement   3.5 %, IAE    3.63 mV.s, efficace   158.4 mV, |dd| 0.0026 ; fenetres adaptees  13/400, gains changes  13, Ki de 0.87 a 1.02, gains finaux x(1.53, 0.87, 0.65)
-    S3   depassement   3.5 %, IAE    6.22 mV.s, efficace   316.6 mV, |dd| 0.0030 ; fenetres adaptees  13/400, gains changes  13, Ki de 0.86 a 1.02, gains finaux x(1.69, 0.90, 0.84)
-    S4   depassement   3.5 %, IAE   18.11 mV.s, efficace   807.3 mV, |dd| 0.0030 ; fenetres adaptees  22/400, gains changes  22, Ki de 0.92 a 1.06, gains finaux x(1.62, 1.02, 0.85)
-    S5   depassement   3.5 %, IAE    3.04 mV.s, efficace    72.6 mV, |dd| 0.0038 ; fenetres adaptees  15/400, gains changes  15, Ki de 0.89 a 1.02, gains finaux x(1.84, 0.97, 1.32)
-    S6   depassement   3.5 %, IAE    1.63 mV.s, efficace    11.7 mV, |dd| 0.0027 ; fenetres adaptees   7/400, gains changes   7, Ki de 0.92 a 1.02, gains finaux x(1.29, 0.92, 0.77)
-    S7a  depassement   3.4 %, IAE    3.73 mV.s, efficace    26.8 mV, |dd| 0.0058 ; fenetres adaptees   7/400, gains changes   7, Ki de 0.94 a 1.02, gains finaux x(1.29, 0.94, 0.89)
-    S7b  depassement   3.4 %, IAE    2.48 mV.s, efficace    18.1 mV, |dd| 0.0043 ; fenetres adaptees   7/400, gains changes   7, Ki de 0.94 a 1.02, gains finaux x(1.28, 0.94, 0.87)
-    S8a  depassement  24.0 %, IAE    3.11 mV.s, efficace    65.3 mV, |dd| 0.0048 ; fenetres adaptees  24/400, gains changes  24, Ki de 0.97 a 1.64, gains finaux x(2.17, 1.64, 1.48)
-    S8b  depassement  45.0 %, IAE    3.47 mV.s, efficace    65.5 mV, |dd| 0.0045 ; fenetres adaptees  39/400, gains changes  39, Ki de 0.91 a 1.77, gains finaux x(2.76, 1.77, 1.21)
-    S9   depassement   3.4 %, IAE  330.85 mV.s, efficace  6727.5 mV, |dd| 0.0030 ; fenetres adaptees  68/840, gains changes  68, Ki de 0.67 a 1.21, gains finaux x(2.75, 1.21, 1.12)
-
-  Controle : PINN-PID sans adaptation contre R0, ecart maximal sur d : 0.0e+00.
-
-==============================================================================
- ETAPE 4 : ce que chaque piece apporte (ablations)
-==============================================================================

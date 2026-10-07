@@ -177,10 +177,52 @@ d'admissibilite, le depart.
   plafond (modele physique a la place du PINN), R0.
 
 
-7. RESULTATS
-------------
-  (a completer apres le calcul)
+7. RESULTATS (7 octobre 2026 ; banc_pinn_pid_sortie_console.txt)
+-----------------------------------------------------------------
+                            J      apres 30 ms   demarrage   non revenus
+    Ziegler-Nichols       1.000      1.000         1.000      S8b, S9
+    meilleur PID fige     0.738      0.710         0.831      -
+      (sur grille, choisi sur les onze essais)
+    R0 (gains figes)      0.917      0.986         0.687      S8b, S9
+    PINN-PID (M1-M2)      0.692      0.697         0.672      -
+    plafond (modele       0.689      0.693         0.674      -
+      physique au lieu du PINN)
+  Ablations : boite (version de depart) 0.684 ; M1 sans restauration
+  0.689 ; sans seuil 0.807 ; sans Vin_eff 0.691 ; modele physique faux
+  0.730 (L et C x2) et 0.694 (x0.5) ; R0 aux gains finaux du PINN-PID sur
+  S8b, x(2.60, 1.63, 1.25), gains FIGES : 0.652.
+  Sensibilite (L ou C a +-0.1 %) : J de 0.679 a 0.690.
+  Fenetres ou les gains changent : S1 7, S2 13, S3 13, S4 22, S5 15, S6 7,
+  S7a 8, S7b 7, S8a 24, S8b 33, S9 74. Ki maximal (x ZN) : S8a 1.64, S8b
+  1.63 (la boite plafonnait Ki a 1). Kd descend sous 1 x ZN sur les cas de
+  base (S1 0.76, S2 0.68, S3 0.84 en fin d'essai), ce que la boite
+  interdisait aussi.
+  IAE apres 30 ms (mV.s), boite / PINN-PID : S8a 3.14 / 3.09 ; S8b
+  3.18 / 3.27 ; S9 317.2 / 341.1 (Ki descend a 0.55 x ZN pendant S9).
+  R1 a R7 justes.
 
+Lecture (pour le memoire)
+  1. Le defaut corrige sur l'ELM-PID (gains immobiles sur les cas de base)
+     n'existait pas sur le PINN-PID. Le defaut commun, la boite au coin,
+     existait : il est corrige (M1, M2), et les gains explorent maintenant
+     tout l'ensemble admissible (Ki jusqu'a 1.64 x ZN, Kd sous 1 x ZN).
+  2. Cela ne change pas le resultat de facon mesurable : 0.692 contre 0.684,
+     un ecart plus petit que celui que produit L ou C a +-0.1 % (0.679 a
+     0.690). La boite n'etait donc pas ce qui limitait le PINN-PID. La
+     modification est gardee, conformement a la regle ecrite avant le
+     calcul (R4 juste) : choisir la boite apres avoir vu les onze essais,
+     pour 0.008, serait regler sur les essais.
+  3. Le constat le plus important est l'ablation "R0 aux gains finaux de
+     S8b" : la meme loi, avec les gains que le PINN-PID a trouves sur S8b
+     mais FIGES, donne 0.652, mieux que le PINN-PID adaptatif (0.692). Le
+     PINN-PID sert ici surtout a trouver de bons gains ; les faire varier
+     en ligne n'ajoute rien, et coute un peu (S9). Reserve : ces gains
+     figes viennent d'un des onze essais ; ce n'est pas une methode, c'est
+     une mesure de ce que l'adaptation apporte. A ecrire tel quel.
+  4. La precision du predicteur compte peu (deja publie) : plafond 0.689,
+     modele physique faux 0.694 a 0.730. Comme pour l'ELM-PID, le
+     resultat vient surtout de la boucle d'adaptation (seuil, Adam,
+     projection), pas du reseau.
 
 8. REFERENCES
 -------------
