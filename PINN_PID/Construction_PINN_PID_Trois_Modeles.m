@@ -74,7 +74,7 @@
 %   3. Simuler_PINN_PID_Trois_Modeles.m.
 %
 % Prerequis dans le dossier courant MATLAB : les trois modeles de base
-% ci-dessus, pinn_pid_adaptatif.m, pinn_pid_modele.mat, pinn_pid_reglages.mat, ensemble_gains_pinn.mat
+% ci-dessus, pinn_pid_adaptatif.m, pinn_pid_modele.mat, pinn_pid_reglages.mat
 % et predictions_banc_pinn_pid.json (PINN-PID).
 % Duree : deux a cinq minutes (trois constructions et trois auto-tests).
 % Compatible R2024a.
@@ -99,7 +99,7 @@ TOLERANCE_TEST = 0.05;                            % ecart maximal au banc (V)
 
 % --- Prerequis ---
 for f = [strcat(MODELES(:, 1)', '.slx'), {[CLASSE '.m'], 'pinn_pid_modele.mat', 'pinn_pid_reglages.mat', ...
-         'ensemble_gains_pinn.mat', 'predictions_banc_pinn_pid.json'}]
+         'predictions_banc_pinn_pid.json'}]
     if ~isfile(fullfile(pwd, f{1}))
         error('Fichier introuvable dans le dossier courant : %s', f{1});
     end

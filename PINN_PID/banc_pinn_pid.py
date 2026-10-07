@@ -2,10 +2,8 @@
 # banc_pinn_pid.py
 #
 # VERSION
-#   2 (7 octobre 2026) : les gains sont projetes sur l'ensemble admissible
-#   (M1, ensemble_gains_pinn.mat) avec restauration vers la frontiere (M2,
-#   Rosen 1961) au lieu de la boite ; methode, previsions et resultats :
-#   criteres_pinn_pid.txt. 1 (5 octobre 2026), etape 4.
+#   1 (5 octobre 2026), PINN-PID sur la base commune v2 (banc commun 2.1),
+#   etape 4.
 #
 # OBJECTIF
 #   Faire tourner le PINN-PID sur le banc commun, sur les onze essais, a
@@ -30,11 +28,10 @@
 #        u(k) = sat( u(k-1) + Kp (e(k) - e(k-1)) + Ki e(k) + Kd (g(k) - g(k-1)) ),
 #      sat = [0.01 ; 0.99], seule saturation du rapport cyclique ; depart
 #      u = 0.5, premier pas sans a-coup ; gains de depart de Ziegler-Nichols
-#      en forme incrementale. Gains admissibles : ensemble de
-#      ensemble_gains_pinn.mat (marge nominale au moins celle du depart,
-#      coupure au plus fs/10), le meme critere que la boite de la version de
-#      depart (boite_gains_elm.json, gardee pour l'echelle de theta et pour
-#      l'ablation "boite").
+#      en forme incrementale, boite des gains de l'ELM-PID
+#      (boite_gains_elm.json). Decision de Jean-Riche du 5 octobre 2026 :
+#      meme loi, meme depart, meme boite que l'ELM-PID ; seule l'adaptation
+#      change.
 #   2. Observateur (consequence de l'etape 3, estimation_etat_pinn.py : la
 #      charge n'est pas estimable a partir de Vout) : filtre de Kalman etendu
 #      sur [Vout, iL, Vin_eff] avec la charge nominale G = 1/5 S. Vin_eff
@@ -44,9 +41,8 @@
 #      appliquee.
 #   3. A la fin de chaque fenetre de 110 periodes (0.5 ms), si l'erreur
 #      efficace mesuree sur la fenetre depasse SEUIL = 0.1 V : 5 iterations
-#      d'Adam sur les gains normalises theta (echelle de la boite : 0 au bord
-#      bas, 1 au bord haut ; theta peut en sortir), chaque iteration suivie
-#      de la projection sur l'ensemble admissible (M1, M2). Cout, sur un horizon de 110 pas a partir de l'etat estime,
+#      d'Adam sur les gains normalises theta (0 au bord bas de la boite, 1 au
+#      bord haut). Cout, sur un horizon de 110 pas a partir de l'etat estime,
 #      la loi de Lu dans la boucle et la consigne courante :
 #        J = moyenne de [ e^2 / (1 V)^2 + RHO (du / 0.01)^2 ] + MU |theta - theta_debut|^2.
 #      Le predicteur de l'horizon est le PINN (pinn_pid_modele.mat) ; dans
@@ -58,7 +54,7 @@
 #      valeur exacte vers l'avant, pente de 0.01 vers l'arriere hors des
 #      bornes.
 #
-# LES REGLAGES (fixes avant les essais, criteres_pinn_pid.txt)
+# LES REGLAGES (fixes avant les essais, criteres_etape4_regulateur.txt)
 #   SEUIL = 0.1 V (zone morte de l'ELM-PID) ; horizon 110 pas ; Adam :
 #   ALPHA = 0.01, BETA1 = 0.9, BETA2 = 0.999, EPS = 1e-7 (Ito et Wasa),
 #   5 iterations, moments remis a zero a chaque fenetre ; RHO = 0.01 ;
@@ -93,7 +89,7 @@
 #
 # COMMENT LANCER CE SCRIPT
 #   python banc_pinn_pid.py
-#   Duree : dix a quinze minutes.
+#   Duree : une quinzaine de minutes.
 #
 # ORDRE D'EXECUTION (PINN-PID)
 #   1. entrainement_pinn.py ; 2. estimation_etat_pinn.py ; 3. ce script ;
@@ -135,7 +131,7 @@ CODES_IAE = ["S1", "S3", "S4", "S5", "S6", "S7a", "S7b", "S8a", "S8b", "S9"]   #
 CODES_DEM = ["S1", "S8a", "S8b"]              # IAE du demarrage (5, 25 et 98 ohms)
 K30 = int(round(0.03 / TC))                   # instant 30 ms (numero de pas Tc)
 NF = 110                                      # periodes Tc par fenetre de 0.5 ms
-CODES_REJEU = ["S1", "S3", "S7b", "S8b", "S9"]   # essais rejoues dans le bloc MATLAB
+CODES_REJEU = ["S1", "S7b", "S8b", "S9"]      # essais rejoues dans le bloc MATLAB
 TCN = TC * PID_N                              # Tc x N du filtre de derivee (meme produit dans le bloc MATLAB)
 L_MOD, C_MOD = L_BOB, C_CONV                  # L et C du modele du regulateur (le circuit peut etre perturbe a part)
 
@@ -149,21 +145,11 @@ K_ZN = np.array([PID_P, PID_I * TC, PID_D / TC])   # Ziegler-Nichols, forme incr
 if np.max(np.abs(np.array(BOITE["K_depart"]) - K_ZN) / K_ZN) > 1e-12:
     raise RuntimeError("boite_gains_elm.json n'a pas ete calcule avec les gains de Ziegler-Nichols de ce banc.")
 
-# Ensemble admissible (M1 de criteres_pinn_pid.txt) : meme critere que la boite, tabule (ensemble_gains_pinn.py)
-ENS = loadmat(os.path.join(DOSSIER_PINN, "ensemble_gains_pinn.mat"))
-G_TABLE = ENS["G_TABLE"].astype(float)
-LOG2_MIN, PAS_LOG2 = float(ENS["LOG2_MIN"].item()), float(ENS["PAS_LOG2"].item())
-N_TABLE = G_TABLE.shape[0]
-if np.max(np.abs(ENS["K_DEPART"].ravel() - K_ZN) / K_ZN) > 1e-12:
-    raise RuntimeError("ensemble_gains_pinn.mat n'a pas ete calcule avec les gains de Ziegler-Nichols de ce banc.")
-
 # Reglages du PINN-PID (voir l'en-tete)
 REGLAGES = {"SEUIL": 0.1, "NH": float(NF), "ALPHA": 0.01, "BETA1": 0.9, "BETA2": 0.999, "EPS_ADAM": 1e-7,
             "N_ADAM": 5.0, "MU": 0.02, "RHO": 0.01, "DU_ECHELLE": 0.01, "PENTE_SAT": 0.01,
             "G_NOM": 0.2, "VIN_DEPART": 200.0, "SIG_Y": (200.0 / 4096.0) / np.sqrt(12.0),
-            "SIG_V": 1e-3, "SIG_I": 1e-2, "SIG_VIN": 0.03, "P0_I": 1.0, "P0_VIN": 30.0 ** 2,
-            "PROJECTION": 1.0, "RESTAURATION": 1.0, "MULT_MIN": 0.25, "MULT_MAX": 4.0,
-            "N_BISSECTIONS": 30.0, "H_GRADIENT": 1e-4, "N_PROJECTION": 10.0}
+            "SIG_V": 1e-3, "SIG_I": 1e-2, "SIG_VIN": 0.03, "P0_I": 1.0, "P0_VIN": 30.0 ** 2}
 
 # Meilleur PID fige (deuxieme reference, oracle)
 with open(os.path.join(DOSSIER_PINN, "predictions_banc_pid_fige.json"), encoding="utf-8") as f:
@@ -390,114 +376,6 @@ class LoiLu:
         return u
 
 
-def g_interp(x):
-    """g de l'ensemble admissible (g <= 0 : admissible), interpolation
-    trilineaire en log2 des multiplicateurs x = K / K_ZN (memes operations
-    que g_interp du bloc MATLAB et de l'ELM-PID)."""
-    u = (np.log2(x) - LOG2_MIN) / PAS_LOG2
-    u = np.minimum(np.maximum(u, 0.0), N_TABLE - 1.0)
-    i = np.minimum(np.floor(u), N_TABLE - 2.0).astype(int)
-    f = u - i
-    s = 0.0
-    for di in (0, 1):
-        wi = f[0] if di else 1.0 - f[0]
-        for dj in (0, 1):
-            wj = f[1] if dj else 1.0 - f[1]
-            for dk in (0, 1):
-                wk = f[2] if dk else 1.0 - f[2]
-                s += wi * wj * wk * G_TABLE[i[0] + di, i[1] + dj, i[2] + dk]
-    return s
-
-
-def gradient_g(x, h):
-    """Gradient de g par differences centrees (normale a la frontiere)."""
-    gr = np.zeros(3)
-    for q in range(3):
-        ep = np.zeros(3)
-        ep[q] = h
-        gr[q] = (g_interp(x + ep) - g_interp(x - ep)) / (2.0 * h)
-    return gr
-
-
-def restaurer(p, gr, r):
-    """Restauration (M2) : recul de p le long de -gr jusqu'a la frontiere
-    (doublement puis bissection) ; None si un recul de 1 ne suffit pas."""
-    lo_, hi_ = r["MULT_MIN"], r["MULT_MAX"]
-    nh = gr / np.sqrt(gr @ gr)
-    s_ok = 1e-6
-    while g_interp(np.minimum(np.maximum(p - s_ok * nh, lo_), hi_)) > 0.0:
-        s_ok *= 2.0
-        if s_ok > 1.0:
-            return None
-    s_ko = 0.0 if s_ok == 1e-6 else 0.5 * s_ok
-    for _ in range(int(r["N_BISSECTIONS"])):
-        m = 0.5 * (s_ko + s_ok)
-        if g_interp(np.minimum(np.maximum(p - m * nh, lo_), hi_)) <= 0.0:
-            s_ok = m
-        else:
-            s_ko = m
-    return np.minimum(np.maximum(p - s_ok * nh, lo_), hi_)
-
-
-def projeter(xc, dx, r):
-    """Pas dx depuis xc (admissible), projete sur l'ensemble admissible
-    (M1) : point de sortie sur le segment, puis, si RESTAURATION (M2),
-    projection du gradient de Rosen (1961) : composante sortante retiree,
-    pas tangent, retour sur la frontiere le long de la normale, tant que le
-    point se rapproche de la cible (N_PROJECTION fois au plus). Sans
-    restauration : glissement tangent coupe par bissection. Meme code que
-    l'ELM-PID (banc_elm_pid.py)."""
-    lo_, hi_ = r["MULT_MIN"], r["MULT_MAX"]
-    nb = int(r["N_BISSECTIONS"])
-    xn = np.minimum(np.maximum(xc + dx, lo_), hi_)
-    if g_interp(xn) <= 0.0:
-        return xn
-    z = xn
-    a, b = 0.0, 1.0
-    for _ in range(nb):
-        m = 0.5 * (a + b)
-        if g_interp(np.minimum(np.maximum(xc + m * dx, lo_), hi_)) <= 0.0:
-            a = m
-        else:
-            b = m
-    xb = np.minimum(np.maximum(xc + a * dx, lo_), hi_)
-    if r["RESTAURATION"]:
-        y = xb
-        for _ in range(int(r["N_PROJECTION"])):
-            gr = gradient_g(y, r["H_GRADIENT"])
-            if gr @ gr == 0.0:
-                break
-            d = z - y
-            sortant = gr @ d
-            if sortant > 0.0:
-                d = d - sortant / (gr @ gr) * gr
-            pt = np.minimum(np.maximum(y + d, lo_), hi_)
-            if g_interp(pt) > 0.0:
-                pt = restaurer(pt, gr, r)
-                if pt is None:
-                    break
-            if np.sum((z - pt) ** 2) >= np.sum((z - y) ** 2):
-                break
-            y = pt
-        return y
-    gr = gradient_g(xb, r["H_GRADIENT"])
-    reste = (1.0 - a) * dx
-    sortant = gr @ reste
-    if sortant > 0.0:
-        reste = reste - sortant / (gr @ gr) * gr
-    xn = np.minimum(np.maximum(xb + reste, lo_), hi_)
-    if g_interp(xn) <= 0.0:
-        return xn
-    a, b = 0.0, 1.0
-    for _ in range(nb):
-        m = 0.5 * (a + b)
-        if g_interp(np.minimum(np.maximum(xb + m * reste, lo_), hi_)) <= 0.0:
-            a = m
-        else:
-            b = m
-    return np.minimum(np.maximum(xb + a * reste, lo_), hi_)
-
-
 class PINNPID:
     """Copie Python de pinn_pid_adaptatif.m (memes reglages, meme ordre des
     operations : Tester_PINN_PID_Rejeu.m compare les deux pas par pas). Les
@@ -505,13 +383,8 @@ class PINNPID:
     bloc."""
     utilise_mesure = True                     # le banc commun passe aussi la mesure
 
-    def __init__(self, predicteur="pinn", adapter=True, seuil=None, svin=None, projection=None, restauration=None):
+    def __init__(self, predicteur="pinn", adapter=True, seuil=None, svin=None):
         r = REGLAGES
-        self.r_proj = dict(r)                 # reglages de la projection (M1, M2), modifiables pour les ablations
-        if projection is not None:
-            self.r_proj["PROJECTION"] = float(projection)
-        if restauration is not None:
-            self.r_proj["RESTAURATION"] = float(restauration)
         if predicteur == "pinn":
             self.pas_pred = pinn_pas          # le PINN de l'etape 2
         elif predicteur == "modele":
@@ -576,14 +449,8 @@ class PINNPID:
             gth = gK * DK + 2 * R["MU"] * (th - th0)
             m = R["BETA1"] * m + (1 - R["BETA1"]) * gth
             vv = R["BETA2"] * vv + (1 - R["BETA2"]) * gth * gth
-            th_prec = th
             th = th - R["ALPHA"] * (m / (1 - b1t)) / (np.sqrt(vv / (1 - b2t)) + R["EPS_ADAM"])
-            if self.r_proj["PROJECTION"]:                       # M1-M2 : projection sur l'ensemble admissible
-                xc = (K_MIN + th_prec * DK) / K_ZN
-                xn = projeter(xc, (K_MIN + th * DK) / K_ZN - xc, self.r_proj)
-                th = (xn * K_ZN - K_MIN) / DK
-            else:                                               # version de depart : projection sur la boite
-                th = np.minimum(np.maximum(th, 0.0), 1.0)
+            th = np.minimum(np.maximum(th, 0.0), 1.0)          # projection sur la boite
         self.theta = th
         self.K = K_MIN + th * DK
 
@@ -660,12 +527,6 @@ print(f"  Meilleur PID fige : J = {J_REF['meilleur PID fige']:.3f} (recherche_pi
 titre("ETAPE 3 : PINN-PID et plafond (modele physique a la place du PINN)")
 
 
-def changements(reg):
-    """Nombre de fenetres ou les gains ont effectivement change."""
-    G = np.array([K_ZN] + [x["K"] for x in reg.journal])
-    return int(np.sum(np.any(np.abs(np.diff(G, axis=0)) > 1e-15 * K_ZN, axis=1)))
-
-
 def bilan(nom, res):
     """Cout J, retours et une ligne par essai."""
     J = float(np.mean(termes(res) / T_ZN))
@@ -674,11 +535,9 @@ def bilan(nom, res):
     for code, r in res.items():
         o = r["o"]; jr = r["reg"].journal
         Kf = jr[-1]["K"] / K_ZN
-        G = np.array([x["K"] for x in jr]) / K_ZN
         print(f"    {code:4s} depassement {o['depassement_pct']:5.1f} %, IAE {o['IAE'] * 1e3:7.2f} mV.s, efficace "
               f"{o['e_eff_V'] * 1e3:7.1f} mV, |dd| {o['dd_moyen']:.4f} ; fenetres adaptees "
-              f"{sum(x['adapte'] for x in jr):3d}/{len(jr)}, gains changes {changements(r['reg']):3d}, Ki de "
-              f"{G[:, 1].min():.2f} a {G[:, 1].max():.2f}, gains finaux x({Kf[0]:.2f}, {Kf[1]:.2f}, {Kf[2]:.2f})")
+              f"{sum(x['adapte'] for x in jr):3d}/{len(jr)}, gains finaux x({Kf[0]:.2f}, {Kf[1]:.2f}, {Kf[2]:.2f})")
     return J
 
 
@@ -706,9 +565,7 @@ K_FIN_S8B = PINN["S8b"]["reg"].journal[-1]["K"].copy()
 # ablations, pas des choix du regulateur.
 PRED_FAUX_2 = predicteur_modele_faux(2.0, 2.0)
 PRED_FAUX_05 = predicteur_modele_faux(0.5, 0.5)
-ABLATIONS = {"Boite (version de depart)": lambda: PINNPID("pinn", projection=0.0),
-             "M1 sans restauration": lambda: PINNPID("pinn", restauration=0.0),
-             "Sans seuil (adaptation a chaque fenetre)": lambda: PINNPID("pinn", seuil=0.0),
+ABLATIONS = {"Sans seuil (adaptation a chaque fenetre)": lambda: PINNPID("pinn", seuil=0.0),
              "Sans Vin_eff (Vin fixee a 200 V)": lambda: PINNPID("pinn", svin=0.0),
              "R0 aux gains finaux du PINN-PID sur S8b": lambda: LoiLu(K_FIN_S8B),
              "Modele physique faux (L et C x2)": lambda: PINNPID(PRED_FAUX_2),
@@ -793,35 +650,6 @@ for code in ESSAIS:
             continue
         print("  " + f"{code + ' ' + etiquette:28s}" + "".join(f"{fmt.format(TOUS[n][code]['o'][cle] * k):>18s}" for n in TOUS))
 print("  " + f"{'activite |dd| (S1)':28s}" + "".join(f"{TOUS[n]['S1']['o']['dd_moyen']:18.4f}" for n in TOUS))
-DECOMP = {}
-for n in TOUS:
-    rr = termes(TOUS[n]) / T_ZN
-    DECOMP[n] = (float(np.mean(rr[:10])), float(np.mean(rr[10:])))
-print("  Decomposition de J (apres 30 ms ; demarrage) : " +
-      " ; ".join(f"{n} {DECOMP[n][0]:.3f} / {DECOMP[n][1]:.3f}" for n in TOUS))
-
-titre("ETAPE 5b : previsions R1 a R7 de criteres_pinn_pid.txt")
-KI_MAX = {c: float(max(x["K"][1] for x in PINN[c]["reg"].journal) / K_ZN[1]) for c in PINN}
-APRES30 = {c: sum(1 for x in PINN[c]["reg"].journal if x["adapte"] and x["k"] + 1 > K30) for c in ("S7a", "S7b")}
-J_SENS = [x["J"] for x in SENSIBILITE]
-J_BOITE = J_ABL["Boite (version de depart)"]
-PREV = {"R1": all(changements(PINN[c]["reg"]) >= 1 for c in ("S1", "S2", "S3")),
-        "R2": sum(KI_MAX[c] > 1.01 for c in ("S3", "S4", "S5", "S8a", "S8b", "S9")) >= 4,
-        "R3": 0.66 <= J_PINN <= 0.71 and not non_revenus(PINN),
-        "R4": abs(J_PINN - J_BOITE) <= 0.02,
-        "R5": abs(J_BOITE - 0.684) <= 0.001,
-        "R6": all(v == 0 for v in APRES30.values()),
-        "R7": max(abs(j - J_PINN) for j in J_SENS) <= 0.02}
-TEXTE = {"R1": "; ".join(f"{c} : {changements(PINN[c]['reg'])} fenetres" for c in ("S1", "S2", "S3")),
-         "R2": "Ki maximal x ZN : " + ", ".join(f"{c} {KI_MAX[c]:.3f}" for c in ("S3", "S4", "S5", "S8a", "S8b", "S9")),
-         "R3": f"J = {J_PINN:.3f} ; " + ("tous les evenements reviennent" if not non_revenus(PINN)
-                                        else "pas revenus : " + ",".join(non_revenus(PINN))),
-         "R4": f"J = {J_PINN:.3f}, boite (version de depart) {J_BOITE:.3f}",
-         "R5": f"boite (version de depart) {J_BOITE:.4f}",
-         "R6": f"fenetres adaptees apres 30 ms : S7a {APRES30['S7a']}, S7b {APRES30['S7b']}",
-         "R7": f"J de {min(J_SENS):.3f} a {max(J_SENS):.3f} (nominal {J_PINN:.3f})"}
-for k_ in PREV:
-    print(f"  {k_} {'juste' if PREV[k_] else 'FAUSSE'} : {TEXTE[k_]}")
 
 
 # %% ETAPE 6 : fichiers pour Simulink et MATLAB, resultats et figure
@@ -830,7 +658,7 @@ titre("ETAPE 6 : fichiers pour Simulink et MATLAB")
 pas_1ms = int(round(1e-3 / TC))               # 220 periodes Tc
 predictions = {"version": 2, "Te": TC,
                "regulateur": "PINN-PID (loi de Lu a derivee filtree, PINN de l'etape 2, observateur a charge nominale, "
-                             "projection sur l'ensemble admissible M1-M2)",
+                             "boite boite_gains_elm.json)",
                "reglages": REGLAGES,
                "boite": {"K_min": K_MIN.tolist(), "K_max": K_MAX.tolist(), "K_depart": K_ZN.tolist()},
                "controle": {"ecart_vecteurs_test": ECART_TEST, "ecart_sans_adaptation_R0": ECART_R0,
@@ -852,7 +680,7 @@ reglages_mat = {k: float(v) for k, v in REGLAGES.items()}
 reglages_mat.update({"K_MIN": K_MIN.reshape(1, 3), "K_MAX": K_MAX.reshape(1, 3), "K_DEPART": K_ZN.reshape(1, 3),
                      "NF": float(NF), "TC": TC, "N_FILTRE": PID_N, "D_MIN": D_MIN, "D_MAX": D_MAX, "U_DEPART": 0.5,
                      "NPER": float(NPER), "NREG": float(NREG), "L_MOD": L_MOD, "VF": VF,
-                     "PHI": PHI.reshape(NS + 1, 4), "GAM": GAM, "PREDICTEUR_PINN": 1.0, "VERSION": 2.0})
+                     "PHI": PHI.reshape(NS + 1, 4), "GAM": GAM, "PREDICTEUR_PINN": 1.0, "VERSION": 1.0})
 savemat(os.path.join(DOSSIER_PINN, "pinn_pid_reglages.mat"), reglages_mat)
 print("  pinn_pid_reglages.mat ecrit (reglages du bloc ; PHI range ligne par ligne : [p11 p12 p21 p22]).")
 
@@ -873,9 +701,7 @@ def resume_essais(res):
     return {c: {"grandeurs": res[c]["o"], "IAE_dem": res[c]["IAE_dem"], "revenus": res[c]["revenus"]} for c in res}
 
 
-sortie = {"version": 2, "reglages": REGLAGES, "echelle_theta": predictions["boite"], "J": J_TOUS, "J_ablations": J_ABL,
-          "decomposition": DECOMP, "previsions": {k_: {"juste": bool(PREV[k_]), "detail": TEXTE[k_]} for k_ in PREV},
-          "fenetres_gains_changes": {c: changements(PINN[c]["reg"]) for c in PINN},
+sortie = {"version": 1, "reglages": REGLAGES, "boite": predictions["boite"], "J": J_TOUS, "J_ablations": J_ABL,
           "sensibilite": SENSIBILITE, "marges": MARGES,
           "references": {n: resume_essais(TOUS[n]) for n in TOUS},
           "ablations": {n: resume_essais(RES_ABL[n]) for n in RES_ABL},

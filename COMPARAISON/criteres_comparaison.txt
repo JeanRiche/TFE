@@ -1,0 +1,63 @@
+COMPARAISON DES CINQ METHODES : CHOIX D'UN SCENARIO ET CLASSEMENT
+Regle ecrite le 7 octobre 2026, AVANT le calcul des classements par essai
+=============================================================================
+
+Demande de Jean-Riche : trouver, parmi les essais, ceux qui revelent le
+mieux la difference entre les cinq methodes (Ziegler-Nichols, PSO-PID,
+Fuzzy-PID, ELM-PID, PINN-PID), en choisir un pour la comparaison du
+memoire, et classer les methodes selon ce scenario.
+
+Ce qui est deja connu avant d'ecrire cette regle (risque de biais, declare)
+  Les cout J globaux (13 termes sur les onze essais) : PINN-PID 0.684,
+  PSO-PID 0.714, ELM-PID 0.728, Fuzzy-PID 0.877, Ziegler-Nichols 1.000 ; et
+  quelques IAE isoles, vus pendant la mise au point de chaque methode
+  (S5, S8b, S9 surtout). Le tableau complet par essai et par methode n'a
+  pas ete calcule. C'est pour cela que la regle est fixee avant, et que le
+  classement de chaque essai sera publie (annexe), pas seulement celui du
+  scenario retenu.
+
+Donnees
+  Les resultats du banc commun v2.1, deja calcules par chaque methode dans
+  sa version finale (memes essais, meme simulateur, memes grandeurs) :
+  PSO_PID/banc_pso_pid_resultats.json, FUZZY_PID/banc_fuzzy_pid_resultats.json,
+  ELM_PID/banc_elm_pid_resultats.json, PINN_PID/banc_pinn_pid_resultats.json.
+  Controle : les grandeurs de Ziegler-Nichols doivent etre identiques dans
+  les quatre fichiers.
+
+Grandeur de comparaison par essai
+  IAE de 30 ms a la fin (la grandeur de 10 des 13 termes de J : elle mesure
+  la reponse aux evenements, le demarrage etant le meme a 5 ohms dans S1 a
+  S7). Le demarrage est compare a part (IAE de 0 a 30 ms).
+
+Essais candidats
+  S2 a S9 sauf S7a. Exclus : S1 (aucun evenement apres 30 ms : l'IAE n'y
+  mesure que l'ondulation) et S7a (mesure quantifiee : Simulink et le banc
+  se separent point par point des qu'un arrondi change une decision du CAN,
+  le scenario ne serait pas reproductible dans Simulink).
+
+Criteres (dans cet ordre)
+  C1 Clarte (obligatoire) : entre deux methodes consecutives du classement,
+     l'IAE differe d'au moins 5 % (au-dessous, l'ordre peut changer avec
+     L ou C a +-0.1 %, constate sur les methodes adaptatives).
+  C2 Representativite (obligatoire) : l'ordre des cinq methodes sur l'essai
+     s'accorde avec l'ordre par J : tau de Kendall >= 0.6 (au plus deux
+     paires inversees sur dix).
+  C3 Pouvoir de separation : ecart type du logarithme des cinq IAE ; le
+     plus grand l'emporte parmi les essais qui passent C1 et C2.
+  C4 (departage) Couverture physique : nombre de phenomenes presents
+     (demarrage, echelon de charge, variation de Vin, variation de
+     consigne, charge legere, conduction discontinue).
+  Si aucun essai ne passe C1 et C2 : on le dit, et on retient l'essai de
+  plus grand C3 parmi ceux qui passent C1, en precisant ou il s'ecarte de J.
+
+Classement dans le scenario retenu
+  Premier critere : tous les evenements reviennent dans +-1 V (une methode
+  dont un evenement ne revient pas est classee apres toutes celles dont
+  tous reviennent). Ensuite : IAE de 30 ms a la fin, croissante. Grandeurs
+  publiees a cote, sans changer l'ordre : IAE de demarrage, depassement,
+  ecart maximal, temps de retour par evenement, activite de la commande.
+
+Ce qu'il faudra ecrire dans le memoire
+  Le scenario retenu illustre la comparaison ; il ne la remplace pas. Le
+  tableau de J (onze essais) reste la comparaison complete et doit figurer
+  a cote, avec le classement de chaque essai en annexe.
