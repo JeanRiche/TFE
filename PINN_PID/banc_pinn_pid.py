@@ -54,7 +54,7 @@
 #      valeur exacte vers l'avant, pente de 0.01 vers l'arriere hors des
 #      bornes.
 #
-# LES REGLAGES (fixes avant les essais, criteres_etape4_regulateur.txt)
+# LES REGLAGES (fixes avant les essais, criteres_pinn_pid.txt)
 #   SEUIL = 0.1 V (zone morte de l'ELM-PID) ; horizon 110 pas ; Adam :
 #   ALPHA = 0.01, BETA1 = 0.9, BETA2 = 0.999, EPS = 1e-7 (Ito et Wasa),
 #   5 iterations, moments remis a zero a chaque fenetre ; RHO = 0.01 ;

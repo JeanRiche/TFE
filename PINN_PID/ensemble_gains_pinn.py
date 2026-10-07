@@ -2,14 +2,15 @@
 # ensemble_gains_pinn.py
 #
 # VERSION
-#   1 (7 octobre 2026). Modification M1 de criteres_pinn_pid.txt. Meme
+#   1 (7 octobre 2026). Variante de la section 6 de criteres_pinn_pid.txt. Meme
 #   calcul que ensemble_gains_elm.py de l'ELM-PID (meme loi de Lu, meme
 #   depart, meme critere que la boite d'origine) : la table est identique.
 #
 # OBJECTIF
 #   Construire, une fois pour toutes et hors ligne, l'ensemble des gains
-#   admissibles du PINN-PID, dans lequel la loi d'adaptation projette les
-#   gains apres chaque pas.
+#   admissibles du PINN-PID, sur lequel la variante
+#   (variante_ensemble_admissible_pinn.py) projette les gains apres chaque
+#   iteration d'Adam. Le PINN-PID retenu garde la boite (boite_gains_elm.json).
 #
 # LE CRITERE (inchange par rapport a la version d'origine)
 #   Modele moyen du Buck, discretise avec un bloqueur d'ordre zero a Tc,
@@ -25,19 +26,20 @@
 #   du regulateur dont elle part ; elle ne porte que sur la plage nominale :
 #   l'adaptation doit trouver seule les gains de la charge legere.
 #
-# CE QUI CHANGE (M1) : L'ENSEMBLE AU LIEU DE LA PLUS GRANDE BOITE
+# CE QUE LA VARIANTE CHANGE : L'ENSEMBLE AU LIEU DE LA PLUS GRANDE BOITE
 #   La version d'origine gardait le plus grand pave (axes paralleles) dont
 #   tous les points sont admissibles et qui contient le depart. Comme le
 #   depart est sur la frontiere (sa marge est le seuil), il etait un coin du
 #   pave : Ki ne pouvait que baisser, Kp et Kd que monter, et toute
 #   correction qui demandait plus d'integrale etait annulee par la
 #   projection, meme quand une hausse conjointe de Kd l'aurait rendue
-#   admissible. Ici l'ensemble admissible lui-meme est tabule, et la loi
-#   d'adaptation projette sur lui en glissant le long de sa frontiere
+#   admissible. Ici l'ensemble admissible lui-meme est tabule, et la
+#   variante projette sur lui en glissant le long de sa frontiere
 #   (projection des parametres sur un ensemble admissible : Goodwin et Sin
 #   1984 ; Ioannou et Sun 1996), avec restauration vers la frontiere quand
-#   le pas tangent en sort (M2, Rosen 1961 ; code dans banc_pinn_pid.py et
-#   pinn_pid_adaptatif.m).
+#   le pas tangent en sort (Rosen 1961 ; code dans
+#   variante_ensemble_admissible_pinn.py). Resultat : la boite ne limitait
+#   pas le PINN-PID (criteres_pinn_pid.txt, section 6).
 #
 # LA TABLE
 #   Multiplicateurs (a, b, c) des gains de Ziegler-Nichols, chacun de 1/4 a
