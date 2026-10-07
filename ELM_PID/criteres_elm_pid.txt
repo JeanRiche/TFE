@@ -292,6 +292,42 @@ Previsions (ecrites avant le calcul sur les onze essais)
   touche ni aux zones mortes ni au critere d'admissibilite pour la rendre
   juste.
 
+Resultats de l'amendement 1 (7 octobre 2026 ; banc_elm_pid_sortie_console.txt)
+                          J      apres 30 ms   demarrage   non revenus
+    Ziegler-Nichols     1.000      1.000         1.000      S8b, S9
+    meilleur PID fige   0.738      0.710         0.831      -
+    R0 (gains figes)    0.917      0.986         0.687      S8b, S9
+    ELM-PID (M1-M3)     0.728      0.747         0.664      -
+  Fenetres ou les gains changent : S1 2, S2 4, S3 6, S4 6, S5 8, S6 2, S7a 2,
+  S7b 1, S8a 12, S8b 18, S9 16 (77 en tout). Gains finaux (x ZN) : S1
+  (0.97, 1.03, 1.07), S2 (1.41, 1.18, 0.96), S3 (1.54, 1.26, 0.99), S8b
+  (3.38, 1.86, 1.30), S9 (3.05, 1.88, 1.28).
+  IAE apres 30 ms (mV.s), R0 / ELM-PID : S3 8.48 / 7.79 ; S4 22.74 / 19.57 ;
+  S5 3.81 / 2.97 ; S8a 11.08 / 3.24 ; S8b 73.89 / 3.33 ; S9 537.3 / 307.0.
+  S2 (hors de J) : 5.27 / 5.61, un peu moins bon.
+  Ablations : jacobien constant 0.728 ; sans OS-ELM 0.728 ; M2 seule 0.744 ;
+  sans glissement 0.760. Sensibilite (L ou C a +-0.1 %) : 0.722 a 0.731.
+  Q1 a Q7 justes.
+
+Lecture
+  1. L'ELM-PID adapte maintenant dans les trois cas de base. Le verrou etait
+     la projection : le depart, sur la frontiere d'un ensemble non convexe,
+     annulait tout pas.
+  2. Les gains ne bougent que lorsque l'erreur moyenne d'une fenetre depasse
+     0.1 V (zone morte). En regime etabli, ils restent constants : c'est
+     voulu (pas d'information, pas d'adaptation, pas de derive sur le
+     bruit). Sur S1, S2, S3, cela fait 2 a 6 fenetres.
+  3. Le jacobien est bien estime en ligne a chaque fenetre par le reseau
+     (de 9.6 a 13.9 V par unite), mais il ne suit pas le vrai (11.2 a 15.8,
+     correlation -0.04 sur les fenetres de controle) et le remplacer par une
+     constante donne le meme J (0.728). Deux raisons : la charge n'est pas
+     observable avec les seules tensions et rapports cycliques passes
+     (section 4) ; et dans le gradient normalise de Lu, le jacobien ne fixe
+     que le signe du pas et le divise a peu pres (dx ~ ebar / J) : une
+     variation de 30 % de J change le pas de 30 %, pas sa direction. Ce qui
+     fait le resultat, c'est la boucle d'adaptation (porte, zone morte,
+     gradient normalise, projection), pas le reseau.
+
 8. REFERENCES
 -------------
   [1] Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller
