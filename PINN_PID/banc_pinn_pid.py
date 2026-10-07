@@ -135,7 +135,7 @@ CODES_IAE = ["S1", "S3", "S4", "S5", "S6", "S7a", "S7b", "S8a", "S8b", "S9"]   #
 CODES_DEM = ["S1", "S8a", "S8b"]              # IAE du demarrage (5, 25 et 98 ohms)
 K30 = int(round(0.03 / TC))                   # instant 30 ms (numero de pas Tc)
 NF = 110                                      # periodes Tc par fenetre de 0.5 ms
-CODES_REJEU = ["S1", "S7b", "S8b", "S9"]      # essais rejoues dans le bloc MATLAB
+CODES_REJEU = ["S1", "S3", "S7b", "S8b", "S9"]   # essais rejoues dans le bloc MATLAB
 TCN = TC * PID_N                              # Tc x N du filtre de derivee (meme produit dans le bloc MATLAB)
 L_MOD, C_MOD = L_BOB, C_CONV                  # L et C du modele du regulateur (le circuit peut etre perturbe a part)
 

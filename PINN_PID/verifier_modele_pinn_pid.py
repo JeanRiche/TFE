@@ -37,7 +37,8 @@
 #   Doit finir par "RESULTAT : Buck_Commun_PINN_PID.slx est conforme."
 #
 # ORDRE D'EXECUTION (PINN-PID)
-#   1. entrainement_pinn.py ; 2. estimation_etat_pinn.py ; 3. banc_pinn_pid.py ;
+#   1. entrainement_pinn.py ; 2. estimation_etat_pinn.py ; 2b. ensemble_gains_pinn.py ;
+#   3. banc_pinn_pid.py ;
 #   4. Tester_PINN_PID_Rejeu.m ; 5. Construction_PINN_PID.m ; 6. ce script ;
 #   7. Simuler_PINN_PID.m.
 # =============================================================================

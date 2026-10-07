@@ -2,6 +2,8 @@
 %
 % VERSION
 % -------
+% 2 (7 octobre 2026) : bloc version 2 (projection sur l'ensemble
+% admissible, criteres_pinn_pid.txt) ; S3 ajoute au rejeu.
 % 1 (5 octobre 2026), PINN-PID sur la base commune v2.
 %
 % OBJECTIF
@@ -9,7 +11,7 @@
 % Verifier, avant toute simulation Simulink, que le bloc MATLAB
 % pinn_pid_adaptatif.m calcule exactement ce que calcule la classe PINNPID
 % de banc_pinn_pid.py. Le banc a enregistre, pas par pas, l'erreur e et la
-% mesure recues par le PINN-PID sur quatre essais (S1, S7b, S8b, S9), ainsi
+% mesure recues par le PINN-PID sur cinq essais (S1, S3, S7b, S8b, S9), ainsi
 % que la commande u et les gains K qu'il a produits, et, a chaque fin de
 % fenetre, la decision d'adapter et l'etat de l'observateur. Ce script
 % donne les memes e et mesure au bloc MATLAB, en dehors de Simulink, et
@@ -33,20 +35,23 @@
 %
 % ORDRE D'EXECUTION (PINN-PID)
 % ----------------------------
-%   1. entrainement_pinn.py ; 2. estimation_etat_pinn.py ; 3. banc_pinn_pid.py ;
+%   1. entrainement_pinn.py ; 2. estimation_etat_pinn.py ; 2b. ensemble_gains_pinn.py ;
+%   3. banc_pinn_pid.py ;
 %   4. ce script ; 5. Construction_PINN_PID.m ; 6. verifier_modele_pinn_pid.py ;
 %   7. Simuler_PINN_PID.m ; 8. Construction_PINN_PID_Trois_Modeles.m ;
 %   9. verifier_modeles_pinn_pid_trois.py ; 10. Simuler_PINN_PID_Trois_Modeles.m.
 %
 % Prerequis dans le dossier courant MATLAB : pinn_pid_adaptatif.m,
-% pinn_pid_modele.mat, pinn_pid_reglages.mat, reference_rejeu_pinn_pid.mat.
+% pinn_pid_modele.mat, pinn_pid_reglages.mat, ensemble_gains_pinn.mat,
+% reference_rejeu_pinn_pid.mat.
 % Duree : une a quelques minutes (230 000 pas). Compatible R2024a.
 % ---------------------------------------------------------------------
 
 clear; clc;
 
 % --- Prerequis ---
-for f = {'pinn_pid_adaptatif.m', 'pinn_pid_modele.mat', 'pinn_pid_reglages.mat', 'reference_rejeu_pinn_pid.mat'}
+for f = {'pinn_pid_adaptatif.m', 'pinn_pid_modele.mat', 'pinn_pid_reglages.mat', 'ensemble_gains_pinn.mat', ...
+         'reference_rejeu_pinn_pid.mat'}
     if ~isfile(fullfile(pwd, f{1}))
         error('Fichier introuvable dans le dossier courant : %s', f{1});
     end
@@ -75,7 +80,7 @@ end
 
 % --- 2. Rejeu pas par pas ---
 ref = load('reference_rejeu_pinn_pid.mat');
-codes = {'S1', 'S7b', 'S8b', 'S9'};
+codes = {'S1', 'S3', 'S7b', 'S8b', 'S9'};
 tout_ok = true;
 temps_pas = [];
 for c = 1:numel(codes)

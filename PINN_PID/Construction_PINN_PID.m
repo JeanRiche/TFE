@@ -50,13 +50,14 @@
 %
 % ORDRE D'EXECUTION (PINN-PID)
 % ----------------------------
-%   1. entrainement_pinn.py ; 2. estimation_etat_pinn.py ; 3. banc_pinn_pid.py ;
+%   1. entrainement_pinn.py ; 2. estimation_etat_pinn.py ; 2b. ensemble_gains_pinn.py ;
+%   3. banc_pinn_pid.py ;
 %   4. Tester_PINN_PID_Rejeu.m ; 5. ce script ; 6. verifier_modele_pinn_pid.py ;
 %   7. Simuler_PINN_PID.m.
 %
 % Prerequis dans le dossier courant MATLAB : Buck_Commun.slx (construit et
 % verifie), charger_scenario.m, scenario_S1.mat, scenario_S8b.mat,
-% pinn_pid_adaptatif.m, pinn_pid_modele.mat, pinn_pid_reglages.mat et
+% pinn_pid_adaptatif.m, pinn_pid_modele.mat, pinn_pid_reglages.mat, ensemble_gains_pinn.mat et
 % predictions_banc_pinn_pid.json.
 % Duree : une a trois minutes (auto-tests compris). Compatible R2024a.
 % ---------------------------------------------------------------------
@@ -76,7 +77,7 @@ PWM      = sprintf('PWM Generator\n(DC-DC)');     % regle #1 : vrai saut de lign
 
 % --- Prerequis ---
 for f = {[SOURCE '.slx'], 'charger_scenario.m', 'scenario_S1.mat', 'scenario_S8b.mat', [CLASSE '.m'], ...
-         'pinn_pid_modele.mat', 'pinn_pid_reglages.mat', 'predictions_banc_pinn_pid.json'}
+         'pinn_pid_modele.mat', 'pinn_pid_reglages.mat', 'ensemble_gains_pinn.mat', 'predictions_banc_pinn_pid.json'}
     if ~isfile(fullfile(pwd, f{1}))
         error('Fichier introuvable dans le dossier courant : %s', f{1});
     end

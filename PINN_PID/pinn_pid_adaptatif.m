@@ -3,6 +3,10 @@ classdef pinn_pid_adaptatif < matlab.System
     %
     % VERSION
     % -------
+    % 2 (7 octobre 2026) : apres chaque iteration d'Adam, les gains sont
+    % projetes sur l'ensemble admissible (M1, ensemble_gains_pinn.mat) avec
+    % restauration vers la frontiere (M2, Rosen 1961), au lieu de la boite.
+    % Methode et references : criteres_pinn_pid.txt.
     % 1 (5 octobre 2026) : base commune v2 (L = 10 mH, C = 47 uF, 22 kHz,
     % regulateur a Tc = 1/(22000*10) s). Remplace le bloc de l'ancienne base
     % (Te = 5 us, bornes internes [-1.5 ; 0.99], ensemble admissible
@@ -11,8 +15,8 @@ classdef pinn_pid_adaptatif < matlab.System
     % CE QUE FAIT CE BLOC
     % -------------------
     % Regulateur PID incremental (loi de Lu et al., eq. 13-14, terme derive
-    % sur l'erreur filtree ; la meme loi, le meme depart et la meme boite
-    % de gains que l'ELM-PID) dont les gains Kp, Ki, Kd sont reoptimises
+    % sur l'erreur filtree ; la meme loi, le meme depart et le meme ensemble
+    % de gains admissibles que l'ELM-PID) dont les gains Kp, Ki, Kd sont reoptimises
     % toutes les 0.5 ms, si l'erreur de la fenetre depasse un seuil, par
     % 5 iterations d'Adam (Ito et Wasa, probleme P6). Le gradient vient
     % d'une simulation de 110 pas (horizon) avec un PINN qui predit le
@@ -46,14 +50,18 @@ classdef pinn_pid_adaptatif < matlab.System
     %    depasse SEUIL, 5 iterations d'Adam sur theta (gains normalises dans
     %    la boite), cout J = moyenne de [e^2 + RHO (du/0.01)^2] sur
     %    l'horizon + MU |theta - theta_debut|^2, gradient par
-    %    retropropagation dans le temps ; projection sur [0 ; 1].
+    %    retropropagation dans le temps ; apres chaque iteration, projection
+    %    sur l'ensemble admissible (M1-M2 : point admissible le plus proche).
     %
     % FICHIERS LUS (dans le dossier courant, un seul exemplaire)
     %   pinn_pid_modele.mat   : poids du PINN (entrainement_pinn.py)
-    %   pinn_pid_reglages.mat : boite, reglages d'Adam, cout, observateur,
-    %                           table du modele physique (banc_pinn_pid.py)
+    %   pinn_pid_reglages.mat : echelle de theta, reglages d'Adam et de la
+    %                           projection, cout, observateur, table du
+    %                           modele physique (banc_pinn_pid.py)
+    %   ensemble_gains_pinn.mat : table de l'ensemble admissible
+    %                           (ensemble_gains_pinn.py)
     % Aucun nombre de l'algorithme n'est ecrit dans ce fichier : tout vient
-    % de ces deux fichiers, pour que le bloc et le banc ne puissent pas
+    % de ces trois fichiers, pour que le bloc et le banc ne puissent pas
     % diverger.
     %
     % Utilise dans Simulink en execution interpretee (Construction_PINN_PID.m).
@@ -62,6 +70,7 @@ classdef pinn_pid_adaptatif < matlab.System
     properties (Nontunable)
         FichierModele = 'pinn_pid_modele.mat';      % poids du PINN
         FichierReglages = 'pinn_pid_reglages.mat';  % reglages du bloc
+        FichierEnsemble = 'ensemble_gains_pinn.mat'; % table de l'ensemble admissible
         AfficherBilan (1,1) logical = true;         % une ligne de bilan a la fin de chaque simulation
     end
 
@@ -72,6 +81,8 @@ classdef pinn_pid_adaptatif < matlab.System
         KMIN; KMAX; dK; K0; SEUIL; NH; ALPHA; BETA1; BETA2; EPSA; NADAM; MU; RHO; DUE; PSAT
         GNOM; VIN0; SIGY; SIGV; SIGI; SIGVIN; P0I; P0VIN
         NF; TCN; DMIN; DMAX; U0; NPER; NREG; LMOD; VF; PHI; GAM; NS; PRED_PINN
+        % Ensemble admissible et projection (M1, M2)
+        PROJECTION; RESTAURATION; XMIN; XMAX; NBIS; HGRAD; NPROJ; GT; L2MIN; PASL2; NT
         % Etat de la loi PID
         K; theta; u; e1; ef; g1; premier
         % Observateur
@@ -137,6 +148,22 @@ classdef pinn_pid_adaptatif < matlab.System
             obj.PHI = double(r.PHI); obj.GAM = double(r.GAM);          % 121 x 4 ([p11 p12 p21 p22]) et 121 x 2
             obj.NS = size(obj.PHI, 1) - 1;
             obj.PRED_PINN = double(r.PREDICTEUR_PINN) ~= 0;
+            % Ensemble admissible et projection (M1, M2)
+            if ~isfield(r, 'PROJECTION') || ~isfield(r, 'RESTAURATION')
+                error('pinn_pid_adaptatif : %s ne vient pas de la version 2 de banc_pinn_pid.py (PROJECTION absent).', ...
+                      obj.FichierReglages);
+            end
+            t = pinn_pid_adaptatif.charger(obj.FichierEnsemble);
+            obj.PROJECTION = double(r.PROJECTION) ~= 0;
+            obj.RESTAURATION = double(r.RESTAURATION) ~= 0;
+            obj.XMIN = double(r.MULT_MIN); obj.XMAX = double(r.MULT_MAX);
+            obj.NBIS = double(r.N_BISSECTIONS); obj.HGRAD = double(r.H_GRADIENT); obj.NPROJ = double(r.N_PROJECTION);
+            obj.GT = double(t.G_TABLE); obj.L2MIN = double(t.LOG2_MIN); obj.PASL2 = double(t.PAS_LOG2);
+            obj.NT = size(obj.GT, 1);
+            if max(abs(double(t.K_DEPART(:)') - obj.K0) ./ obj.K0) > 1e-12
+                error('pinn_pid_adaptatif : %s et %s n''ont pas les memes gains de depart.', ...
+                      obj.FichierEnsemble, obj.FichierReglages);
+            end
         end
 
         function resetImpl(obj)
@@ -365,11 +392,152 @@ classdef pinn_pid_adaptatif < matlab.System
                 gth = gK .* obj.dK + 2 * obj.MU * (th - th0);
                 m = obj.BETA1 * m + (1 - obj.BETA1) * gth;
                 vv = obj.BETA2 * vv + (1 - obj.BETA2) * gth .* gth;
+                th_prec = th;
                 th = th - obj.ALPHA * (m / (1 - b1t)) ./ (sqrt(vv / (1 - b2t)) + obj.EPSA);
-                th = min(max(th, 0), 1);              % projection sur la boite
+                if obj.PROJECTION                     % M1-M2 : projection sur l'ensemble admissible
+                    xc = (obj.KMIN + th_prec .* obj.dK) ./ obj.K0;
+                    xn = projeter(obj, xc, (obj.KMIN + th .* obj.dK) ./ obj.K0 - xc);
+                    th = (xn .* obj.K0 - obj.KMIN) ./ obj.dK;
+                else                                  % version de depart : projection sur la boite
+                    th = min(max(th, 0), 1);
+                end
             end
             obj.theta = th;
             obj.K = obj.KMIN + th .* obj.dK;
+        end
+    end
+
+    methods (Access = private)
+
+        function g = g_interp(obj, x)
+            % g de l'ensemble admissible, interpolation trilineaire en log2
+            % des multiplicateurs (memes operations que g_interp du banc).
+            uu = (log2(x) - obj.L2MIN) / obj.PASL2;
+            uu = min(max(uu, 0), obj.NT - 1);
+            i = min(floor(uu), obj.NT - 2);
+            f = uu - i;
+            g = 0;
+            for di = 0:1
+                if di, wi = f(1); else, wi = 1 - f(1); end
+                for dj = 0:1
+                    if dj, wj = f(2); else, wj = 1 - f(2); end
+                    for dk = 0:1
+                        if dk, wk = f(3); else, wk = 1 - f(3); end
+                        g = g + wi * wj * wk * obj.GT(i(1) + di + 1, i(2) + dj + 1, i(3) + dk + 1);
+                    end
+                end
+            end
+        end
+
+        function gr = gradient_g(obj, x)
+            % Gradient de g par differences centrees (normale a la frontiere).
+            hh = obj.HGRAD;
+            gr = [0 0 0];
+            for q = 1:3
+                ep = [0 0 0];
+                ep(q) = hh;
+                gr(q) = (g_interp(obj, x + ep) - g_interp(obj, x - ep)) / (2 * hh);
+            end
+        end
+
+        function [p, ok] = restaurer(obj, p, gr)
+            % Restauration (M2) : recul de p le long de -gr jusqu'a la
+            % frontiere (doublement puis bissection) ; ok = false si un recul
+            % de 1 ne suffit pas (meme algorithme que restaurer() du banc).
+            lo_ = obj.XMIN; hi_ = obj.XMAX;
+            nh = gr / sqrt(gr * gr');
+            s_ok = 1e-6;
+            ok = true;
+            while g_interp(obj, min(max(p - s_ok * nh, lo_), hi_)) > 0
+                s_ok = s_ok * 2;
+                if s_ok > 1
+                    ok = false;
+                    return;
+                end
+            end
+            if s_ok == 1e-6
+                s_ko = 0;
+            else
+                s_ko = 0.5 * s_ok;
+            end
+            for it = 1:obj.NBIS
+                mm = 0.5 * (s_ko + s_ok);
+                if g_interp(obj, min(max(p - mm * nh, lo_), hi_)) <= 0
+                    s_ok = mm;
+                else
+                    s_ko = mm;
+                end
+            end
+            p = min(max(p - s_ok * nh, lo_), hi_);
+        end
+
+        function xn = projeter(obj, xc, dx)
+            % Projection du pas sur l'ensemble admissible (M1), avec
+            % restauration (M2) ou, pour l'ablation, glissement puis
+            % bissection. Meme algorithme que projeter() du banc.
+            lo_ = obj.XMIN; hi_ = obj.XMAX;
+            xn = min(max(xc + dx, lo_), hi_);
+            if g_interp(obj, xn) <= 0
+                return;
+            end
+            z = xn;
+            a = 0; b = 1;
+            for it = 1:obj.NBIS
+                mm = 0.5 * (a + b);
+                if g_interp(obj, min(max(xc + mm * dx, lo_), hi_)) <= 0
+                    a = mm;
+                else
+                    b = mm;
+                end
+            end
+            xb = min(max(xc + a * dx, lo_), hi_);
+            if obj.RESTAURATION
+                y = xb;
+                for it = 1:obj.NPROJ
+                    gr = gradient_g(obj, y);
+                    if gr * gr' == 0
+                        break;
+                    end
+                    d = z - y;
+                    sortant = gr * d';
+                    if sortant > 0
+                        d = d - sortant / (gr * gr') * gr;
+                    end
+                    pt = min(max(y + d, lo_), hi_);
+                    if g_interp(obj, pt) > 0
+                        [pt, ok] = restaurer(obj, pt, gr);
+                        if ~ok
+                            break;
+                        end
+                    end
+                    if sum((z - pt) .^ 2) >= sum((z - y) .^ 2)
+                        break;
+                    end
+                    y = pt;
+                end
+                xn = y;
+                return;
+            end
+            gr = gradient_g(obj, xb);
+            reste = (1 - a) * dx;
+            sortant = gr * reste';
+            if sortant > 0
+                reste = reste - sortant / (gr * gr') * gr;
+            end
+            xn = min(max(xb + reste, lo_), hi_);
+            if g_interp(obj, xn) <= 0
+                return;
+            end
+            a = 0; b = 1;
+            for it = 1:obj.NBIS
+                mm = 0.5 * (a + b);
+                if g_interp(obj, min(max(xb + mm * reste, lo_), hi_)) <= 0
+                    a = mm;
+                else
+                    b = mm;
+                end
+            end
+            xn = min(max(xb + a * reste, lo_), hi_);
         end
     end
 

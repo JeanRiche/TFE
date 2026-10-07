@@ -67,7 +67,7 @@
 %   2. verifier_modeles_pinn_pid_trois.py ; 3. ce script.
 %
 % Prerequis dans le dossier courant MATLAB : les trois modeles construits,
-% pinn_pid_adaptatif.m, pinn_pid_modele.mat, pinn_pid_reglages.mat,
+% pinn_pid_adaptatif.m, pinn_pid_modele.mat, pinn_pid_reglages.mat, ensemble_gains_pinn.mat,
 % predictions_banc_pinn_pid.json. Duree : deux a trois minutes. Compatible
 % R2024a.
 % ---------------------------------------------------------------------
@@ -86,7 +86,7 @@ FICHIER_RESULTATS = 'resultats_PINN_PID_Trois_Modeles.mat';
 
 % --- Prerequis ---
 for f = [strcat(ESSAIS(:, 1)', '.slx'), {'pinn_pid_adaptatif.m', 'pinn_pid_modele.mat', 'pinn_pid_reglages.mat', ...
-         'predictions_banc_pinn_pid.json'}]
+         'ensemble_gains_pinn.mat', 'predictions_banc_pinn_pid.json'}]
     if ~isfile(fullfile(pwd, f{1}))
         error('Fichier introuvable dans le dossier courant : %s', f{1});
     end
