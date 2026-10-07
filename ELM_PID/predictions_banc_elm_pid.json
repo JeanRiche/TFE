@@ -1,7 +1,7 @@
 {
- "version": 3,
+ "version": 2,
  "Te": 4.5454545454545455e-06,
- "regulateur": "ELM-PID (loi de Lu a derivee filtree, ELM de Lu adapte, porte M1, projection M2)",
+ "regulateur": "ELM-PID (loi de Lu a derivee filtree, ELM de Lu adapte, porte M1, projection M2-M3)",
  "reglages": {
   "ETA": 0.5,
   "ZONE_MORTE": 0.1,

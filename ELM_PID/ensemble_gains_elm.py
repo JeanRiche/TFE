@@ -33,7 +33,9 @@
 #   admissible. Ici l'ensemble admissible lui-meme est tabule, et la loi
 #   d'adaptation projette sur lui en glissant le long de sa frontiere
 #   (projection des parametres sur un ensemble admissible : Goodwin et Sin
-#   1984 ; Ioannou et Sun 1996).
+#   1984 ; Ioannou et Sun 1996), avec restauration vers la frontiere quand
+#   le pas tangent en sort (M3, Rosen 1961 ; code dans banc_elm_pid.py et
+#   elm_pid_adaptatif.m).
 #
 # LA TABLE
 #   Multiplicateurs (a, b, c) des gains de Ziegler-Nichols, chacun de 1/4 a

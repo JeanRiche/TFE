@@ -5,7 +5,8 @@ classdef elm_pid_adaptatif < matlab.System
     % -------
     % 3 (7 octobre 2026) : porte limitee a la saturation et zone morte
     % d'estimation pour l'OS-ELM (M1), projection des gains sur l'ensemble
-    % admissible avec glissement le long de sa frontiere (M2). Methode et
+    % admissible avec glissement le long de sa frontiere (M2) et
+    % restauration vers la frontiere (M3, Rosen 1961). Methode et
     % references : criteres_elm_pid.txt.
     %
     % CE QUE FAIT CE BLOC
@@ -41,8 +42,9 @@ classdef elm_pid_adaptatif < matlab.System
     %    b. si |ebar| > ZONE_MORTE et J > 0 : x = K ./ K_DEPART,
     %       phi = J (s .* K_DEPART) ;
     %       dx = ETA ebar phi / (EPS_PHI + phi phi') + ALPHA (x - x_prec) ;
-    %       projection de x + dx sur l'ensemble admissible (M2,
-    %       ensemble_gains_elm.mat) ; K = K_DEPART .* x.
+    %       projection de x + dx sur l'ensemble admissible (M2 et M3,
+    %       ensemble_gains_elm.mat) : point admissible le plus proche ;
+    %       K = K_DEPART .* x.
     %
     % FICHIERS LUS (dans le dossier courant, un seul exemplaire)
     %   elm_pid_modele.mat      : modele ELM (entrainement_elm.py)
@@ -65,7 +67,7 @@ classdef elm_pid_adaptatif < matlab.System
         W; B; BETA0; P0; XM; XE; TM; TE_; n
         BETA; P
         K0; ETA; ZM; ZME; ALPHA; EPS; LAMBDA; APPRENDRE; JC; GLISSEMENT
-        XMIN; XMAX; NBIS; HGRAD
+        XMIN; XMAX; NBIS; HGRAD; RESTAURATION; NPROJ
         GT; L2MIN; PASL2; NT
         NF; TCN; DMIN; DMAX; U0
         K; x; x_prec; u; e1; ef; g1; premier
@@ -117,6 +119,12 @@ classdef elm_pid_adaptatif < matlab.System
             obj.XMAX = double(r.MULT_MAX);
             obj.NBIS = double(r.N_BISSECTIONS);
             obj.HGRAD = double(r.H_GRADIENT);
+            if ~isfield(r, 'RESTAURATION') || ~isfield(r, 'N_PROJECTION')
+                error('elm_pid_adaptatif : %s ne vient pas de la version 3 de banc_elm_pid.py (RESTAURATION absent).', ...
+                      obj.FichierReglages);
+            end
+            obj.RESTAURATION = double(r.RESTAURATION) ~= 0;
+            obj.NPROJ = double(r.N_PROJECTION);
             obj.NF = double(r.NF);
             obj.TCN = double(r.TC) * double(r.N_FILTRE);
             obj.DMIN = double(r.D_MIN);
@@ -291,15 +299,60 @@ classdef elm_pid_adaptatif < matlab.System
             end
         end
 
+        function gr = gradient_g(obj, x)
+            % Gradient de g par differences centrees (normale a la frontiere).
+            hh = obj.HGRAD;
+            gr = [0 0 0];
+            for q = 1:3
+                ep = [0 0 0];
+                ep(q) = hh;
+                gr(q) = (g_interp(obj, x + ep) - g_interp(obj, x - ep)) / (2 * hh);
+            end
+        end
+
+        function [p, ok] = restaurer(obj, p, gr)
+            % Restauration (M3) : recul de p le long de -gr jusqu'a la
+            % frontiere (doublement puis bissection) ; ok = false si un recul
+            % de 1 ne suffit pas (meme algorithme que restaurer() du banc).
+            lo_ = obj.XMIN; hi_ = obj.XMAX;
+            nh = gr / sqrt(gr * gr');
+            s_ok = 1e-6;
+            ok = true;
+            while g_interp(obj, min(max(p - s_ok * nh, lo_), hi_)) > 0
+                s_ok = s_ok * 2;
+                if s_ok > 1
+                    ok = false;
+                    return;
+                end
+            end
+            if s_ok == 1e-6
+                s_ko = 0;
+            else
+                s_ko = 0.5 * s_ok;
+            end
+            for it = 1:obj.NBIS
+                m = 0.5 * (s_ko + s_ok);
+                if g_interp(obj, min(max(p - m * nh, lo_), hi_)) <= 0
+                    s_ok = m;
+                else
+                    s_ko = m;
+                end
+            end
+            p = min(max(p - s_ok * nh, lo_), hi_);
+        end
+
         function xn = projeter(obj, xc, dx)
-            % Projection du pas sur l'ensemble admissible (M2), avec
-            % glissement le long de la frontiere (meme algorithme que
-            % projeter() du banc).
+            % Projection du pas sur l'ensemble admissible : M3 (point
+            % admissible le plus proche de la cible, projection du gradient
+            % de Rosen avec restauration) ou, pour l'ablation, M2 seule
+            % (glissement puis bissection). Meme algorithme que projeter()
+            % du banc.
             lo_ = obj.XMIN; hi_ = obj.XMAX;
             xn = min(max(xc + dx, lo_), hi_);
             if g_interp(obj, xn) <= 0
                 return;
             end
+            z = xn;
             a = 0; b = 1;
             for it = 1:obj.NBIS
                 m = 0.5 * (a + b);
@@ -314,13 +367,34 @@ classdef elm_pid_adaptatif < matlab.System
                 xn = xb;
                 return;
             end
-            hh = obj.HGRAD;
-            gr = [0 0 0];
-            for q = 1:3
-                ep = [0 0 0];
-                ep(q) = hh;
-                gr(q) = (g_interp(obj, xb + ep) - g_interp(obj, xb - ep)) / (2 * hh);
+            if obj.RESTAURATION
+                y = xb;
+                for it = 1:obj.NPROJ
+                    gr = gradient_g(obj, y);
+                    if gr * gr' == 0
+                        break;
+                    end
+                    d = z - y;
+                    sortant = gr * d';
+                    if sortant > 0
+                        d = d - sortant / (gr * gr') * gr;
+                    end
+                    pt = min(max(y + d, lo_), hi_);
+                    if g_interp(obj, pt) > 0
+                        [pt, ok] = restaurer(obj, pt, gr);
+                        if ~ok
+                            break;
+                        end
+                    end
+                    if sum((z - pt) .^ 2) >= sum((z - y) .^ 2)
+                        break;
+                    end
+                    y = pt;
+                end
+                xn = y;
+                return;
             end
+            gr = gradient_g(obj, xb);
             reste = (1 - a) * dx;
             sortant = gr * reste';
             if sortant > 0

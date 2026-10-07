@@ -2,7 +2,7 @@
 # banc_elm_pid.py
 #
 # VERSION
-#   2 (7 octobre 2026). Methode, modifications et previsions :
+#   3 (7 octobre 2026). Methode, modifications M1 a M3 et previsions :
 #   criteres_elm_pid.txt.
 #
 # OBJECTIF
@@ -41,7 +41,7 @@
 #         ensemble_gains_elm.mat) avec glissement le long de sa frontiere.
 #
 # COMMENT LANCER CE SCRIPT
-#   python banc_elm_pid.py      (dix a quinze minutes : ablations et
+#   python banc_elm_pid.py      (une a deux minutes : ablations et
 #   sensibilite comprises)
 #
 # ORDRE D'EXECUTION
@@ -550,8 +550,8 @@ for k in P:
 titre("ETAPE 6 : fichiers pour Simulink et MATLAB")
 pas_1ms = int(round(1e-3 / TC))
 REGL_JSON = {k: (None if (isinstance(v, float) and np.isnan(v)) else v) for k, v in REGLAGES.items()}
-predictions = {"version": 3, "Te": TC,
-               "regulateur": "ELM-PID (loi de Lu a derivee filtree, ELM de Lu adapte, porte M1, projection M2)",
+predictions = {"version": 2, "Te": TC,              # format de la base commune v2 (lu par Simuler_ELM_PID.m)
+               "regulateur": "ELM-PID (loi de Lu a derivee filtree, ELM de Lu adapte, porte M1, projection M2-M3)",
                "reglages": REGL_JSON, "K_depart": K_ZN.tolist(),
                "controle": {"ecart_vecteurs_test_V": ecart_y, "ecart_sans_adaptation_R0": ecart_r0},
                "essais": {}}
@@ -577,8 +577,9 @@ savemat(os.path.join(DOSSIER_ELM, "elm_pid_reglages.mat"),
          "GLISSEMENT": REGLAGES["GLISSEMENT"], "JACOBIEN_CONSTANT": REGLAGES["JACOBIEN_CONSTANT"],
          "MULT_MIN": REGLAGES["MULT_MIN"], "MULT_MAX": REGLAGES["MULT_MAX"],
          "N_BISSECTIONS": REGLAGES["N_BISSECTIONS"], "H_GRADIENT": REGLAGES["H_GRADIENT"],
+         "RESTAURATION": REGLAGES["RESTAURATION"], "N_PROJECTION": REGLAGES["N_PROJECTION"],
          "NF": float(NF), "TC": TC, "N_FILTRE": PID_N, "D_MIN": D_MIN, "D_MAX": D_MAX, "U_DEPART": 0.5,
-         "VERSION": 2.0})
+         "VERSION": 3.0})
 print("  elm_pid_reglages.mat ecrit.")
 
 rejeu = {}

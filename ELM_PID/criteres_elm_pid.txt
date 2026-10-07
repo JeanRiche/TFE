@@ -2,26 +2,33 @@ ELM-PID : PID AUTO-ADAPTATIF A MODELE INTERNE ELM
 Methode, modifications documentees, previsions et resultats
 =============================================================================
 
-Methode et previsions ecrites le 7 octobre 2026, avant tout calcul de cette
-version sur les onze essais communs. Mesures faites avant ce texte :
-  - sur les donnees d'apprentissage seulement : quotients de Lipschitz,
-    vrais jacobiens, candidats ELM (entrainement_elm.py) ; ensemble des
-    gains admissibles (ensemble_gains_elm.py) ;
-  - un prototype de la loi corrigee sur quatre essais de mise au point E1 a
-    E4, distincts des onze essais (resultats en section 5) ;
-  - sur la version de depart (pas sur celle-ci) : le diagnostic de la
-    section 2, dont une variante sans seuil de porte sur S1, S2 et S3.
-Resultats ajoutes apres le calcul, sans changer la methode ni les
-previsions.
-
-Origine. La version de depart (5 octobre 2026, J = 0.784) ne changeait ses
-gains sur aucun des essais S1 a S7b, dont les trois cas de base : elle se
-comportait exactement comme la meme loi a gains figes (R0). Ce document
-decrit la version corrigee ; la version de depart est conservee dans
-l'historique du depot et ne fait pas partie de ce dossier.
+Methode et previsions ecrites le 7 octobre 2026, avant le calcul sur les
+onze essais communs (commits 35e8708 puis d87e8aa du depot). Mesures faites avant les previsions : donnees
+d'apprentissage seulement (entrainement_elm.py, ensemble_gains_elm.py) et
+essais de mise au point E1 a E4, distincts des onze essais
+(mise_au_point_elm_pid.py). Resultats ajoutes apres le calcul, sans
+changer la methode ni les previsions.
+Origine des modifications. La version de depart (5 octobre 2026, J = 0.784)
+ne changeait ses gains sur aucun des essais S1 a S7b, dont les trois cas de
+base : elle se comportait exactement comme la meme loi a gains figes. Un
+premier calcul avec M1 et M2 seules (J = 0.744) les adaptait sur S4, S5,
+S8a, S8b et S9, mais toujours pas sur S1, S2, S3 (prevision fausse,
+diagnostic en section 3, verrou V3) : M3 a ete ajoutee, avec de nouvelles
+previsions. Ces versions sont conservees dans l'historique du depot et ne
+font pas partie de ce dossier ; "M2 seule" reste une ablation du banc.
 
 
-1. LA METHODE DE REFERENCE ET CE QUI EN EST GARDE
+1. CADRE (base commune v2.1)
+----------------------------
+  Circuit L = 10 mH, C = 47 uF, R = 5 ohms, Vin = 200 V, fs = 22 kHz ;
+  regulateur a Tc = 1/220 000 s ; onze essais S1 a S9 ; cout J = moyenne
+  de 13 rapports d'IAE a Ziegler-Nichols (10 apres 30 ms, 3 de demarrage) ;
+  tous les evenements doivent revenir dans +-1 V ; banc Python valide
+  contre Simulink ; previsions ecrites avant le calcul. Depart : les gains
+  de Ziegler-Nichols (P = 0.093910, I = 301.089, D = 7.3227e-6).
+
+
+2. LA METHODE DE REFERENCE ET CE QUI EN EST GARDE
 -------------------------------------------------
   Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller based
   on ELM and its implementation for Buck converters", International Journal
@@ -41,11 +48,13 @@ l'historique du depot et ne fait pas partie de ce dossier.
       epsilon = 1e-3, zone morte de 0.1 V sur ebar, signe du jacobien ;
     - critere d'admissibilite des gains : marge de phase nominale au moins
       celle du depart (25.2 degres) et coupure au plus fs/10 aux neuf coins
-      nominaux (R = 4 a 6 ohms, Vin = 160 a 240 V), modele moyen discretise.
+      nominaux (R = 4 a 6 ohms, Vin = 160 a 240 V), modele moyen discretise
+      (ensemble_gains_elm.py).
 
 
-2. DIAGNOSTIC DE LA VERSION DE DEPART (pourquoi les gains ne bougeaient pas)
---------------------------------------------------------------------------
+
+3. DIAGNOSTIC : POURQUOI LES GAINS NE BOUGEAIENT PAS
+----------------------------------------------------
   Trois verrous empiles, mesures sur le banc :
   V1. La porte. Une fenetre etait "suspecte" si la loi saturait OU si
       l'erreur de prediction du modele depassait 0.5 V ; les gains ne
@@ -53,20 +62,27 @@ l'historique du depot et ne fait pas partie de ce dossier.
       Or l'erreur de prediction du modele vaut 1.4 V en moyenne (0.76 V
       meme entre 4 et 6 ohms) : chaque fois que l'erreur moyenne d'une
       fenetre depassait la zone morte (0.1 V), la porte etait fermee. Sur
-      S1, S2 et S3 : 0 fenetre adaptee.
-  V2. La boite. Les gains etaient projetes sur le plus grand pave
-      (axes paralleles) de gains admissibles contenant le depart. Le depart
-      ayant exactement la marge-seuil, il etait un COIN du pave : Ki ne
-      pouvait que baisser, Kp et Kd que monter. Apres une perturbation,
-      le gradient demande surtout plus d'integrale : la projection annulait
-      le pas. Mesure : meme sans seuil de porte, S1 et S3 finissent avec
-      les gains de depart (2 et 6 fenetres "adaptees", toutes annulees).
-  V3. Le modele (constat, pas corrige) : avec les cinq entrees de Lu, il ne
-      voit pas la charge ; son jacobien n'est pas plus juste qu'une
-      constante (section 4).
+      S1, S2 et S3 : 0 fenetre adaptee.  -> M1
+  V2. La boite. Les gains etaient projetes sur le plus grand pave (axes
+      paralleles) de gains admissibles contenant le depart. Le depart ayant
+      exactement la marge-seuil, il etait un COIN du pave : Ki ne pouvait
+      que baisser, Kp et Kd que monter ; une hausse de Ki avec une hausse de
+      Kd, pourtant admissible (Ki x 1.2 avec Kd x 1.3), etait interdite.
+      -> M2
+  V3. La frontiere. Meme projete sur l'ensemble admissible lui-meme, le
+      depart est SUR sa frontiere (g(1, 1, 1) = 0, le critere etant "marge
+      au moins egale a celle du depart"), et l'ensemble y est localement
+      non convexe : sur 200 pas de 0.05 tires dans le plan tangent, 18
+      seulement restent admissibles. Un glissement tangent coupe par
+      bissection (M2 seule) y est donc ramene a zero : sur S1 a S3, tous
+      les pas calcules partent du depart et sont annules (calcul avec M1 et
+      M2 seules : 2, 4 et 6 pas calcules, 0 changement).  -> M3
+  Constat (pas corrige) : avec les cinq entrees de Lu, le modele ne voit
+  pas la charge ; son jacobien n'est pas plus juste qu'une constante
+  (section 5).
 
 
-3. MODIFICATIONS ET LEURS REFERENCES
+4. MODIFICATIONS ET LEURS REFERENCES
 ------------------------------------
 M1. La porte : saturation seulement ; zone morte d'estimation pour l'OS-ELM
   Pourquoi. La condition de saturation a une raison mecanique et reste :
@@ -120,14 +136,39 @@ M2. Projection sur l'ensemble admissible, avec glissement le long de sa
       S'il n'est pas admissible : point de sortie xb sur le segment
       (30 bissections), normale n = gradient de g en xb (differences
       centrees, h = 1e-4), reste du pas r = (1 - t) dx dont on retire la
-      composante sortante max(0, n.r) n / |n|^2, puis xb + r, raccourci par
-      bissection (30) s'il sort encore.
+      composante sortante max(0, n.r) n / |n|^2, puis xb + r. S'il sort
+      encore : M2 seule le raccourcit par bissection ; M3 (ci-dessous)
+      remplace ce raccourcissement par une restauration.
 
-Inchange (section 1) : tout le reste, dont le modele, eta, alpha, epsilon,
-la zone morte des gains, l'absence d'oubli, le depart.
+M3. Projection : point admissible le plus proche, avec restauration
+  Pourquoi. Le depart est sur la frontiere de l'ensemble admissible et
+  l'ensemble y est non convexe : le glissement de M2 seul (pas tangent coupe
+  par bissection) y est annule (verrou V3 de la section 3). L'operateur de
+  projection des references de M2 (Goodwin et Sin ; Ioannou et Sun)
+  ramene le pas au point admissible le plus proche ; sur un ensemble a
+  frontiere courbe, cela demande, apres le pas tangent, un retour sur la
+  frontiere.
+  Reference. J. B. Rosen, "The gradient projection method for nonlinear
+  programming, Part II : Nonlinear constraints", Journal of the Society
+  for Industrial and Applied Mathematics, 9(4), 1961 (projection du pas
+  sur le plan tangent aux contraintes actives, puis restauration vers la
+  frontiere le long de la normale).
+  Mise en oeuvre (banc_elm_pid.py, elm_pid_adaptatif.m) : cible
+  z = x + dx (bornee a [1/4 ; 4]) ; si z n'est pas admissible : point de
+  sortie y sur le segment (30 bissections) ; puis, au plus 10 fois :
+  normale n = gradient de g en y ; d = z - y privee de sa composante
+  sortante max(0, n.d) n / |n|^2 ; p = y + d ; si p n'est pas admissible,
+  restauration : recul le long de -n / |n| (pas doubles a partir de 1e-6,
+  puis 30 bissections) ; p remplace y seulement s'il est plus proche de z.
+  Le resultat est toujours admissible. La version M2 seule (sans
+  restauration) est gardee comme ablation.
+
+Inchange (section 2) : tout le reste, dont le modele, eta, alpha, epsilon,
+la zone morte des gains, l'absence d'oubli, le critere d'admissibilite, le
+depart.
 
 
-4. LE MODELE : VERIFIE, PAS MODIFIE (entrainement_elm.py)
+5. LE MODELE ET SON JACOBIEN : VERIFIES, PAS MODIFIES (entrainement_elm.py)
 ---------------------------------------------------------
   Ordre. Regle ecrite avant le calcul : quotients de Lipschitz (X. He,
   H. Asada, "A new method for identifying orders of input-output models
@@ -157,179 +198,93 @@ la zone morte des gains, l'absence d'oubli, le depart.
   4 octobre (poids de sortie a 2e-8 pres).
 
 
-5. PROTOTYPE SUR LES ESSAIS DE MISE AU POINT (avant les previsions)
------------------------------------------------------------------
-  Quatre essais distincts des onze essais (points R, Vin absents des
-  essais) : E1 7 ohms, 190 V, charge a 4.5 ohms sur [40 ; 65) ms ; E2
-  15 ohms, 210 V, Vin 175 V puis 235 V ; E3 60 ohms, 220 V, consigne
-  +10 V sur [40 ; 65) ms ; E4 9 ohms, 200 V, bruit et CAN 12 bits.
-  IAE apres 30 ms (mV.s), R0 / version de depart / version corrigee :
-    E1 34.06 / 34.06 / 33.99 ; E2 3.02 / 3.02 / 1.88 ;
-    E3 33.92 / 33.64 / 20.16 ; E4 1.16 / 1.16 / 1.03.
-  Fenetres ou les gains changent (corrigee) : 9, 12, 15 et 3 ; gains
-  finaux (x ZN) : (1.17, 1.03, 0.95), (1.80, 1.45, 1.13), (1.92, 1.12,
-  0.83), (1.42, 1.04, 0.89). Avec un jacobien constant a la place du
-  reseau : memes resultats a 0.2 mV.s pres. Aucun reglage n'a ete change
-  apres ces essais.
 
-
-6. PREVISIONS (ecrites avant le calcul sur les onze essais)
------------------------------------------------------------
-  P1. Les gains changent dans les trois cas de base : sur S1, S2 et S3,
-      au moins une fenetre adaptee, et des gains finaux differents de ceux
-      de Ziegler-Nichols (au moins un multiplicateur hors de [0.99 ; 1.01]).
-  P2. J entre 0.68 et 0.80 ; tous les evenements reviennent dans la bande.
-  P3. J au moins 0.05 sous R0 (0.917) : l'adaptation sert.
-  P4. Ablation "jacobien constant" (11.07 V par unite) : J a 0.02 pres de
-      celui de l'ELM-PID : le reseau n'apporte rien de mesurable au
-      gradient (section 4).
-  P5. Ablation "sans glissement" (pas coupe a la frontiere) : J au moins
-      egal a celui de l'ELM-PID (le glissement ne degrade pas).
-  P6. Pas de derive sur le bruit et la quantification : sur S7a et S7b,
-      aucune fenetre adaptee apres 30 ms.
-  P7. Sensibilite : avec L ou C a +-0.1 %, J reste a 0.02 pres de sa
-      valeur nominale (la version de depart variait de 0.768 a 0.788).
-  Regle de conclusion : si P1 est fausse, le diagnostic portera sur la
-  raison (porte, zone morte, projection), sans regler sur les onze essais.
-  Ablations rapportees, jamais choisies : jacobien constant, sans OS-ELM,
-  sans glissement, R0 (gains figes).
-
-
-7. RESULTATS (7 octobre 2026 ; sortie complete : banc_elm_pid_sortie_console.txt
-   de ce calcul, conservee dans l'historique du depot)
-------------------------------------------------------------------------------
-                          J      apres 30 ms   demarrage   non revenus
-    Ziegler-Nichols     1.000      1.000         1.000      S8b, S9
-    meilleur PID fige   0.738      0.710         0.831      -
-    R0 (gains figes)    0.917      0.986         0.687      S8b, S9
-    ELM-PID             0.744      0.765         0.674      -
-  Fenetres ou les gains changent : S4 2, S5 6, S7a 1, S8a 13, S8b 23, S9 19 ;
-  S1, S2, S3, S6, S7b : 0. Gains finaux (x ZN) : S5 (1.68, 1.52, 1.16),
-  S8b (2.71, 1.42, 1.03), S9 (2.65, 1.65, 1.30).
-  Ablations : jacobien constant 0.741 ; sans OS-ELM 0.743 ; sans glissement
-  0.760. Sensibilite (L ou C a +-0.1 %) : J de 0.739 a 0.749.
-  Jacobien du reseau sur les essais (V par unite, fenetres de 0.5 ms) : de
-  9.6 a 13.9 ; mediane 10.3 sur S1, 10.0 sur S5, 11.5 sur S8b. Il varie a
-  chaque fenetre, mais bien moins que le vrai (11.2 a 15.8).
-
-Face aux previsions
-  P1 FAUSSE : sur S1, S2, S3, des pas sont calcules (2, 4 et 6 fenetres)
-     mais les gains ne changent pas.
-  P2 juste : J = 0.744, tous les evenements reviennent.
-  P3 juste : 0.744 contre 0.917 pour R0.
-  P4 juste : jacobien constant 0.741.
-  P5 juste : sans glissement 0.760.
-  P6 juste : aucune fenetre adaptee apres 30 ms sur S7a et S7b.
-  P7 juste : J de 0.739 a 0.749.
-
-Diagnostic de P1 (regle de conclusion : porte, zone morte ou projection)
-  Ce n'est ni la porte (ouverte sur 97 a 99 % des fenetres) ni la zone
-  morte (les pas sont calcules) : c'est la projection. Le critere
-  d'admissibilite est "marge au moins egale a celle du depart" : le depart
-  est donc, par construction, SUR la frontiere (g(1, 1, 1) = 0). Et
-  l'ensemble y est localement non convexe : sur 200 pas de 0.05 tires dans
-  le plan tangent, 18 seulement restent admissibles. Le glissement de M2
-  (retrait de la composante normale, puis bissection le long du pas
-  tangent) part donc du point de sortie, sort a nouveau des le premier
-  millieme du pas, et la bissection le ramene a zero. Sur S1 a S3, tous les
-  pas calcules partent du depart : tous sont annules. Ailleurs (S5, S8,
-  S9), les premiers pas entrent dans l'ensemble, les suivants partent d'un
-  point interieur, et l'adaptation fonctionne.
-
-7bis. AMENDEMENT 1 : M3, PROJECTION AVEC RESTAURATION (7 octobre 2026)
----------------------------------------------------------------------
-Ecrit apres le diagnostic de P1 et avant tout nouveau calcul sur les onze
-essais. Mesures faites avant ce texte : test geometrique et essais de mise
-au point E1 a E4 (mise_au_point_elm_pid.py), aucun des onze essais.
-
-M3. Projection : point admissible le plus proche, avec restauration
-  Pourquoi. Le depart est sur la frontiere de l'ensemble admissible et
-  l'ensemble y est non convexe : le glissement de M2 (pas tangent coupe par
-  bissection) y est annule (diagnostic de la section 7). L'operateur de
-  projection des references de M2 (Goodwin et Sin ; Ioannou et Sun)
-  ramene le pas au point admissible le plus proche ; sur un ensemble a
-  frontiere courbe, cela demande, apres le pas tangent, un retour sur la
-  frontiere.
-  Reference. J. B. Rosen, "The gradient projection method for nonlinear
-  programming, Part II : Nonlinear constraints", Journal of the Society
-  for Industrial and Applied Mathematics, 9(4), 1961 (projection du pas
-  sur le plan tangent aux contraintes actives, puis restauration vers la
-  frontiere le long de la normale).
-  Mise en oeuvre (banc_elm_pid.py, elm_pid_adaptatif.m) : cible
-  z = x + dx (bornee a [1/4 ; 4]) ; si z n'est pas admissible : point de
-  sortie y sur le segment (30 bissections) ; puis, au plus 10 fois :
-  normale n = gradient de g en y ; d = z - y privee de sa composante
-  sortante max(0, n.d) n / |n|^2 ; p = y + d ; si p n'est pas admissible,
-  restauration : recul le long de -n / |n| (pas doubles a partir de 1e-6,
-  puis 30 bissections) ; p remplace y seulement s'il est plus proche de z.
-  Le resultat est toujours admissible. Tout le reste est inchange (y
-  compris le critere d'admissibilite, la porte, les zones mortes, eta).
-  La version M2 seule est gardee comme ablation.
-
-Controles faits avant les previsions (mise_au_point_elm_pid.py)
-  Depuis le depart, 500 pas aleatoires : gains changes 500 (M3), 304 (M2
-  seule), 242 (sans glissement) ; aucun resultat hors de l'ensemble ;
-  distance moyenne a la cible 0.046 (M3), 0.075 (M2), 0.086.
-  Essais E1 a E4, IAE apres 30 ms (mV.s), R0 / M2 seule / ELM-PID (M3) :
+6. CONTROLES DE MISE AU POINT (avant les previsions ; mise_au_point_elm_pid.py)
+-----------------------------------------------------------------------------
+  Projection depuis le depart, 500 pas aleatoires : gains changes 500
+  (M3), 304 (M2 seule), 242 (sans glissement) ; aucun resultat hors de
+  l'ensemble ; distance moyenne a la cible 0.046 (M3), 0.075, 0.086.
+  Essais de mise au point (points R, Vin absents des onze essais) : E1
+  7 ohms, 190 V, charge a 4.5 ohms sur [40 ; 65) ms ; E2 15 ohms, 210 V, Vin
+  175 V puis 235 V ; E3 60 ohms, 220 V, consigne +10 V sur [40 ; 65) ms ;
+  E4 9 ohms, 200 V, bruit et CAN 12 bits.
+  IAE apres 30 ms (mV.s), R0 / M2 seule / ELM-PID :
     E1 34.06 / 33.99 / 33.13 ; E2 3.02 / 1.88 / 1.52 ;
     E3 33.92 / 20.16 / 20.19 ; E4 1.16 / 1.03 / 1.03.
   Avec M3, les gains changent des le demarrage (2.5 a 4 ms) sur les quatre
-  essais ; avec M2 seule, sur E1 et E2, pas avant 68 et 40.5 ms. Jacobien
-  constant : a 0.4 mV.s pres de l'ELM-PID.
+  essais. Jacobien constant : a 0.4 mV.s pres. Aucun reglage n'a ete change
+  apres ces essais.
 
-Previsions (ecrites avant le calcul sur les onze essais)
+
+7. PREVISIONS (ecrites avant le calcul sur les onze essais)
+-----------------------------------------------------------
   Q1. Les gains changent dans les trois cas de base : sur S1, S2 et S3, au
       moins une fenetre ou les gains changent et un multiplicateur final
       hors de [0.99 ; 1.01].
   Q2. J entre 0.70 et 0.78 ; tous les evenements reviennent.
-  Q3. J au plus egal a celui de la version M2 seule (0.744).
+  Q3. J au plus egal a celui de la version M1-M2 seules (0.744).
   Q4. Jacobien constant : J a 0.02 pres de l'ELM-PID.
-  Q5. Aucune fenetre adaptee apres 30 ms sur S7a et S7b.
+  Q5. Aucune fenetre adaptee apres 30 ms sur S7a et S7b (pas de derive sur
+      le bruit et la quantification).
   Q6. L ou C a +-0.1 % : J a 0.02 pres de sa valeur nominale.
-  Q7. Demarrage de S1 : IAE de 0 a 30 ms a 5 % pres de celle de R0 (les
-      gains ne changent qu'apres la phase saturee).
+  Q7. Demarrage de S1 : IAE de 0 a 30 ms a 5 % pres de celle de R0.
   Regle de conclusion : si Q1 est fausse, on s'arrete et on le dit ; on ne
   touche ni aux zones mortes ni au critere d'admissibilite pour la rendre
-  juste.
+  juste. Ablations rapportees, jamais choisies : jacobien constant, sans
+  OS-ELM, M2 seule, sans glissement, R0 (gains figes).
 
-Resultats de l'amendement 1 (7 octobre 2026 ; banc_elm_pid_sortie_console.txt)
+
+8. RESULTATS (7 octobre 2026 ; banc_elm_pid_sortie_console.txt)
+---------------------------------------------------------------
                           J      apres 30 ms   demarrage   non revenus
     Ziegler-Nichols     1.000      1.000         1.000      S8b, S9
     meilleur PID fige   0.738      0.710         0.831      -
+      (sur grille, choisi sur les onze essais)
     R0 (gains figes)    0.917      0.986         0.687      S8b, S9
-    ELM-PID (M1-M3)     0.728      0.747         0.664      -
-  Fenetres ou les gains changent : S1 2, S2 4, S3 6, S4 6, S5 8, S6 2, S7a 2,
-  S7b 1, S8a 12, S8b 18, S9 16 (77 en tout). Gains finaux (x ZN) : S1
-  (0.97, 1.03, 1.07), S2 (1.41, 1.18, 0.96), S3 (1.54, 1.26, 0.99), S8b
-  (3.38, 1.86, 1.30), S9 (3.05, 1.88, 1.28).
+    ELM-PID             0.728      0.747         0.664      -
+  Fenetres ou les gains changent : S1 2, S2 4, S3 6, S4 6, S5 8, S6 2,
+  S7a 2, S7b 1, S8a 12, S8b 18, S9 16 (77 en tout). Gains finaux (x ZN) :
+  S1 (0.97, 1.03, 1.07) ; S2 (1.41, 1.18, 0.96) ; S3 (1.54, 1.26, 0.99) ;
+  S8b (3.38, 1.86, 1.30) ; S9 (3.05, 1.88, 1.28). Instants : 3.5 et 4 ms
+  sur S1, S2, S3 ; puis 52 et 52.5 ms sur S2 ; 52, 52.5, 53 et 72 ms sur S3.
   IAE apres 30 ms (mV.s), R0 / ELM-PID : S3 8.48 / 7.79 ; S4 22.74 / 19.57 ;
   S5 3.81 / 2.97 ; S8a 11.08 / 3.24 ; S8b 73.89 / 3.33 ; S9 537.3 / 307.0.
   S2 (hors de J) : 5.27 / 5.61, un peu moins bon.
   Ablations : jacobien constant 0.728 ; sans OS-ELM 0.728 ; M2 seule 0.744 ;
-  sans glissement 0.760. Sensibilite (L ou C a +-0.1 %) : 0.722 a 0.731.
+  sans glissement 0.760. Sensibilite (L ou C a +-0.1 %) : J de 0.722 a
+  0.731.
   Q1 a Q7 justes.
 
-Lecture
-  1. L'ELM-PID adapte maintenant dans les trois cas de base. Le verrou etait
-     la projection : le depart, sur la frontiere d'un ensemble non convexe,
-     annulait tout pas.
-  2. Les gains ne bougent que lorsque l'erreur moyenne d'une fenetre depasse
-     0.1 V (zone morte). En regime etabli, ils restent constants : c'est
-     voulu (pas d'information, pas d'adaptation, pas de derive sur le
-     bruit). Sur S1, S2, S3, cela fait 2 a 6 fenetres.
-  3. Le jacobien est bien estime en ligne a chaque fenetre par le reseau
-     (de 9.6 a 13.9 V par unite), mais il ne suit pas le vrai (11.2 a 15.8,
-     correlation -0.04 sur les fenetres de controle) et le remplacer par une
-     constante donne le meme J (0.728). Deux raisons : la charge n'est pas
-     observable avec les seules tensions et rapports cycliques passes
-     (section 4) ; et dans le gradient normalise de Lu, le jacobien ne fixe
-     que le signe du pas et le divise a peu pres (dx ~ ebar / J) : une
-     variation de 30 % de J change le pas de 30 %, pas sa direction. Ce qui
-     fait le resultat, c'est la boucle d'adaptation (porte, zone morte,
-     gradient normalise, projection), pas le reseau.
 
-8. REFERENCES
--------------
+9. LECTURE (pour le memoire)
+----------------------------
+  1. L'ELM-PID adapte ses gains dans les trois cas de base et sur tous les
+     essais. Il fait mieux que R0 (0.728 contre 0.917), ramene S8b et S9
+     dans la bande, et fait un peu mieux que le meilleur PID fige sur grille
+     (0.738).
+  2. Les gains ne bougent que lorsque l'erreur moyenne d'une fenetre de
+     0.5 ms depasse 0.1 V (zone morte). En regime etabli, ils restent
+     constants : c'est voulu (pas d'information, pas d'adaptation, pas de
+     derive sur le bruit, Q5). Sur S1, S2, S3, cela fait 2 a 6 fenetres.
+  3. Le jacobien est bien estime en ligne a chaque fenetre par le reseau
+     (de 9.6 a 13.9 V par unite sur les essais ; mediane 10.3 sur S1, 11.5
+     sur S8b), mais il ne suit pas le vrai (11.2 a 15.8 ; correlation
+     -0.04 sur les fenetres de controle), et le remplacer par une constante
+     donne le meme J (0.728). Deux raisons : la charge n'est pas observable
+     avec les seules tensions et rapports cycliques passes (section 5) ; et
+     dans le gradient normalise de Lu, dx = eta ebar phi / (eps + phi.phi)
+     avec phi = J v, le jacobien ne fixe que le signe du pas et le divise
+     (dx ~ eta ebar v / (J |v|^2)) : une variation de 30 % de J change la
+     longueur du pas de 30 %, pas sa direction. Ce qui fait le resultat,
+     c'est la boucle d'adaptation (porte, zone morte, gradient normalise,
+     projection), pas le reseau. A dire tel quel dans le memoire.
+  4. Perspective (non faite ici) : un jacobien informatif demanderait une
+     entree qui renseigne sur la charge (courant de la bobine), ce qui
+     changerait la mesure disponible au regulateur dans la base commune.
+
+
+10. REFERENCES
+--------------
   [1] Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller
       based on ELM and its implementation for Buck converters",
       International Journal of Control, Automation and Systems, 19(7),
@@ -365,6 +320,7 @@ Lecture
   [14] J. B. Rosen, "The gradient projection method for nonlinear
       programming, Part II : Nonlinear constraints", Journal of the Society
       for Industrial and Applied Mathematics, 9(4), 1961.
-  Les references [1] a [4], [5], [7], [11] a [13] viennent de la version
-  de depart (document Regulateur_ELM_PID.docx) ; [6], [8], [9], [10] sont
-  ajoutees ici, verifiees par leurs notices bibliographiques.
+  Les references [1] a [5], [7], [11] a [13] viennent du document de la
+  methode (Regulateur_ELM_PID.docx) ; [6], [8], [9], [10], [14] justifient
+  les modifications et ont ete verifiees par leurs notices
+  bibliographiques (textes integraux non consultes ici, sauf [1]).
