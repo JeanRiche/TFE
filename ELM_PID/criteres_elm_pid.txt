@@ -195,10 +195,46 @@ la zone morte des gains, l'absence d'oubli, le depart.
   sans glissement, R0 (gains figes).
 
 
-7. RESULTATS
-------------
-  (a completer apres le calcul)
+7. RESULTATS (7 octobre 2026 ; sortie complete : banc_elm_pid_sortie_console.txt
+   de ce calcul, conservee dans l'historique du depot)
+------------------------------------------------------------------------------
+                          J      apres 30 ms   demarrage   non revenus
+    Ziegler-Nichols     1.000      1.000         1.000      S8b, S9
+    meilleur PID fige   0.738      0.710         0.831      -
+    R0 (gains figes)    0.917      0.986         0.687      S8b, S9
+    ELM-PID             0.744      0.765         0.674      -
+  Fenetres ou les gains changent : S4 2, S5 6, S7a 1, S8a 13, S8b 23, S9 19 ;
+  S1, S2, S3, S6, S7b : 0. Gains finaux (x ZN) : S5 (1.68, 1.52, 1.16),
+  S8b (2.71, 1.42, 1.03), S9 (2.65, 1.65, 1.30).
+  Ablations : jacobien constant 0.741 ; sans OS-ELM 0.743 ; sans glissement
+  0.760. Sensibilite (L ou C a +-0.1 %) : J de 0.739 a 0.749.
+  Jacobien du reseau sur les essais (V par unite, fenetres de 0.5 ms) : de
+  9.6 a 13.9 ; mediane 10.3 sur S1, 10.0 sur S5, 11.5 sur S8b. Il varie a
+  chaque fenetre, mais bien moins que le vrai (11.2 a 15.8).
 
+Face aux previsions
+  P1 FAUSSE : sur S1, S2, S3, des pas sont calcules (2, 4 et 6 fenetres)
+     mais les gains ne changent pas.
+  P2 juste : J = 0.744, tous les evenements reviennent.
+  P3 juste : 0.744 contre 0.917 pour R0.
+  P4 juste : jacobien constant 0.741.
+  P5 juste : sans glissement 0.760.
+  P6 juste : aucune fenetre adaptee apres 30 ms sur S7a et S7b.
+  P7 juste : J de 0.739 a 0.749.
+
+Diagnostic de P1 (regle de conclusion : porte, zone morte ou projection)
+  Ce n'est ni la porte (ouverte sur 97 a 99 % des fenetres) ni la zone
+  morte (les pas sont calcules) : c'est la projection. Le critere
+  d'admissibilite est "marge au moins egale a celle du depart" : le depart
+  est donc, par construction, SUR la frontiere (g(1, 1, 1) = 0). Et
+  l'ensemble y est localement non convexe : sur 200 pas de 0.05 tires dans
+  le plan tangent, 18 seulement restent admissibles. Le glissement de M2
+  (retrait de la composante normale, puis bissection le long du pas
+  tangent) part donc du point de sortie, sort a nouveau des le premier
+  millieme du pas, et la bissection le ramene a zero. Sur S1 a S3, tous les
+  pas calcules partent du depart : tous sont annules. Ailleurs (S5, S8,
+  S9), les premiers pas entrent dans l'ensemble, les suivants partent d'un
+  point interieur, et l'adaptation fonctionne.
 
 8. REFERENCES
 -------------

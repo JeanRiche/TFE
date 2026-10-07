@@ -313,7 +313,7 @@ def juger(mod):
         err.append(float(np.sqrt(np.mean((predire(mod, X)[0] - T) ** 2))))
     r = J / Jv
     return {"c1": bool(np.all(J > 0)), "c2": bool(np.all(J >= Jv / 2)), "erreur_V": float(np.mean(err)),
-            "erreurs_V1_V2": err, "rapport_J_min": float(r.min()),
+            "erreurs_V1_V2": err, "rapport_J_min": float(r.min()), "J_median": float(np.median(J)),
             "ecart_log_J": float(np.sqrt(np.mean(np.log(np.maximum(J, 1e-12) / Jv) ** 2)))}
 
 
