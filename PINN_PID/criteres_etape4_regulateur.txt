@@ -1,0 +1,119 @@
+PINN-PID, etape 4 : le regulateur sur le banc commun
+Ecrit le 5 octobre 2026. Les reglages ci-dessous ont ete fixes avant tout
+essai. Un essai exploratoire sur S1 et S8b a ete fait avant d'ecrire ce
+fichier (voir "Transparence") ; rien n'a ete change apres lui.
+
+Loi, depart et boite (decision de Jean-Riche du 5 octobre 2026)
+  Loi de Lu a derivee filtree, depart u = 0.5 aux gains de Ziegler-Nichols
+  en forme incrementale, boite de boite_gains_elm.json, seule saturation
+  [0.01 ; 0.99]. Les gains sont ecrits theta dans [0 ; 1] (0 au bord bas de
+  la boite, 1 au bord haut), comme pour l'ELM-PID.
+
+Observateur (consequence de l'etape 3)
+  Filtre de Kalman etendu a chaque Tc sur [Vout, iL, Vin_eff], charge
+  nominale G = 1/5 S. Vin_eff est une tension d'entree "effective" : elle
+  absorbe l'ecart de Vin et l'ecart de pertes du a la charge, pour que le
+  modele nominal ait le bon regime etabli au point de fonctionnement (sans
+  elle, a Vin = 160 V, le modele nominal predirait une derive vers 126 V
+  qui n'existe pas). Bruit de mesure 14.1 mV, bruit d'etat 1 mV, 10 mA,
+  0.03 V par pas (valeurs de l'etape 3). Modele : moyen par tranche Tc,
+  table de 121 fractions de conduction, interpolation lineaire.
+
+Optimisation des gains (Ito et Wasa, P6, adaptee)
+  A la fin de chaque fenetre de 0.5 ms (110 periodes Tc), si l'erreur
+  efficace mesuree sur la fenetre depasse 0.1 V (meme valeur que la zone
+  morte de l'ELM-PID) : 5 iterations d'Adam (alpha = 0.01 en unites de
+  theta, beta1 = 0.9, beta2 = 0.999, eps = 1e-7, valeurs d'Ito et Wasa ;
+  moments remis a zero a chaque fenetre), projection sur [0 ; 1].
+  Cout, sur un horizon de 110 pas a partir de l'etat estime, avec la loi de
+  Lu dans la boucle et la consigne courante :
+    J = moyenne de [ e^2 / (1 V)^2 + rho (du / 0.01)^2 ] + mu |theta - theta_debut|^2,
+    rho = 0.01 (un du de 0.01 par pas coute autant que 0.1 V d'erreur),
+    mu = 0.02 (proximite, valeur de la version precedente).
+  Ecarts a Ito et Wasa, a ecrire : du^2 au lieu de u^2 (u vaut environ 0.5
+  en regime, u^2 pousserait la commande vers 0) ; proximite au lieu de
+  |F|^2 (|F|^2 ramene les gains vers zero en regime, constate sur
+  l'ancienne base) ; declenchement a 0.1 V (Adam fait un pas de taille
+  alpha quel que soit le gradient : sans seuil, les gains marcheraient au
+  hasard en regime).
+  Gradient : calcule a la main par retropropagation dans le temps (loi,
+  modulation, modele). Saturation : valeur exacte vers l'avant, pente de
+  0.01 vers l'arriere hors de [0.01 ; 0.99] (sinon gradient nul en butee).
+  Modulation dans l'horizon : fraction de conduction continue
+  clip(u x 1200 - phase, 0, 120) / 120.
+  Controle : gradient compare aux differences finies hors saturation
+  (identique a 4 chiffres sur 5, 30 et 110 pas).
+
+Variantes
+  Plafond : predicteur = modele physique nominal (ce fichier).
+  PINN-PID : predicteur = PINN, tout le reste identique (apres l'etape 2).
+  R0 : meme loi, gains figes (aucune adaptation).
+  Controle : PINN-PID sans adaptation = R0 a l'identique.
+
+Transparence
+  Essai exploratoire S1 et S8b (plafond), fait juste apres l'ecriture du
+  code, avant ce fichier :
+    S1 : 7 fenetres adaptees sur 400 (demarrage), IAE identique a R0.
+    S8b : IAE 3.17 mV.s (R0 73.89, ELM-PID 8.25, meilleur PID fige 2.46),
+    tous les evenements reviennent, Kp au bord haut de la boite (x2.38),
+    Kd x1.28, 29 fenetres adaptees.
+  Ma prevision ecrite avant cet essai (message du 5 octobre) etait que
+  l'adaptation agirait peu a 98 ohms, voire dans le mauvais sens : elle
+  est fausse sur S8b. Le modele nominal ne connait pas la charge, mais
+  recale a chaque fenetre sur l'etat estime, il voit une erreur qui ne
+  s'eteint pas et demande plus de Kp ; a 98 ohms, plus de Kp ameliore la
+  marge (constate aussi avec l'ELM-PID : -2.7 a 3.5 degres).
+
+Previsions pour les onze essais (plafond), ecrites avant l'essai complet
+  J du meilleur PID fige : entre 0.74 et 0.85 (R0 0.917, ELM-PID 0.784).
+  S8a, S8b, S9 : tous les evenements reviennent dans la bande.
+  S1 a S7b : peu d'adaptations, hors demarrage et evenements ; S7a et S7b
+  sans adaptation en regime (bruit sous le seuil de 0.1 V).
+  S2 (F1 a la consigne) : la consigne bouge de 2 a 5.4 V ; les adaptations
+  ne changent pas l'ecart maximal de plus de 10 % (R0 : 4.81 V).
+  Risque : Kp colle au bord haut apres un transitoire et y reste (aucune
+  force ne le ramene) ; consequence possible sur S7a et S7b si un
+  transitoire precede, a mesurer (activite de la commande).
+
+Resultat du plafond sur les onze essais, face aux previsions
+  J = 0.688 (prevu entre 0.74 et 0.85 : faux, meilleur que prevu).
+  S8a, S8b, S9 : tous les evenements reviennent (prevu).
+  S1 a S7b : 6 a 21 fenetres adaptees sur 400, au demarrage et apres les
+  evenements ; S7a et S7b : seulement au demarrage (prevu).
+  S2 : ecart maximal 4.61 V contre 4.81 V pour R0 (-4 %, dans les 10 %
+  prevus).
+  Risque note : Kp finit au bord haut de la boite sur S8b (x2.38) et n'en
+  redescend pas. Sur le bruit, pas d'effet defavorable : S7a 28.7 mV et
+  S7b 18.9 mV d'ecart efficace (R0 32.0 et 21.2), activite sur S7a 0.0070
+  (R0 0.0062).
+  Controles : sans adaptation = R0 a l'identique ; L ou C a +-0.1 % : J de
+  0.677 a 0.682, tous les evenements reviennent. Ablations : sans seuil
+  0.750 ; sans Vin_eff 0.681 (pas d'effet mesurable) ; R0 aux gains finaux
+  de S8b 0.722. Marges aux gains finaux : 12.6 a 19.3 degres a 25 et
+  98 ohms (Ziegler-Nichols : -2.7), 33 a 40 degres a 4 et 5 ohms.
+
+Premier passage avec le PINN (candidat A', 5 octobre 2026, 17 h 40 ; B' pas
+encore fini, donc pas le resultat final)
+  PINN-PID : J = 0.684, tous les evenements reviennent ; plafond 0.688.
+  Memes fenetres adaptees et memes gains finaux que le plafond a 1 % pres.
+  La prevision "le PINN fera au mieux comme le modele" se lit ici comme
+  "pareil, au bruit pres" (sensibilite L, C a +-0.1 % : 0.678 a 0.687).
+  Decomposition de J (13 termes) : sans les trois termes de demarrage,
+  PINN-PID 0.694, meilleur PID fige 0.710, R0 0.986 ; demarrage seul,
+  PINN-PID 0.651, PID fige 0.831, R0 0.687. L'avance de J sur le PID fige
+  vient surtout du demarrage, c'est-a-dire de la forme incrementale (R0 l'a
+  deja), pas de l'adaptation. Apres le demarrage, PINN-PID et PID fige
+  sont au meme niveau : le PINN-PID gagne sur le bruit (S7a, S7b), perd sur
+  S3, S5, S8a, S8b et S9.
+
+Ablation ajoutee apres ce passage (declaree comme telle)
+  Comme le PINN et le modele physique donnent le meme J, on a remplace le
+  predicteur par un modele physique volontairement faux. Essai
+  exploratoire : L et C x2 : J = 0.692 ; L et C x0.5 : 0.694 ; L x4 :
+  0.690 ; C x4 : 0.691 ; tous les evenements reviennent, Kp finit au bord
+  haut de la boite sur S8b dans tous les cas. Conclusion a ecrire : sur ce
+  convertisseur, ce n'est pas la precision du predicteur qui fait le
+  resultat, mais le declenchement a 0.1 V, le pas d'Adam (de taille alpha
+  quel que soit le gradient) et la boite ; le predicteur donne surtout le
+  signe du gradient. Les deux premieres variantes entrent dans
+  banc_pinn_pid.py comme ablations.

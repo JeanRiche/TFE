@@ -1,0 +1,30 @@
+Dossier de travail : /home/user/TFE/PINN_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Boite : Kp de 0.093910 a 0.223357, Ki de 3.4215e-04 a 1.3686e-03, Kd de 1.6110 a 3.8316 ; depart a Ziegler-Nichols.
+PINN : 3 couches cachees de 32 neurones (candidat A, plage nominale).
+Vecteurs de test du PINN : ecart maximal 6.4e-16.
+Gradient de l'horizon contre differences finies : ecart relatif maximal 6.7e-08.
+
+==============================================================================
+ Essais de mise au point E1 a E4 (IAE en mV.s ; gains en multiples de Ziegler-Nichols)
+==============================================================================
+  E1 (R = 7 ohms, Vin = 190 V)
+    R0 (gains figes)       demarrage  72.96, apres 30 ms  34.06
+    boite (depart)         demarrage  72.32, apres 30 ms  31.68 ; gains changes 17 fenetres ; Ki de 0.925 a 1.000 ; finaux x(1.332, 0.989, 1.054)
+    PINN-PID (M1-M2)       demarrage  72.23, apres 30 ms  31.57 ; gains changes 17 fenetres ; Ki de 0.907 a 1.245 ; finaux x(1.498, 1.211, 1.081)
+    M1 sans restauration   demarrage  72.31, apres 30 ms  31.54 ; gains changes 15 fenetres ; Ki de 0.925 a 1.206 ; finaux x(1.479, 1.173, 1.068)
+  E2 (R = 15 ohms, Vin = 210 V)
+    R0 (gains figes)       demarrage  63.70, apres 30 ms   3.02
+    boite (depart)         demarrage  62.84, apres 30 ms   1.51 ; gains changes 17 fenetres ; Ki de 0.963 a 1.000 ; finaux x(1.827, 1.000, 1.345)
+    PINN-PID (M1-M2)       demarrage  64.58, apres 30 ms   1.42 ; gains changes 17 fenetres ; Ki de 1.018 a 1.403 ; finaux x(1.942, 1.403, 1.289)
+    M1 sans restauration   demarrage  62.91, apres 30 ms   1.39 ; gains changes 13 fenetres ; Ki de 0.963 a 1.334 ; finaux x(1.894, 1.334, 1.477)
+  E3 (R = 60 ohms, Vin = 220 V)
+    R0 (gains figes)       demarrage  92.19, apres 30 ms  33.92
+    boite (depart)         demarrage  88.44, apres 30 ms  16.98 ; gains changes 27 fenetres ; Ki de 0.894 a 1.000 ; finaux x(1.734, 0.993, 1.028)
+    PINN-PID (M1-M2)       demarrage  91.28, apres 30 ms  16.77 ; gains changes 31 fenetres ; Ki de 0.956 a 1.232 ; finaux x(1.870, 1.112, 0.960)
+    M1 sans restauration   demarrage  88.65, apres 30 ms  15.60 ; gains changes 25 fenetres ; Ki de 0.962 a 1.390 ; finaux x(1.826, 1.352, 1.297)
+  E4 (R = 9 ohms, Vin = 200 V)
+    R0 (gains figes)       demarrage  66.51, apres 30 ms   1.16
+    boite (depart)         demarrage  65.35, apres 30 ms   1.10 ; gains changes  8 fenetres ; Ki de 0.964 a 1.000 ; finaux x(1.346, 1.000, 1.137)
+    PINN-PID (M1-M2)       demarrage  66.26, apres 30 ms   0.84 ; gains changes 10 fenetres ; Ki de 0.943 a 1.168 ; finaux x(1.445, 1.168, 1.178)
+    M1 sans restauration   demarrage  65.84, apres 30 ms   0.94 ; gains changes  8 fenetres ; Ki de 0.967 a 1.142 ; finaux x(1.364, 1.142, 1.057)
