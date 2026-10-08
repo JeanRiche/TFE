@@ -11,6 +11,15 @@ FUZZY, PSO ou ELM_PID_INCREMENTAL sur le chemin MATLAB en meme temps
 et ensemble_gains_elm.mat ont change (versions 4, 4 et 2) : le bloc refuse
 les fichiers de la version incrementale.
 
+STATUT (8 octobre 2026) : VALIDE SOUS SIMULINK sur le modele commun
+(etapes 2 a 4, sorties de Jean-Riche) : auto-tests T0, T1, T2 passes,
+modele conforme, IAE a 0.1 % pres sauf S7a (+2.5 %, mesure quantifiee,
+ecart attendu), memes nombres de pas d'adaptation, memes depassements et
+memes retours. Le J du banc (0.746) vaut pour Simulink. Detail :
+criteres_elm_pid.txt, section 10. Pas encore transmis : la sortie du test
+de rejeu (etape 1). Restent a lancer : les trois modeles de base (etapes
+5 a 7).
+
 A LIRE D'ABORD : criteres_elm_pid.txt
   Methode de reference (Lu et al. 2021), diagnostics, modifications M1 a
   M4 avec leurs references, previsions ecrites avant le calcul (commit
@@ -64,13 +73,15 @@ A lancer :
    Nominal, F1, F2 compares a S1, S2, S3 du banc ; une figure par modele,
    avec les gains.
 
-Envoie-moi la sortie console des etapes 1 a 7. Si une etape s'arrete sur
-une erreur, envoie-la telle quelle sans passer a la suivante.
-Aucun script MATLAB n'a pu etre execute ici (pas de MATLAB). Ce qui a ete
-controle sans MATLAB : le rejeu emule en Python a partir du fichier de
-reference redonne les gains du banc a l'identique ; les deux verificateurs
-ont ete passes sur des modeles fabriques (conformes, puis avec deux
-entrees de l'adaptateur inversees : rejete).
+Fait le 8 octobre 2026 : etapes 2, 3 et 4 (validees, voir le statut en
+tete). A faire : envoie-moi la sortie console de l'etape 1 (rejeu), puis
+celle des etapes 5 a 7. Si une etape s'arrete sur une erreur, envoie-la
+telle quelle sans passer a la suivante.
+Avant la validation Simulink, ce qui avait ete controle sans MATLAB : le
+rejeu emule en Python a partir du fichier de reference redonne les gains
+du banc a l'identique ; les deux verificateurs ont ete passes sur des
+modeles fabriques (conformes, puis avec deux entrees de l'adaptateur
+inversees : rejete).
 
 CE QUE SIMULINK DOIT DONNER (banc)
 ----------------------------------

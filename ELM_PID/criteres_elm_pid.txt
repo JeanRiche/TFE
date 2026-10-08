@@ -404,7 +404,52 @@ Aucun de ces reglages n'a ete revu pour M4.
      la boucle d'adaptation et la loi qu'elle regle.
 
 
-10. REFERENCES
+10. VALIDATION SIMULINK (8 octobre 2026, sorties envoyees par Jean-Riche)
+-----------------------------------------------------------------------------
+  Construction_ELM_PID : entrees du bloc "PID Controller" u = 1, P = 2,
+    I = 3, D = 4, N = 5. Auto-tests :
+      T0 (S1, 20 ms, adaptateur fige, contre le PID classique) : 2.3 mV,
+         gains x[1 1 1] ;
+      T1 (S1, 20 ms, ELM-PID) : 2.3 mV, gains a 19 ms
+         x[1.469 1.059 1.151] (banc x[1.469 1.058 1.152]) ;
+      T2 (S8b) : 23.7 mV, gains x[2.311 1.657 1.133]
+         (banc x[2.313 1.653 1.130]).
+  verifier_modele_elm_pid.py : modele conforme.
+  Simuler_ELM_PID, onze essais, Simulink face au banc :
+    IAE apres 30 ms (mV.s), Simulink / banc :
+      S1    1.49 /   1.49       S6    1.60 /   1.60
+      S2    2.40 /   2.41       S7a   3.86 /   3.76  (+2.5 %)
+      S3    6.41 /   6.41       S7b   2.66 /   2.66
+      S4   18.88 /  18.87       S8a   2.97 /   2.96
+      S5    2.46 /   2.46       S8b   3.02 /   3.03
+                                S9  295.05 / 294.86  (+0.1 %)
+    Memes nombres de pas d'adaptation que le banc sur les onze essais.
+    Gains, ecart relatif maximal Simulink - banc (toutes les ms) : 0.13 %
+    au plus sur S1 a S6, 0.11 % sur S8a, 0.85 % sur S8b, 0.38 % sur S9,
+    4.2 % sur S7a.
+    Ecart sur Vout prise toutes les ms : 0.3 a 1.1 mV efficace, sauf S8b
+    (4.0 mV), S9 (5.3 mV) et S7a (33.4 mV).
+    S7a : mesure quantifiee (CAN 12 bits). Un ecart d'arrondi suffit a
+    changer une decision du CAN, les trajectoires se separent point par
+    point et les decisions d'adaptation qui en dependent aussi ; seuls IAE
+    et ecart efficace se comparent. Ecart attendu (deja vu pour le
+    Fuzzy-PID, le PSO-PID et la version incrementale).
+    Depassements identiques : S1 13.99 %, S8a 52.22 %, S8b 82.35 %. Memes
+    retours dans la bande et memes temps de retour.
+  Conclusion : le banc Python reproduit Simulink pour l'ELM-PID option B,
+  modele commun. Le J du banc (0.746) vaut pour Simulink. Estimation de J
+  sous Simulink a partir des IAE ci-dessus, IAE du demarrage supposees
+  egales a celles du banc (non transmises) : 0.748, dont presque tout
+  l'ecart vient de S7a (0.746 avec S7a pris au banc).
+  Non transmis : la sortie du test de rejeu (Tester_ELM_PID_Rejeu), qui
+  reste la validation du bloc pas par pas. L'accord ci-dessus (memes
+  decisions d'adaptation, gains a moins de 1 % hors S7a) la rend tres
+  probable, sans la remplacer.
+  Non lances : les trois modeles de base (Construction_ELM_PID_Trois_Modeles,
+  verifier_modeles_elm_pid_trois.py, Simuler_ELM_PID_Trois_Modeles).
+
+
+11. REFERENCES
 --------------
   [1] Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller
       based on ELM and its implementation for Buck converters",
