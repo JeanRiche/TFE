@@ -316,10 +316,104 @@ C3. Ensemble admissible de l'ELM-PID au lieu de la boite  (memes bornes
   touchees ensuite.
 
 
-8. RESULTATS
-------------
-  (A remplir apres le calcul sur les onze essais, sans changer les
-  sections 1 a 7.)
+8. RESULTATS (8 octobre 2026 ; banc_pinn_pid_sortie_console.txt)
+-----------------------------------------------------------------
+  Calcul fait apres le commit des previsions (913837e), sans rien changer
+  a la loi, aux reglages ni a la combinaison. Le script a tourne du
+  premier coup : aucune correction de programmation pendant ce calcul.
+  Controles refaits par le banc : gradient 4.4e-7, 9.0e-8 et 4.3e-7 (C2) ;
+  table et projection identiques a l'ELM-PID ; sans adaptation, ecart 0.0
+  sur d a Ziegler-Nichols (S1, S8b) ; "aucune correction" redonne la
+  version B (0.8931).
+                            J      apres 30 ms   demarrage   non revenus
+    Ziegler-Nichols       1.000      1.000         1.000      S8b, S9
+    meilleur PID fige     0.738      0.710         0.831      -
+    PINN-PID C (C1)       0.757      0.702         0.942      -
+    PINN-PID B            0.893      0.878         0.942      -
+    PINN-PID version 1    0.684      0.694         0.651      -
+    ELM-PID B             0.746      0.680         0.967      -
+  Rapports a Ziegler-Nichols apres 30 ms : S1 1.00, S3 0.74, S4 0.78,
+  S5 0.79, S6 0.99, S7a 0.98, S7b 0.92, S8a 0.24, S8b 0.04, S9 0.55 ;
+  demarrage : S1 0.98, S8a 0.93, S8b 0.91.
+  IAE apres 30 ms (mV.s), Ziegler-Nichols / PINN-PID C : S2 2.84 / 2.44 ;
+  S3 8.67 / 6.40 ; S4 23.61 / 18.30 ; S5 3.87 / 3.05 ; S6 1.65 / 1.63 ;
+  S8a 12.07 / 2.95 ; S8b 77.19 / 2.96 ; S9 531.8 / 291.1. S1 demarrage
+  93.77 / 92.06 mV.s (depassement 13.2 %). Tous les evenements reviennent
+  dans +-1 V.
+  Gains : sur S1, le demarrage les fixe a x(1.30, 0.90, 1.06) ; aucune
+  fenetre optimisee apres 30 ms sur S1, S6, S7a et S7b. Les evenements
+  les deplacent (fenetres optimisees apres 30 ms : S2 5, S3 6, S4 15,
+  S5 8, S8a 11, S8b 11, S9 41) et ils y restent : S3 finit a
+  (1.49, 0.95, 1.16), S8a a (2.15, 1.00, 2.00), S9 a (2.38, 1.00, 2.30),
+  P sur sa borne haute. Marges du modele moyen aux gains finaux : 32.3
+  degres (S1) a 47.1 (S9) aux coins nominaux, 6.2 a 28.5 a charge legere
+  (Ziegler-Nichols : 24.9 et -3.1).
+  Ablations (rapportees, jamais choisies) : plafond (modele physique)
+  0.757 ; aucune correction 0.893 (= B) ; C1+C2 0.752 (0.695 / 0.943) ;
+  C1+C3 0.754 (0.695 / 0.952) ; PID fige aux gains finaux de S1 des le
+  depart 0.768 (0.719 / 0.931). Sensibilite (L ou C a +-0.1 %) : J de
+  0.748 a 0.763, tous les evenements reviennent.
+
+  Previsions :
+    P1  juste : J = 0.757116218, identique a l'ablation D4 de B (controle
+        de reproductibilite, pas une prevision).
+    P2  juste : 0.702 / 0.942 (idem, deja connu).
+    P3  juste : S1 demarrage 92.06 mV.s.
+    P4  juste : S2 2.44 mV.s (prevu 1.9 a 2.6).
+    P5  juste : S3 6.40 mV.s (prevu 6.0 a 7.4).
+    P6  FAUSSE : S8a 2.95 mV.s, bien meilleur que prevu (4.5 a 6.8).
+        L'extrapolation depuis E3 (60 ohms, C1 = 0.86 fois B) ne valait
+        pas pour 25 ohms : sur S8a, les gains montent a (2.15, 1, 2.00)
+        pendant les sauts de Vin, et ces gains hauts gardent la marge a
+        charge legere.
+    P7  juste : tous les evenements reviennent (deja connu).
+    P8  juste : ecart maximal entre 50 et 55 ms : S2 0.098, S3 0.139.
+    P9  FAUSSE : sur S1, aucune fenetre optimisee apres 30 ms et gains
+        constants (juste), mais valeur finale x(1.299, 0.900, 1.059) :
+        P a 0.001 sous la borne de 1.30, D sous 1.15. Le demarrage a 5 ohms
+        monte moins les gains que E4 (9 ohms).
+    P10 FAUSSE : aucune derive en regime (0 fenetre optimisee apres 30 ms
+        sur S7a et S7b ; ecart efficace de S7b 19.6 mV contre 21.3 pour
+        Ziegler-Nichols), mais l'ecart a S1 atteint 0.100 sur S7b (prevu
+        0.05 au plus ; S7a 0.050) : le bruit change les fenetres
+        optimisees pendant le demarrage, donc les gains d'arrivee
+        (1.35, 1.00, 1.11) au lieu de (1.30, 0.90, 1.06). Ce n'est pas une
+        derive, mais la prevision portait sur cet ecart.
+    Bilan : 7 justes (dont P1, P2, P7 connues d'avance), 3 fausses (P6,
+    P9, P10). Sur les previsions qui n'etaient pas connues d'avance : 4
+    justes sur 7.
+
+  Classement (IAE en mV.s, du meilleur au moins bon) :
+    S1 demarrage : PSO 87.62 < PINN-PID C 92.06 < ELM-B 93.72 < ZN 93.77
+                   < Fuzzy 110.91 (2e sur 5)
+    S2 : PSO 2.04 < ELM-B 2.41 < Fuzzy 2.43 < PINN-PID C 2.44 < ZN 2.84
+                   (4e sur 5)
+    S3 : PSO 5.46 < PINN-PID C 6.40 < ELM-B 6.41 < Fuzzy 7.94 < ZN 8.67
+                   (2e sur 5, a 0.01 de l'ELM-PID B)
+    S8a : PSO 2.46 < PINN-PID C 2.95 < ELM-B 2.96 < Fuzzy 4.12 < ZN 12.07
+                   (2e sur 5, a 0.01 de l'ELM-PID B)
+    J : PSO 0.714 < ELM-PID B 0.746 < PINN-PID C 0.757 < Fuzzy 0.877
+        < ZN 1 (4e sur 5 ; meilleur PID fige 0.738, version 1 0.684).
+
+  Lecture (constats, pas de reglage) :
+    1. La correction tiree du diagnostic fait passer J de 0.893 (B) a
+       0.757 ; elle revient a remettre le declenchement de la version 1.
+       Le PINN-PID C reste derriere l'ELM-PID B (0.746) et le PSO-PID
+       (0.714), et derriere la version 1 (0.684), qui garde l'avantage de
+       la loi incrementale au demarrage (0.651 contre 0.942).
+    2. Inversion a signaler : sur les onze essais, C1+C2 (0.752) et C1+C3
+       (0.754) font un peu mieux que C1 (0.757), alors que C1 etait la
+       meilleure sur E1 a E4. Les ecarts (0.3 a 0.6 %) sont sous la
+       tolerance de 1 % de la regle ; la regle a retenu la plus simple et
+       on ne change pas de combinaison apres coup.
+    3. L'adaptation apporte peu au-dela des gains que fixe le demarrage :
+       le PID fige aux gains finaux de S1 fait 0.768, le PINN-PID C 0.757.
+       Le gain vient surtout de ce que les gains montent pendant les
+       evenements a charge legere (S8a, S8b, S9 : P de 2.15 a 2.38, la
+       borne haute sur S9) et y restent.
+    4. Le predicteur ne compte pas : plafond 0.7573 contre 0.7571.
+    5. Le choix entre les versions 1, B et C revient a Jean-Riche. Rien
+       n'a ete regle sur ces resultats.
 
 
 9. REFERENCES
