@@ -1,5 +1,10 @@
 MODE D'EMPLOI : S10 SOUS SIMULINK ET METRIQUES DES CINQ METHODES
 Pour Windows, MATLAB R2024a ; 8 octobre 2026
+Mise a jour du 8 octobre 2026 (apres-midi) : Ouvrir_Modele_S10.m est
+remplace par Construire_Modeles_Comparaison.m (memes modeles <M>_S10.slx,
+et aussi S1, S2, S3, S8a) ; points 1b, 3, 4b, 5 et 6. Mode d'emploi des
+modeles de comparaison : MODE_EMPLOI.txt de l'archive
+scripts_comparaison.zip (ou COMPARAISON/MODE_EMPLOI_MODELES_COMPARAISON.txt).
 =============================================================================
 
 Arborescence supposee (noms de dossiers a garder tels quels) :
@@ -31,12 +36,14 @@ a) Fichiers S10 du depot (commit "S10 dans les dossiers PSO_PID,
    n'en a pas besoin. charger_scenario.m ne change pas.
 b) Archive scripts_S10_metriques.zip : la decompresser DANS Regulateurs\
    (elle a deja la bonne arborescence). Elle ajoute :
-     PSO_PID\Ouvrir_Modele_S10.m      FUZZY_PID\Ouvrir_Modele_S10.m
-     ELM_PID\Ouvrir_Modele_S10.m      PINN_PID\Ouvrir_Modele_S10.m
      PSO_PID\Simuler_ZN.m             (Ziegler-Nichols, voir point 4)
      COMPARAISON\metriques\...        (Metriques_Simulink.m, metriques_banc.csv, ...)
      COMPARAISON\S10\MODE_EMPLOI_S10.txt (ce fichier)
    Aucun fichier existant n'est ecrase par l'archive.
+   Si une premiere version de l'archive t'a donne Ouvrir_Modele_S10.m
+   dans les quatre dossiers : le supprimer. Il est remplace par
+   Construire_Modeles_Comparaison.m (archive scripts_comparaison.zip), qui
+   ecrit les memes fichiers <M>_S10.slx avec plus de blocs d'observation.
 c) Un seul exemplaire de chaque fichier sur le chemin MATLAB : ne pas
    ajouter les quatre dossiers au chemin (Set Path). On travaille toujours
    en se placant DANS le dossier (Current Folder), comme jusqu'ici.
@@ -85,32 +92,29 @@ l'IAE de l'ELM-PID de 8.63 a 7.88 mV.s) ; au-dela de 3 %, ou si un
 evenement ne revient pas, envoie-moi la sortie avant d'aller plus loin.
 
 
-3. LE MODELE A OUVRIR ET A LANCER : Ouvrir_Modele_S10.m
--------------------------------------------------------
-Pour voir S10 dans Simulink (Scope) sans passer par Simuler_<M>.m :
+3. LE MODELE A OUVRIR ET A LANCER : Construire_Modeles_Comparaison.m
+-------------------------------------------------------------------
+Pour voir S10 dans Simulink sans passer par Simuler_<M>.m :
   1. Current Folder = Regulateurs\<DOSSIER>.
-  2. Lancer Ouvrir_Modele_S10 (la methode est deduite du nom du dossier).
-     Le script verifie que Buck_Commun_<M>.slx, scenario_S10.mat et
-     charger_scenario.m sont la, cree une copie fraiche <M>_S10.slx
-     (PSO_PID_S10.slx, Fuzzy_PID_S10.slx, ELM_PID_S10.slx,
-     PINN_PID_S10.slx), et dans la copie seulement :
-       - InitFcn = charger_scenario('S10') : S10 est TOUJOURS charge a
-         chaque Run, quoi qu'il y ait dans le workspace ;
-       - StopTime = duree de S10 plus un demi-pas de 1/220000 s, comme
-         Simuler_<M>.m (le dernier instant, 200 ms, est simule) ;
-       - un Scope "Scope S10 Vout consigne" (entree 1 Vout, entree 2
-         consigne, un point par periode du regulateur).
-     Il enregistre la copie et l'ouvre.
-  3. Cliquer sur Run. Le Scope s'ouvre au debut de la simulation ; le
-     Scope d'origine (Vin, Vout, iL) est toujours la.
+  2. Lancer Construire_Modeles_Comparaison (la methode est reconnue par
+     le seul fichier Buck_Commun_<M>.slx du dossier). Il cree des copies
+     fraiches <M>_S1.slx, <M>_S2.slx, <M>_S3.slx, <M>_S8a.slx et
+     <M>_S10.slx (ex. ELM_PID_S10.slx, Fuzzy_PID_S10.slx). Dans chaque
+     copie seulement : InitFcn = charger_scenario('<code>') (toujours ce
+     scenario, a chaque Run), StopTime = duree plus un demi-pas de
+     1/220000 s (comme Simuler_<M>.m), et des blocs d'observation (Scope
+     Vout et consigne, iL, rapport cyclique, gains ; To Workspace cmp_*).
+  3. Ouvrir <M>_S10.slx (double-clic) et cliquer sur Run.
 Ce modele sert a regarder et a faire des captures pour le memoire. Les
-chiffres officiels restent ceux du point 2. Il est plus lent que
-Simuler_<M>.m (les blocs To Workspace d'origine enregistrent au pas du
-powergui). Relancer Ouvrir_Modele_S10 refait toujours une copie fraiche ;
-la copie peut etre fermee sans enregistrer apres un Run.
-Si le script s'arrete sur "Buck_Commun_<M>.slx introuvable" : le modele de
-la methode n'a pas ete construit dans ce dossier ; lancer Construction_<M>.m
-(comme pour la validation), puis recommencer.
+chiffres officiels restent ceux du point 2. Lance par Run, il est plus
+lent que Simuler_<M>.m (les blocs To Workspace d'origine enregistrent au
+pas du powergui) ; Simuler_Modeles_Comparaison.m le simule sans eux et
+mesure le temps de calcul. Relancer Construire_Modeles_Comparaison refait
+toujours des copies fraiches ; une copie peut etre fermee sans enregistrer
+apres un Run.
+Si le script s'arrete sur "Aucun modele de methode (Buck_Commun_*.slx)" :
+le modele de la methode n'a pas ete construit dans ce dossier ; lancer
+Construction_<M>.m (comme pour la validation), puis recommencer.
 
 
 4. ZIEGLER-NICHOLS
@@ -132,9 +136,9 @@ a) Chiffres : Simuler_ZN.m, dans PSO_PID. C'est une copie mecanique de
    Ziegler-Nichols sur S10 : son oscillation peu amortie vers 1.4 kHz fait
    que la phase peut differer du banc ; on compare les IAE et les retours,
    pas les courbes point par point.
-b) Modele a ouvrir : dans n'importe lequel des quatre dossiers, ouvrir
-   Ouvrir_Modele_S10.m, mettre ZIEGLER_NICHOLS = true; en tete, lancer.
-   Le script cree ZN_S10.slx a partir de Buck_Commun.slx et l'ouvre.
+b) Modele a ouvrir : dans PSO_PID, ouvrir Construire_Modeles_Comparaison.m,
+   mettre AVEC_ZIEGLER_NICHOLS = true; en tete, lancer. Le script cree
+   aussi ZN_S1.slx ... ZN_S10.slx a partir de Buck_Commun.slx.
 
 
 5. LES METRIQUES : Metriques_Simulink.m
@@ -157,6 +161,10 @@ Une fois les points 2 et 4a faits pour les cinq methodes :
   4. Copier toute la sortie console dans sortie_metriques.txt.
 Le script ne modifie aucun fichier de resultats. Il prend quelques
 secondes.
+Variante : avec RESULTATS = 'comparaison' en tete du script, il lit a la
+place les resultats des modeles de comparaison (Simuler_Modeles_Comparaison.m,
+fichiers resultats_<modele>_comparaison.mat) et ecrit
+metriques_simulink_comparaison.csv et .md. Memes definitions.
 
 
 6. CE QU'IL FAUT M'ENVOYER
@@ -167,8 +175,8 @@ secondes.
     (point 5) ;
   - si un message d'erreur apparait : le message complet, copie tel quel,
     et le nom du script ;
-  - facultatif : une capture du Scope "Scope S10 Vout consigne" pour une ou
-    deux methodes (point 3), et les fichiers resultats_*_S10.mat si leur
+  - facultatif : une capture du Scope "Observation Vout et consigne" pour
+    une ou deux methodes (point 3), et les fichiers resultats_*_S10.mat si leur
     taille permet de les envoyer.
 Ne pas modifier les chiffres a la main dans les fichiers envoyes.
 

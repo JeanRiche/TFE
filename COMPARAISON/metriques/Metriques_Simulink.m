@@ -42,6 +42,13 @@
 %   dossier.
 %   Facultatif : metriques_banc.csv (ce dossier, ecrit par metriques_banc.py)
 %   pour comparer l'IAE de classement Simulink a celle du banc.
+%   Avec le reglage RESULTATS = 'comparaison' (ajoute le 8 octobre 2026),
+%   le script lit a la place les fichiers resultats_<modele>_comparaison.mat
+%   ecrits par Simuler_Modeles_Comparaison.m (modeles lances d'un clic,
+%   <PREFIXE>_<code>.slx, de Construire_Modeles_Comparaison.m), un fichier
+%   par methode pour les cinq scenarios, au meme format ; les sorties sont
+%   alors metriques_simulink_comparaison.csv et .md. Les definitions et le
+%   calcul ne changent pas.
 % Un fichier absent est signale ; le script continue avec ce qu'il trouve.
 %
 % CE QUE PRODUIT CE SCRIPT (dans ce dossier)
@@ -53,6 +60,7 @@
 %   - metriques_simulink.csv : une ligne par metrique (scenario ; methode ;
 %     groupe ; fenetre ; metrique ; valeur ; unite), separateur ';' ;
 %   - metriques_simulink.md : les tableaux, prets a copier.
+%   (RESULTATS = 'comparaison' : metriques_simulink_comparaison.csv et .md)
 %
 % CONTROLE SANS MATLAB
 % --------------------
@@ -67,6 +75,9 @@
 clear; clc;
 
 % --- Reglages ---
+RESULTATS = 'Simuler';      % 'Simuler' : fichiers de Simuler_<M>.m (resultats_<modele>.mat et _S10.mat) ;
+                            % 'comparaison' : fichiers de Simuler_Modeles_Comparaison.m
+                            % (resultats_<modele>_comparaison.mat)
 SCENARIOS = {'S1', 'S2', 'S3', 'S8a', 'S10'};
 METHODES  = {'Ziegler-Nichols', 'PSO-PID', 'Fuzzy-PID', 'ELM-PID', 'PINN-PID'};
 DOSSIERS  = {{'PSO_PID', 'FUZZY_PID', 'ELM_PID', 'PINN_PID'}, {'PSO_PID'}, {'FUZZY_PID'}, ...
@@ -81,12 +92,23 @@ if isempty(ICI)
     ICI = pwd;
 end
 RACINE = fullfile(ICI, '..', '..');
+switch RESULTATS
+    case 'Simuler'
+        SUFFIXES = {'', '_S10'};                           % le fichier _S10 passe avant pour S10
+        SORTIE = 'metriques_simulink';
+    case 'comparaison'
+        SUFFIXES = {'_comparaison'};
+        SORTIE = 'metriques_simulink_comparaison';
+    otherwise
+        error('RESULTATS = ''%s'' : choisir ''Simuler'' ou ''comparaison''.', RESULTATS);
+end
+fprintf('Resultats lus : %s (fichiers resultats_<modele>%s.mat).\n', RESULTATS, strjoin(SUFFIXES, '.mat ou '));
 
 % --- Lecture des resultats et calcul des metriques ---
 LIGNES = cell(0, 7);                                       % scenario, methode, groupe, fenetre, metrique, valeur, unite
 ABSENTS = {};
 for im = 1:numel(METHODES)
-    E = lire_resultats(RACINE, DOSSIERS{im}, MODELES{im});
+    E = lire_resultats(RACINE, DOSSIERS{im}, MODELES{im}, SUFFIXES);
     if isempty(E)
         fprintf('%-16s : aucun fichier resultats_%s*.mat dans %s.\n', METHODES{im}, MODELES{im}, ...
                 strjoin(DOSSIERS{im}, ', '));
@@ -127,7 +149,7 @@ for i = 1:size(LIGNES, 1)
 end
 
 % --- CSV ---
-fcsv = fullfile(ICI, 'metriques_simulink.csv');
+fcsv = fullfile(ICI, [SORTIE '.csv']);
 fid = fopen(fcsv, 'w', 'n', 'UTF-8');
 fprintf(fid, 'scenario;methode;groupe;fenetre;metrique;valeur;unite\n');
 for i = 1:size(LIGNES, 1)
@@ -137,7 +159,11 @@ fclose(fid);
 
 % --- Tableaux (Markdown, affiches aussi dans la console) ---
 T = {};
-T{end + 1} = '# Metriques des cinq methodes, resultats Simulink';
+if strcmp(RESULTATS, 'comparaison')
+    T{end + 1} = '# Metriques des cinq methodes, resultats Simulink des modeles de comparaison (<PREFIXE>_<code>.slx)';
+else
+    T{end + 1} = '# Metriques des cinq methodes, resultats Simulink';
+end
 T{end + 1} = '';
 T{end + 1} = 'Definitions : definitions_metriques.txt. Grandeurs descriptives ; le classement reste celui des IAE deja fixees.';
 if ~isempty(ABSENTS)
@@ -205,7 +231,7 @@ else
     end
 end
 
-fmd = fullfile(ICI, 'metriques_simulink.md');
+fmd = fullfile(ICI, [SORTIE '.md']);
 fid = fopen(fmd, 'w', 'n', 'UTF-8');
 fprintf(fid, '%s\n', T{:});
 fclose(fid);
@@ -347,11 +373,11 @@ function L = ajouter(L, groupe, fenetre, metrique, val, unite)
     L.unite{end + 1} = unite;
 end
 
-function E = lire_resultats(racine, dossiers, modele)
-    % Toutes les entrees des fichiers resultats_<modele>.mat et
-    % resultats_<modele>_S10.mat des dossiers donnes (cellule de structures).
+function E = lire_resultats(racine, dossiers, modele, suffixes)
+    % Toutes les entrees des fichiers resultats_<modele><suffixe>.mat des
+    % dossiers donnes (cellule de structures) ; suffixes {'', '_S10'} pour
+    % Simuler_<M>.m, {'_comparaison'} pour Simuler_Modeles_Comparaison.m.
     E = {};
-    suffixes = {'', '_S10'};
     for i = 1:numel(dossiers)
         for s = 1:numel(suffixes)
             f = fullfile(racine, dossiers{i}, ['resultats_' modele suffixes{s} '.mat']);
@@ -374,7 +400,7 @@ function E = lire_resultats(racine, dossiers, modele)
                 en.r = S.resultats(j);
                 en.fichier = f;
                 en.dossier = fullfile(racine, dossiers{i});
-                en.priorite = s == 2;                    % fichier _S10 : prioritaire pour S10
+                en.priorite = strcmp(suffixes{s}, '_S10');   % fichier _S10 : prioritaire pour S10
                 E{end + 1} = en; %#ok<AGROW>
             end
         end

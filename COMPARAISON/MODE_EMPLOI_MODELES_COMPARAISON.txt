@@ -1,0 +1,187 @@
+MODE D'EMPLOI : MODELES DE COMPARAISON (S1, S2, S3, S8a, S10)
+Pour Windows, MATLAB R2024a ; 8 octobre 2026
+=============================================================================
+
+Ce que tu obtiens
+  Pour chacun des cinq regulateurs et chacun des scenarios du corps du
+  memoire (S1, S2, S3, S8a, S10) : un modele Simulink qu'on ouvre et qu'on
+  lance d'un clic (Run), le temps d'execution de chaque simulation, et
+  toutes les metriques (IAE, ISE, ITAE, depassement, temps de montee et
+  d'etablissement, erreur en regime permanent, ondulation, evenements,
+  commande), avec les definitions de COMPARAISON\metriques\
+  definitions_metriques.txt (les seules definitions de reference).
+
+
+1. QUEL SCRIPT POUR QUOI
+------------------------
+  Construire_Modeles_Comparaison.m   (nouveau, dans les 4 dossiers de methode)
+      Construit les modeles cliquables <M>_S1.slx ... <M>_S10.slx.
+      Remplace Ouvrir_Modele_S10.m (qui ne faisait que S10).
+  verifier_modeles_comparaison.py    (nouveau, dans les 4 dossiers)
+      Controle sans MATLAB que chaque modele construit ne differe de son
+      modele de methode que par InitFcn, StopTime et les blocs
+      d'observation.
+  Simuler_Modeles_Comparaison.m      (nouveau, dans les 4 dossiers)
+      Simule ces modeles, mesure le temps de chaque simulation, compare au
+      banc et ecrit resultats_<modele>_comparaison.mat.
+  COMPARAISON\metriques\Metriques_Simulink.m   (modifie)
+      Calcule toutes les metriques. Nouveau reglage en tete :
+      RESULTATS = 'comparaison' pour lire les fichiers ci-dessus
+      ('Simuler', par defaut, lit comme avant ceux de Simuler_<M>.m).
+  Inchanges, a garder : Construction_<M>.m, Simuler_<M>.m (chiffres
+  officiels et validation contre le banc), PSO_PID\Simuler_ZN.m.
+  A supprimer si tu l'as copie : Ouvrir_Modele_S10.m (4 dossiers).
+  (<M> = PSO_PID, Fuzzy_PID, ELM_PID, PINN_PID ; ZN pour Ziegler-Nichols.)
+
+
+2. OU COPIER LES FICHIERS
+-------------------------
+Decompresser scripts_comparaison.zip n'importe ou. Il contient un dossier
+scripts_comparaison\ dont les sous-dossiers portent les noms de tes
+dossiers : copier son CONTENU dans Regulateurs\ (Windows propose de
+fusionner les dossiers : accepter ; les fichiers de meme nom sont
+remplaces). On obtient :
+  Regulateurs\
+    ELM_PID\     Construire_Modeles_Comparaison.m, Simuler_Modeles_Comparaison.m,
+                 verifier_modeles_comparaison.py
+    PINN_PID\    les memes trois fichiers
+    PSO_PID\     les memes trois fichiers
+    FUZZY_PID\   les memes trois fichiers
+    COMPARAISON\metriques\   Metriques_Simulink.m (remplace), LISEZMOI_METRIQUES.txt
+    COMPARAISON\S10\         MODE_EMPLOI_S10.txt (mis a jour)
+    COMPARAISON\             tester_verifier_modeles_comparaison.py (test du
+                             verificateur, facultatif), ce mode d'emploi
+                             (MODE_EMPLOI.txt, a la racine de l'archive, est
+                             le meme texte)
+Les trois fichiers sont identiques dans les quatre dossiers. Ne pas
+ajouter les dossiers au chemin MATLAB (Set Path) : on se place DANS le
+dossier (Current Folder), comme d'habitude.
+Il faut deja dans chaque dossier : Buck_Commun_<M>.slx (construit par
+Construction_<M>.m), charger_scenario.m, scenario_S1.mat, scenario_S2.mat,
+scenario_S3.mat, scenario_S8a.mat, scenario_S10.mat et les fichiers du
+bloc de la methode (elm_pid_*.mat, pinn_pid_*.mat, fuzzy_pid_reglages.mat
+et les classes .m), comme pour Simuler_<M>.m.
+
+
+3. CONSTRUIRE LES MODELES (une fois par dossier)
+------------------------------------------------
+  1. Current Folder = Regulateurs\ELM_PID (puis PINN_PID, PSO_PID, FUZZY_PID).
+  2. Taper Construire_Modeles_Comparaison dans la Command Window.
+     Le script trouve seul le modele de la methode (le seul
+     Buck_Commun_<M>.slx du dossier) et cree, par copie fraiche :
+       ELM_PID_S1.slx, ELM_PID_S2.slx, ELM_PID_S3.slx, ELM_PID_S8a.slx,
+       ELM_PID_S10.slx (et de meme pour les autres dossiers).
+     Dans chaque copie, et seulement la :
+       - InitFcn : charge le scenario du modele, toujours, a chaque Run ;
+       - StopTime : duree du scenario plus un demi-pas de 1/220000 s,
+         comme Simuler_<M>.m ;
+       - blocs d'observation : Scope "Observation Vout et consigne",
+         "Observation iL", "Observation rapport cyclique" et, pour le
+         Fuzzy-PID, l'ELM-PID et le PINN-PID, "Observation gains" (P, I, D
+         divises par ceux de Ziegler-Nichols) ; To Workspace cmp_vout,
+         cmp_iL, cmp_d, cmp_K, un point par periode de 1/220000 s.
+     Rien d'autre ne change. Buck_Commun_<M>.slx n'est pas modifie.
+  3. Ziegler-Nichols, dans PSO_PID seulement : ouvrir
+     Construire_Modeles_Comparaison.m, mettre en tete
+         AVEC_ZIEGLER_NICHOLS = true;
+     enregistrer, relancer. Il cree en plus ZN_S1.slx ... ZN_S10.slx a
+     partir de Buck_Commun.slx.
+  4. Facultatif, controle sans MATLAB (Python, dans le meme dossier) :
+         python verifier_modeles_comparaison.py
+     Doit finir par "RESULTAT : les N modele(s) controle(s) sont conformes."
+     S'il ecrit NON CONFORME, envoie-moi sa sortie.
+Duree : moins d'une minute par dossier.
+
+
+4. OUVRIR UN MODELE ET CLIQUER SUR RUN
+--------------------------------------
+  1. Current Folder = le dossier de la methode.
+  2. Double-clic sur le modele voulu, par exemple ELM_PID_S10.slx.
+  3. Cliquer sur Run (onglet Simulation).
+  4. Double-clic sur un Scope "Observation ..." pour voir les courbes. A la
+     fin, cmp_vout, cmp_iL, cmp_d (et cmp_K) sont dans le workspace.
+  5. Fermer le modele sans enregistrer (un Run ne change rien d'utile).
+Lance ainsi, un modele est plus lent que par le script du point 5 : les
+deux To Workspace d'origine du modele commun (x et y) enregistrent au pas
+du powergui. C'est le meme comportement que Buck_Commun_<M>.slx.
+
+
+5. LE TEMPS DE CALCUL : Simuler_Modeles_Comparaison.m
+-----------------------------------------------------
+  1. Current Folder = le dossier de la methode.
+  2. Taper Simuler_Modeles_Comparaison. Il simule tous les modeles
+     <M>_<code>.slx du dossier, l'un apres l'autre, et affiche pour
+     chacun : le temps de calcul (s, et microsecondes par periode du
+     regulateur), les grandeurs principales et l'ecart au banc.
+     Pour ne simuler qu'un modele : en tete,
+         MODELES_A_SIMULER = {'ELM_PID_S10'};
+     Pour Ziegler-Nichols (dans PSO_PID) : AVEC_ZIEGLER_NICHOLS = true;
+     ou MODELES_A_SIMULER = {'ZN_S1', 'ZN_S2', 'ZN_S3', 'ZN_S8a', 'ZN_S10'};
+  3. Il ecrit resultats_Buck_Commun_<M>_comparaison.mat (ZN :
+     resultats_Buck_Commun_comparaison.mat). Si tu resimules un seul
+     scenario, les autres deja simules sont gardes dans le fichier.
+     Les fichiers de Simuler_<M>.m ne sont pas touches.
+  4. Copier la sortie de la Command Window dans
+     sortie_comparaison_<M>.txt.
+Durees indicatives par scenario : 30 s pour ZN et le PSO-PID, une a deux
+minutes pour le Fuzzy-PID et l'ELM-PID, deux a quatre minutes pour le
+PINN-PID. Le temps mesure est celui de sim() (compilation comprise) ; il
+est domine par l'execution interpretee des blocs MATLAB System et par le
+circuit au pas du powergui : ce n'est pas le cout du regulateur.
+
+
+6. LES METRIQUES : Metriques_Simulink.m
+---------------------------------------
+Quand les cinq methodes sont simulees (point 5 dans les quatre dossiers,
+ZN compris) :
+  1. Current Folder = Regulateurs\COMPARAISON\metriques.
+  2. Ouvrir Metriques_Simulink.m et mettre en tete
+         RESULTATS = 'comparaison';
+     enregistrer, lancer.
+  3. Le tableau des metriques est ecrit dans ce dossier :
+       metriques_simulink_comparaison.md   (tableaux prets a copier)
+       metriques_simulink_comparaison.csv  (une ligne par metrique, ';')
+     Erreur en regime permanent : tableaux "<code> : erreur en regime
+     permanent" (moyenne de consigne - Vout sur les 5 ms avant chaque
+     evenement et sur les 10 dernieres ms ; signee, absolue, ondulation de
+     Vout). Temps : tableau "Temps de calcul Simulink par periode du
+     regulateur". Ecart au banc : tableau "IAE de classement : Simulink /
+     banc".
+  4. Copier la sortie dans sortie_metriques_comparaison.txt.
+Le meme tableau, calcule par le banc Python, est deja dans
+COMPARAISON\metriques\metriques_banc.md (memes definitions).
+
+
+7. REMARQUE SUR S10
+-------------------
+Dans S10, la charge passe a 25 ohms a 50 ms par une conductance NEGATIVE
+de la charge electronique, ajoutee a la resistance physique de 5 ohms
+(gx = 1/25 - 1/5 = -0.16 S) : la source de courant fournit du courant au
+lieu d'en absorber. C'est la definition de S10 ecrite avant le calcul
+(voir COMPARAISON\S10\MODE_EMPLOI_S10.txt, point 7). Ce montage n'a encore
+jamais tourne sous Simulink : si un message d'erreur ou un resultat
+etrange apparait sur S10 seulement, envoie-le moi avant d'aller plus loin.
+
+
+8. CE QU'IL FAUT M'ENVOYER
+--------------------------
+  - la sortie de verifier_modeles_comparaison.py pour chaque dossier (si
+    tu as Python) ;
+  - sortie_comparaison_<M>.txt pour les quatre dossiers (et ZN) ;
+  - sortie_metriques_comparaison.txt, metriques_simulink_comparaison.md et
+    .csv ;
+  - tout message d'erreur, copie tel quel, avec le nom du script.
+
+
+9. CE QUI N'A PAS PU ETRE VERIFIE SANS MATLAB
+---------------------------------------------
+Les scripts ont ete relus, analyses par MISS_HIT et executes sous GNU
+Octave 8.4 avec des fonctions Simulink factices et les signaux du banc :
+construction (InitFcn, StopTime, blocs et liaisons), simulation, fichier
+de resultats, puis Metriques_Simulink.m en mode 'comparaison' (memes 921
+valeurs que metriques_banc.csv, ecart nul). Le verificateur Python a ete
+teste sur des modeles fabriques a partir de Buck_Commun.slx (conformes
+acceptes, sept variantes fautives rejetees). Restent a voir sous MATLAB :
+les vrais appels Simulink (add_block, add_line, reglage de la periode des
+Scope, sauvegarde), le XML reellement ecrit par Simulink, la simulation
+elle-meme et les durees.

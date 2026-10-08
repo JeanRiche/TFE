@@ -36,7 +36,12 @@ Les fichiers
       controle du script MATLAB sans MATLAB.
   Metriques_Simulink.m
       Meme calcul sur les resultats Simulink des dossiers de methode, plus
-      le temps de calcul Simulink par periode du regulateur. Ecrit
+      le temps de calcul Simulink par periode du regulateur. Reglage RESULTATS
+      (ajoute le 8 octobre apres-midi) : 'Simuler' (defaut) lit les
+      fichiers de Simuler_<M>.m ; 'comparaison' lit ceux de
+      Simuler_Modeles_Comparaison.m (modeles <PREFIXE>_<code>.slx lances
+      d'un clic) et ecrit metriques_simulink_comparaison.csv et .md. Les
+      definitions et le calcul ne changent pas. Ecrit
       metriques_simulink.csv et metriques_simulink.md dans ce dossier et,
       si metriques_banc.csv est present, compare l'IAE de classement
       Simulink a celle du banc (S10 : 1 % PSO-PID et Fuzzy-PID, 3 % ELM-PID
@@ -88,6 +93,8 @@ Controles faits le 8 octobre 2026 (metriques_banc_sortie_console.txt)
   Simulink de Ouvrir_Modele_S10.m (son deroulement a ete execute sous
   Octave avec des fonctions Simulink factices : prerequis, copie, InitFcn,
   StopTime, Scope, sauvegarde ; le modele source n'est pas modifie).
+  Ouvrir_Modele_S10.m a depuis ete remplace par
+  Construire_Modeles_Comparaison.m (voir MODE_EMPLOI_S10.txt).
 
 A savoir pour la lecture
   - Temps d'execution du banc : ordre de grandeur RELATIF entre methodes

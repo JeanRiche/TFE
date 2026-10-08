@@ -1,0 +1,24 @@
+A. ELM_PID_S10.slx    -> conforme (attendu : conforme)
+A. ELM_PID_S2.slx     -> conforme (attendu : conforme)
+A. ZN_S1.slx          -> conforme (attendu : conforme)
+A. ZN_S10.slx         -> conforme (attendu : conforme)
+A. ZN_S2.slx          -> conforme (attendu : conforme)
+A. ZN_S3.slx          -> conforme (attendu : conforme)
+A. ZN_S8a.slx         -> conforme (attendu : conforme)
+B. ZN_S8a.slx     inductance modifiee            -> rejete (attendu : rejete)
+      [PROBLEME] Bloc 'Series RLC Branch' modifie : InstanceData.Inductance '10e-3' -> '11e-3'
+B. ZN_S3.slx      gain P du PID modifie          -> rejete (attendu : rejete)
+      [PROBLEME] Bloc 'PID Controller' modifie : InstanceData.P '0.093910' -> '0.1'
+B. ZN_S1.slx      StopTime faux                  -> rejete (attendu : rejete)
+      [PROBLEME] StopTime '0.2' au lieu de 0.20000227272727272 ((n - 0.5) x Tc, n = 44001).
+B. ZN_S2.slx      InitFcn d'origine              -> rejete (attendu : rejete)
+      [PROBLEME] Rappel InitFcn "if ~exist('sc_R0', 'var'), charger_scenario('S1'); end" au lieu de "% Modele de comparaison ZN_S2 (Construire_Modeles_Comparaison.m) : scenario S2.\ncmp_dossier_modele = fileparts(get_param('ZN_S2', 'FileName'));\ ...
+B. ZN_S10.slx     bloc non prevu ajoute          -> rejete (attendu : rejete)
+      [PROBLEME] Blocs ajoutes : ['Enregistrement Vout', 'Enregistrement iL', 'Enregistrement rapport cyclique', 'Observation Vout et consigne', 'Observation constante', 'Observation iL', 'Observation rapport cyclique'] au lieu de ['Enregistremen ...
+B. ZN_S2.slx      solveur change                 -> rejete (attendu : rejete)
+      [PROBLEME] Configuration modifiee hors StopTime : /Simulink.ConfigSet/Array/Simulink.SolverCC/StartTime: '0.0' -> '0.001'
+B. ELM_PID_S10.slx signal renvoye dans le modele  -> rejete (attendu : rejete)
+      [PROBLEME] Liaisons de signal differentes : manquantes [('Vout#out:1', 'Courant Charge#in:2')], en trop [('Observation gains rapportes a ZN#out:1', 'Courant Charge#in:2')]
+      [PROBLEME] Des blocs ajoutes alimentent le modele : [('Observation gains rapportes a ZN#out:1', 'Courant Charge#in:2')]
+
+BILAN : 14 cas sur 14 conformes a l'attente (7 modeles conformes acceptes attendus, 7 variantes rejetees attendues).
