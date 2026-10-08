@@ -9,10 +9,17 @@ courant MATLAB, et lance les etapes ci-dessous. Ne garde pas les dossiers
 ELM, PINN ou FUZZY sur le chemin MATLAB en meme temps (memes noms de
 fichiers de base). Tout ancien dossier PSO ne sert plus.
 
+STATUT (8 octobre 2026) : VALIDE SOUS SIMULINK sur le modele commun
+(etapes 3 a 5, MATLAB R2024a, sorties de Jean-Riche) : gains identiques,
+modele conforme, IAE a 0.1 % pres sauf S7a (+0.8 %, mesure
+quantifiee, ecart attendu). Le J du banc (0.714) vaut pour Simulink.
+Detail : criteres_pso_pid.txt, section 8. Restent a lancer : les trois
+modeles de base (etapes 6 a 8).
+
 A LIRE D'ABORD : criteres_pso_pid.txt
   Cadre, article de reference, modifications M1 a M3 avec leurs
   references, ecarts declares, previsions ecrites avant la recherche,
-  resultats et bibliographie complete.
+  resultats, validation Simulink et bibliographie complete.
 
 LA METHODE EN BREF
 - Essaim de Gaing (IEEE Trans. Energy Conversion, 2004) : 50 particules,
@@ -39,11 +46,11 @@ ORDRE D'EXECUTION
    refait les cinq recherches (35 a 70 minutes).
 2. (deja fait) python banc_pso_pid.py
    Une minute. Sortie attendue : banc_pso_pid_sortie_console.txt.
-3. MATLAB : Construction_PSO_PID
+3. (fait le 8 oct., gains identiques) MATLAB : Construction_PSO_PID
    Copie Buck_Commun.slx en Buck_Commun_PSO_PID.slx et y ecrit P, I, D.
-4. python verifier_pso_pid.py
+4. (fait le 8 oct., conforme) python verifier_pso_pid.py
    Fin attendue : "RESULTAT : Buck_Commun_PSO_PID.slx est conforme."
-5. MATLAB : Simuler_PSO_PID
+5. (fait le 8 oct., banc retrouve) MATLAB : Simuler_PSO_PID
    Onze essais, comparaison au banc. Six a dix minutes.
 6. MATLAB : Construction_PSO_PID_Trois_Modeles
    Tes trois modeles de base -> PSO_PID_Control.slx,
@@ -54,14 +61,14 @@ ORDRE D'EXECUTION
 8. MATLAB : Simuler_PSO_PID_Trois_Modeles
    Nominal, F1, F2 compares a S1, S2, S3 du banc ; une figure par modele.
 
-Envoie-moi la sortie console des etapes 3 a 8. Si une etape s'arrete sur
-une erreur, envoie-la telle quelle sans passer a la suivante.
-Aucun script MATLAB n'a pu etre execute ici (pas de MATLAB) ; les
-verificateurs Python ont ete testes sur des modeles fabriques (conformes et
-faux).
+Envoie-moi la sortie console des etapes 6 a 8 (3 a 5 deja recues). Si une
+etape s'arrete sur une erreur, envoie-la telle quelle sans passer a la
+suivante. Les scripts des etapes 6 a 8 n'ont jamais ete executes sous
+MATLAB ; leur verificateur Python a ete teste sur des modeles fabriques
+(conformes et faux).
 
-CE QUE L'ETAPE 5 DOIT DONNER (banc)
------------------------------------
+CE QUE L'ETAPE 5 DOIT DONNER (banc ; retrouve sous Simulink le 8 oct.)
+-----------------------------------------------------------------------
 - Gains : P = 0.239585, I = 412.0556, D = 1.913247e-05, N = 64122.9.
 - Tous les evenements reviennent dans la bande.
 - S1 : depassement 7.1 % (ZN 14 %) ; S5 : IAE 2.46 mV.s (ZN 3.87) ;
@@ -96,7 +103,8 @@ predictions_banc_pid_classique.json, predictions_banc_pid_fige.json,
 banc_elm_pid_resultats.json, banc_pinn_pid_resultats.json, banc_fuzzy_pid_resultats.json
 
 PSO-PID
-criteres_pso_pid.txt                   methode, references, previsions, resultats
+criteres_pso_pid.txt                   methode, references, previsions, resultats,
+                                       validation Simulink (section 8)
 recherche_pso_pid.py                   les cinq recherches (graines 1 a 5)
 recherche_pso_pid.json                 leur compte rendu (gbest, historique)
 recherche_pso_pid_sortie_console.txt   sortie de la recherche

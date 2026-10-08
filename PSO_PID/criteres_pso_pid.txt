@@ -211,7 +211,44 @@ Face aux previsions
      specification (section 3, M1).
 
 
-8. REFERENCES
+8. VALIDATION SIMULINK (8 octobre 2026, sorties envoyees par Jean-Riche,
+   MATLAB R2024a)
+-----------------------------------------------------------------------------
+  Construction_PSO_PID : gains relus dans Buck_Commun_PSO_PID.slx
+    P = 0.23958473741825065, I = 412.05561398119556,
+    D = 1.9132467777972335e-05, N = 64122.9,
+    identiques a predictions_banc_pso_pid.json.
+  verifier_pso_pid.py : "RESULTAT : Buck_Commun_PSO_PID.slx est conforme"
+    (34 blocs identiques a Buck_Commun.slx sauf P, I, D ; 25 liaisons ;
+    configuration identique ; InitFcn present).
+  Simuler_PSO_PID, onze essais, Simulink face au banc :
+    IAE apres 30 ms (mV.s), Simulink / banc :
+      S1   1.49 /   1.49       S6    1.55 /   1.55
+      S2   2.04 /   2.04       S7a   4.06 /   4.03  (+0.8 %)
+      S3   5.46 /   5.46       S7b   3.14 /   3.14
+      S4  16.55 /  16.54       S8a   2.46 /   2.46
+      S5   2.46 /   2.46       S8b   2.46 /   2.46
+                               S9  283.42 / 283.25  (+0.1 %)
+    Ecart sur Vout prise toutes les ms : 0.3 a 0.9 mV efficace, 2.3 mV au
+    plus, sauf S7a (36.7 mV efficace), S8b (4.9 mV) et S9 (4.8 mV).
+    S7a : mesure quantifiee (CAN 12 bits). Un ecart d'arrondi suffit a
+    changer une decision du CAN et les trajectoires se separent point par
+    point ; seuls IAE et ecart efficace se comparent. Ecart attendu.
+    Depassements identiques : S1 7.06 %, S8a 43.48 % (banc 43.49 %),
+    S8b 73.58 % (banc 73.60 %). Tous les evenements reviennent dans la
+    bande, memes temps de retour a 0.01 ms pres. Courant iL a 1 mA pres
+    (S9 : 8.6 mA au plus). Temps de calcul : environ 2 ms par periode du
+    regulateur.
+  Conclusion : le banc Python reproduit Simulink pour le PSO-PID. Le J du
+  banc (0.714) vaut pour Simulink, S7a excepte, ou l'ecart de 0.8 % vient
+  de la quantification et etait attendu. Estimation de J sous Simulink a
+  partir des IAE ci-dessus, IAE du demarrage supposees egales a celles du
+  banc (non transmises) : 0.715.
+  Non lances : les trois modeles de base (Construction_PSO_PID_Trois_Modeles,
+  verifier_modeles_pso_pid_trois.py, Simuler_PSO_PID_Trois_Modeles).
+
+
+9. REFERENCES
 -------------
   [1] Z.-L. Gaing, "A particle swarm optimization approach for optimum
       design of PID controller in AVR system", IEEE Transactions on Energy

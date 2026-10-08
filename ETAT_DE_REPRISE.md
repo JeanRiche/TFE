@@ -4,7 +4,7 @@
 
 Base commune v2.1 pour tout ce qui suit : circuit L = 10 mH, C = 47 µF, R = 5 Ω, Vin = 200 V, fs = 22 kHz, régulateur à Tc = 1/220 000 s. Il y a onze essais (S1 à S9, S7a/b, S8a/b). Le coût **J** est la moyenne de 13 rapports d'IAE à Ziegler-Nichols : 10 termes d'IAE de 30 ms à la fin (S1, S3–S9) et 3 termes d'IAE de démarrage (S1, S8a, S8b). Banc : `banc_commun.py`.
 
-**En bref (8 oct.).** Les cinq méthodes sont figées : Ziegler-Nichols, PSO-PID (J = 0.714), Fuzzy-PID (0.877), ELM-PID option B (0.746), PINN-PID final (0.757). Les chiffres de référence sont ceux du banc Python. Scénarios du corps : S1, S2, S3, S8a. Reste à faire : Simulink de l'ELM-PID et du PINN-PID (Jean-Riche), puis la rédaction.
+**En bref (8 oct.).** Les cinq méthodes sont figées : Ziegler-Nichols, PSO-PID (J = 0.714), Fuzzy-PID (0.877), ELM-PID option B (0.746), PINN-PID final (0.757). Les chiffres de référence sont ceux du banc Python. Scénarios du corps : S1, S2, S3, S8a. PSO-PID validé sous Simulink le 8 oct. (modèle commun ; trois modèles de base non lancés). Reste à faire : Simulink de l'ELM-PID et du PINN-PID (Jean-Riche), les trois modèles de base du PSO-PID, puis la rédaction.
 
 Dossiers de premier niveau : `COMPARAISON/`, `ELM_PID/` (retenu), `ELM_PID_INCREMENTAL/` (chapitre 4), `FUZZY_PID/`, `PINN_PID/` (version finale seule), `PSO_PID/`, `REDACTION/`, plus les archives et documents versés par Jean-Riche. Les versions abandonnées (`PINN_PID` du 5 octobre, `PINN_PID_B`, `PINN_PID_C` sous ce nom, `ELM_PID_B2`) ne sont plus que dans l'historique git.
 
@@ -43,14 +43,14 @@ Les copies de la base commune présentes dans chaque dossier sont identiques et 
 
 | Fichier | Rôle | Statut |
 |---|---|---|
-| `criteres_pso_pid.txt` | méthode, modifications M1–M3 et références, prévisions R1–R7, résultats | document |
+| `criteres_pso_pid.txt` | méthode, modifications M1–M3 et références, prévisions R1–R7, résultats, validation Simulink (§8) | document |
 | `recherche_pso_pid.py`, `recherche_pso_pid.json`, `recherche_pso_pid_sortie_console.txt` | 5 recherches (graines 1–5), contrôle de reprise identique | BANC |
-| `banc_pso_pid.py`, `banc_pso_pid_sortie_console.txt`, `banc_pso_pid_resultats.json`, `banc_pso_pid.png`, `pso_pid_convergence.png`, `predictions_banc_pso_pid.json` | jugement sur les 11 essais (J = 0.714) | BANC |
-| `Construction_PSO_PID.m`, `Simuler_PSO_PID.m` | modèle commun | **NON TESTÉ** (jamais lancé sous MATLAB) |
-| `verifier_pso_pid.py` | vérificateur du modèle commun | VÉRIF-FAB |
+| `banc_pso_pid.py`, `banc_pso_pid_sortie_console.txt`, `banc_pso_pid_resultats.json`, `banc_pso_pid.png`, `pso_pid_convergence.png`, `predictions_banc_pso_pid.json` | jugement sur les 11 essais (J = 0.714) | BANC, puis confirmé SIMULINK |
+| `Construction_PSO_PID.m`, `Simuler_PSO_PID.m` | modèle commun | SIMULINK (8 oct. : gains identiques ; IAE à 0.1 % près, S7a +0.8 % par la quantification ; mêmes dépassements et retours) |
+| `verifier_pso_pid.py` | vérificateur du modèle commun | VÉRIF-FAB, puis SIMULINK (8 oct. : modèle de Jean-Riche conforme) |
 | `Construction_PSO_PID_Trois_Modeles.m`, `Simuler_PSO_PID_Trois_Modeles.m` | trois modèles de base | **NON TESTÉ** |
 | `verifier_modeles_pso_pid_trois.py` | vérificateur des trois modèles | VÉRIF-FAB |
-| `LISEZMOI_PSO.txt` | mode d'emploi | document (rappels ELM 0.746 et PINN 0.757 corrigés le 8 oct.) |
+| `LISEZMOI_PSO.txt` | mode d'emploi | document (rappels ELM 0.746 et PINN 0.757 corrigés le 8 oct. ; statut validé sous Simulink, étapes 6 à 8 à lancer) |
 | `banc_elm_pid_resultats.json`, `banc_pinn_pid_resultats.json`, `banc_fuzzy_pid_resultats.json` | copies pour le rappel | copies des versions finales (8 oct.) |
 
 ### 2.3 `ELM_PID/` — ELM-PID option B (8 oct. : bloc PID commun à gains externes, M1–M4)
@@ -194,6 +194,7 @@ Historique (versions abandonnées, dans l'historique git) :
 - J_réglage de 0.5939 à 0.6015 selon la graine.
 - Graine retenue : 3. Gains P = 0.239585, I = 412.0556, D = 1.913247e-5 (×ZN : 2.551, 1.369, 2.613).
 - Marge 30.0°, coupure 2175 Hz.
+- SIMULINK (8 oct., modèle commun) : IAE à 0.1 % près sauf S7a (S9 283.42 contre 283.25 ; S7a 4.06 contre 4.03, +0.8 %, quantification) ; écart sur Vout 0.3 à 0.9 mV efficace hors S7a ; dépassements S1 7.06 %, S8b 73.58 % (banc 73.60) ; J estimé sous Simulink 0.715 (IAE du démarrage supposées égales au banc). Le J du banc (0.714) vaut pour Simulink. Trois modèles de base : non lancés.
 
 **ELM-PID option B** (`banc_elm_pid.py`, 11 essais) : J = 0.746 ; prévisions Q1–Q8 justes (`ELM_PID/criteres_elm_pid.txt`). Un PID figé aux gains atteints à 4 ms sur S1 donne 0.754. Simulink : à faire.
 
@@ -300,4 +301,5 @@ Points de la proposition de TFE à revoir plus tard avec Jean-Riche :
 1. **ELM-PID option B sous Simulink** (Jean-Riche) : `Tester_ELM_PID_Rejeu`, `Construction_ELM_PID`, `verifier_modele_elm_pid.py`, `Simuler_ELM_PID`, puis les trois scripts « Trois_Modeles » (`ELM_PID/LISEZMOI_ELM.txt`).
 2. **PINN-PID final sous Simulink** (Jean-Riche) : même chaîne dans `PINN_PID/` (`LISEZMOI_PINN.txt`, étapes 1 à 7).
 3. **Rédaction** des chapitres avec Jean-Riche (corps : J, S1, S2, S3, S8a ; annexe : classement essai par essai ; chapitre 4 : ELM incrémental contre option B).
-4. Points ouverts non tranchés, à décider par Jean-Riche : PSO-PID jamais lancé sous MATLAB (les chiffres de référence restent ceux du banc) ; F1 appliqué à la consigne plutôt qu'à la commande (§4bis) ; scénario « dynamique non linéaire » (P2).
+4. **PSO-PID, trois modèles de base sous Simulink** (Jean-Riche) : `Construction_PSO_PID_Trois_Modeles`, `verifier_modeles_pso_pid_trois.py`, `Simuler_PSO_PID_Trois_Modeles` (`PSO_PID/LISEZMOI_PSO.txt`, étapes 6 à 8). Le modèle commun est validé (8 oct.).
+5. Points ouverts non tranchés, à décider par Jean-Riche : F1 appliqué à la consigne plutôt qu'à la commande (§4bis) ; scénario « dynamique non linéaire » (P2).
