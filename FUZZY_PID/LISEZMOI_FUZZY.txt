@@ -129,8 +129,8 @@ CE QUE L'ETAPE 5 DOIT DONNER (banc)
 - S7a : 34.3 mV d'ecart efficace (34 a 40 mV selon L ou C a 0.1 % pres :
   comparer l'ordre de grandeur) ; S7b : 27.4 mV.
 - Cout J : Fuzzy-PID 0.877 ; Ziegler-Nichols 1.000 ; meilleur PID fige
-  0.738 (oracle). Rappel, autre structure : ELM-PID 0.784, PINN-PID 0.684
-  (leur base sans adaptation, R0, vaut 0.917).
+  0.738 (oracle). Rappel, meme bloc PID : ELM-PID 0.746, PINN-PID 0.757
+  (leur base sans adaptation est Ziegler-Nichols, 1.000).
 
 CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
 ---------------------------------------------
@@ -144,7 +144,7 @@ CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
 - Le bruit de mesure passe davantage dans la commande.
 - Comparaison avec l'ELM et le PINN : en absolu (J) et par rapport a sa
   propre base sans adaptation (Fuzzy-PID 1.000 -> 0.877 ; ELM-PID
-  0.917 -> 0.784 ; PINN-PID 0.917 -> 0.684).
+  1.000 -> 0.746 ; PINN-PID 1.000 -> 0.757).
 
 FICHIERS
 --------

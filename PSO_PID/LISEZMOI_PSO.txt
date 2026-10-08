@@ -67,7 +67,7 @@ CE QUE L'ETAPE 5 DOIT DONNER (banc)
 - S1 : depassement 7.1 % (ZN 14 %) ; S5 : IAE 2.46 mV.s (ZN 3.87) ;
   S8b : depassement 73.6 %.
 - Cout J : PSO-PID 0.714 ; Ziegler-Nichols 1.000 ; meilleur PID fige sur
-  grille 0.738. Rappel : ELM-PID 0.784, PINN-PID 0.684, Fuzzy-PID 0.877.
+  grille 0.738. Rappel : ELM-PID 0.746, PINN-PID 0.757, Fuzzy-PID 0.877.
 - Gains fixes : Simulink doit retrouver le banc a quelques dizaines de mV
   pres, comme le PID classique et le PID fige.
 
