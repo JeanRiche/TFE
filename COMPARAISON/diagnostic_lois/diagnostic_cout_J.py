@@ -1,8 +1,8 @@
 # Diagnostic du 8 octobre 2026 (COMPARAISON/diagnostic_lois) : pourquoi ELM-PID et PINN-PID
 # rejettent moins bien les perturbations ; lois de Lu et PID parallele a gains figes.
-# Lancer depuis ce dossier : python diagnostic_cout_J.py (le dossier ELM_PID doit etre a cote).
+# Lancer depuis ce dossier : python diagnostic_cout_J.py (le dossier ELM_PID_INCREMENTAL doit etre a cote).
 import os, json, numpy as np
-_ICI = os.path.dirname(os.path.abspath(__file__)); __file__ = os.path.join(_ICI, "..", "..", "ELM_PID", "banc_elm_pid.py"); os.chdir(os.path.dirname(__file__))
+_ICI = os.path.dirname(os.path.abspath(__file__)); __file__ = os.path.join(_ICI, "..", "..", "ELM_PID_INCREMENTAL", "banc_elm_pid.py"); os.chdir(os.path.dirname(__file__))
 src = open(__file__, encoding="utf-8").read(); exec(src[:src.index("# %% ETAPE 2 :")])
 G = json.load(open(os.path.join(_ICI, "..", "..", "PSO_PID", "predictions_banc_pso_pid.json")))["gains"]
 X_PSO = np.array([G["P"] / PID_P, G["I"] / PID_I, G["D"] / PID_D])

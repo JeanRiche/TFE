@@ -1,0 +1,45 @@
+Dossier de travail : /home/user/TFE/ELM_PID_INCREMENTAL
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.1% admissibles ; jacobien constant des ablations 11.0687.
+Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
+Dossier de travail : /home/user/TFE/ELM_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.2% admissibles ; jacobien constant des ablations 11.0687.
+Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
+Cout J (13 termes) et decomposition, d'apres banc_elm_pid_resultats.json de chaque dossier
+  incrementale (Lu)      J 0.728 ; apres 30 ms 0.747 ; demarrage 0.664
+  option B (bloc PID)    J 0.746 ; apres 30 ms 0.680 ; demarrage 0.967
+
+IAE (mV.s) et grandeurs ; controle : chaque version redonne l'IAE de son fichier de resultats
+  S4
+    Ziegler-Nichols        apres 30 ms   23.61 ; demarrage   93.77 ; depassement  14.0 % ; ecart max 11.52 V ; gains changes  0 fois
+        evenement a  50.0 ms : IAE   6.44 mV.s, ecart max 10.47 V
+        evenement a  70.0 ms : IAE   7.40 mV.s, ecart max 11.52 V
+        evenement a 100.0 ms : IAE   4.78 mV.s, ecart max  6.90 V
+        evenement a 120.0 ms : IAE   4.82 mV.s, ecart max  6.61 V
+    incrementale (Lu)      apres 30 ms   19.57 ; demarrage   81.13 ; depassement   2.4 % ; ecart max 11.52 V ; gains changes  6 fois
+        evenement a  50.0 ms : IAE   6.41 mV.s, ecart max 10.47 V
+        evenement a  70.0 ms : IAE   6.00 mV.s, ecart max 11.52 V
+        evenement a 100.0 ms : IAE   3.49 mV.s, ecart max  6.89 V
+        evenement a 120.0 ms : IAE   3.49 mV.s, ecart max  6.61 V
+    option B (bloc PID)    apres 30 ms   18.87 ; demarrage   93.72 ; depassement  14.0 % ; ecart max 11.51 V ; gains changes  2 fois
+        evenement a  50.0 ms : IAE   5.36 mV.s, ecart max 10.47 V
+        evenement a  70.0 ms : IAE   6.20 mV.s, ecart max 11.51 V
+        evenement a 100.0 ms : IAE   3.46 mV.s, ecart max  6.89 V
+        evenement a 120.0 ms : IAE   3.67 mV.s, ecart max  6.61 V
+  S2
+    Ziegler-Nichols        apres 30 ms    2.84 ; demarrage   93.77 ; depassement  14.0 % ; ecart max  2.01 V ; gains changes  0 fois
+        evenement a  50.0 ms : IAE   1.14 mV.s, ecart max  2.01 V
+        evenement a  70.0 ms : IAE   1.53 mV.s, ecart max  1.11 V
+    incrementale (Lu)      apres 30 ms    5.61 ; demarrage   81.12 ; depassement   2.4 % ; ecart max  5.34 V ; gains changes  4 fois
+        evenement a  50.0 ms : IAE   3.88 mV.s, ecart max  5.34 V
+        evenement a  70.0 ms : IAE   1.56 mV.s, ecart max  1.11 V
+    option B (bloc PID)    apres 30 ms    2.41 ; demarrage   93.72 ; depassement  14.0 % ; ecart max  2.01 V ; gains changes  1 fois
+        evenement a  50.0 ms : IAE   0.82 mV.s, ecart max  2.01 V
+        evenement a  70.0 ms : IAE   1.41 mV.s, ecart max  1.11 V
+  S1
+    Ziegler-Nichols        apres 30 ms    1.49 ; demarrage   93.77 ; depassement  14.0 % ; ecart max  0.01 V ; gains changes  0 fois
+    incrementale (Lu)      apres 30 ms    1.49 ; demarrage   81.12 ; depassement   2.4 % ; ecart max  0.01 V ; gains changes  2 fois
+    option B (bloc PID)    apres 30 ms    1.49 ; demarrage   93.72 ; depassement  14.0 % ; ecart max  0.01 V ; gains changes  1 fois
+
+elm_incremental_contre_B.json et elm_incremental_contre_B.png ecrits.

@@ -1,6 +1,6 @@
 Dossier de travail : /home/user/TFE/ELM_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
-ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.1% admissibles ; jacobien constant des ablations 11.0687.
+ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.2% admissibles ; jacobien constant des ablations 11.0687.
 Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
 Dossier de travail : /home/user/TFE/PSO_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
@@ -20,7 +20,7 @@ Scenario S4 : nominal, puis L ou C a +-0.1 % (IAE de 30 ms a la fin, mV.s)
   Ziegler-Nichols  nominal  23.61  L - 0.1 %  23.58  L + 0.1 %  23.65  C - 0.1 %  23.61  C + 0.1 %  23.63   (fichier 23.61, ecart 0.0e+00)
   PSO-PID          nominal  16.54  L - 0.1 %  16.52  L + 0.1 %  16.57  C - 0.1 %  16.55  C + 0.1 %  16.54   (fichier 16.54, ecart 0.0e+00)
   Fuzzy-PID        nominal  22.38  L - 0.1 %  22.35  L + 0.1 %  22.40  C - 0.1 %  22.38  C + 0.1 %  22.37   (fichier 22.38, ecart 0.0e+00)
-  ELM-PID          nominal  19.57  L - 0.1 %  19.60  L + 0.1 %  19.54  C - 0.1 %  19.61  C + 0.1 %  19.58   (fichier 19.57, ecart 0.0e+00)
+  ELM-PID          nominal  18.87  L - 0.1 %  18.92  L + 0.1 %  18.85  C - 0.1 %  18.89  C + 0.1 %  18.88   (fichier 18.87, ecart 0.0e+00)
   PINN-PID         nominal  17.64  L - 0.1 %  17.62  L + 0.1 %  17.66  C - 0.1 %  17.65  C + 0.1 %  17.64   (fichier 17.64, ecart 0.0e+00)
 
 Classement dans chaque variante du circuit :
@@ -31,4 +31,4 @@ Classement dans chaque variante du circuit :
   C + 0.1 %  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.6 %)
   Classement identique dans les cinq variantes.
 
-scenario_retenu.npz, robustesse_scenario.json et comparaison_S4.png ecrits.
+scenario_S4.npz, robustesse_S4.json et comparaison_S4.png ecrits.

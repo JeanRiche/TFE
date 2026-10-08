@@ -1,0 +1,36 @@
+Dossier de travail : /home/user/TFE/ELM_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.1% admissibles ; jacobien constant des ablations 11.0687.
+Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
+
+==============================================================================
+ ETAPE 1 : projection depuis le depart (500 pas aleatoires)
+==============================================================================
+  g au depart : 0.00e+00 (0 : le depart est sur la frontiere de l'ensemble admissible)
+  M3 (restauration)        gains changes 500 / 500 ; resultats hors de l'ensemble 0 ; distance moyenne a la cible 0.0459
+  M2 seule (glissement)    gains changes 304 / 500 ; resultats hors de l'ensemble 0 ; distance moyenne a la cible 0.0753
+  sans glissement          gains changes 242 / 500 ; resultats hors de l'ensemble 0 ; distance moyenne a la cible 0.0858
+
+==============================================================================
+ ETAPE 2 : essais de mise au point E1 a E4 (IAE en mV.s)
+==============================================================================
+  E1 (R = 7 ohms, Vin = 190 V)
+    R0 (gains figes)   demarrage  72.96, apres 30 ms  34.06
+    ELM-PID            demarrage  72.98, apres 30 ms  33.13 ; gains changes sur  6 fenetres (premiere a  2.5 ms), finaux x(1.789, 1.216, 0.905)
+    M2 seule           demarrage  72.96, apres 30 ms  33.99 ; gains changes sur  1 fenetres (premiere a 68.0 ms), finaux x(1.173, 1.026, 0.950)
+    jacobien constant  demarrage  72.98, apres 30 ms  32.77 ; gains changes sur  6 fenetres (premiere a  2.5 ms), finaux x(1.567, 1.123, 0.929)
+  E2 (R = 15 ohms, Vin = 210 V)
+    R0 (gains figes)   demarrage  63.70, apres 30 ms   3.02
+    ELM-PID            demarrage  63.16, apres 30 ms   1.52 ; gains changes sur  7 fenetres (premiere a  3.0 ms), finaux x(2.277, 1.484, 1.052)
+    M2 seule           demarrage  63.70, apres 30 ms   1.88 ; gains changes sur  4 fenetres (premiere a 40.5 ms), finaux x(1.803, 1.446, 1.126)
+    jacobien constant  demarrage  63.17, apres 30 ms   1.53 ; gains changes sur  7 fenetres (premiere a  3.0 ms), finaux x(2.265, 1.475, 1.047)
+  E3 (R = 60 ohms, Vin = 220 V)
+    R0 (gains figes)   demarrage  92.19, apres 30 ms  33.92
+    ELM-PID            demarrage  89.77, apres 30 ms  20.19 ; gains changes sur 13 fenetres (premiere a  4.0 ms), finaux x(2.109, 1.140, 0.860)
+    M2 seule           demarrage  89.82, apres 30 ms  20.16 ; gains changes sur 15 fenetres (premiere a  4.0 ms), finaux x(1.915, 1.117, 0.825)
+    jacobien constant  demarrage  89.71, apres 30 ms  20.16 ; gains changes sur 12 fenetres (premiere a  4.0 ms), finaux x(2.125, 1.136, 0.883)
+  E4 (R = 9 ohms, Vin = 200 V)
+    R0 (gains figes)   demarrage  66.51, apres 30 ms   1.16
+    ELM-PID            demarrage  66.03, apres 30 ms   1.03 ; gains changes sur  3 fenetres (premiere a  3.0 ms), finaux x(1.423, 1.040, 0.885)
+    M2 seule           demarrage  66.03, apres 30 ms   1.03 ; gains changes sur  3 fenetres (premiere a  3.0 ms), finaux x(1.423, 1.040, 0.885)
+    jacobien constant  demarrage  65.91, apres 30 ms   0.88 ; gains changes sur  3 fenetres (premiere a  3.0 ms), finaux x(1.393, 1.030, 0.937)

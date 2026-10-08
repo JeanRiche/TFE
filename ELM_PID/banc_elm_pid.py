@@ -2,43 +2,47 @@
 # banc_elm_pid.py
 #
 # VERSION
-#   3 (7 octobre 2026). Methode, modifications M1 a M3 et previsions :
-#   criteres_elm_pid.txt.
+#   4 (8 octobre 2026), option B. Methode, modifications M1 a M4 et
+#   previsions : criteres_elm_pid.txt. La version 3 (loi incrementale de Lu)
+#   est dans le dossier ELM_PID_INCREMENTAL.
 #
 # OBJECTIF
 #   Faire tourner l'ELM-PID sur le banc commun, sur les onze essais, a cote
-#   des references (PID de Ziegler-Nichols, meilleur PID fige sur grille,
-#   R0 = meme loi a gains figes), mesurer ce que chaque piece apporte
-#   (ablations, jamais choisies), et ecrire ce que Simulink doit retrouver :
+#   des references (PID de Ziegler-Nichols, qui est aussi l'ELM-PID sans
+#   adaptation, et meilleur PID fige sur grille), mesurer ce que chaque
+#   piece apporte (ablations, jamais choisies), et ecrire ce que Simulink
+#   doit retrouver :
 #     - predictions_banc_elm_pid.json (lu par Simuler_ELM_PID.m) ;
 #     - elm_pid_reglages.mat (reglages lus par elm_pid_adaptatif.m) ;
 #     - reference_rejeu_elm_pid.mat (lu par Tester_ELM_PID_Rejeu.m).
 #
 # L'ELM-PID, TEL QU'IL EST CODE ICI ET DANS elm_pid_adaptatif.m
-#   A chaque periode Tc = 1/220 000 s, le regulateur recoit l'erreur
-#   e = consigne - mesure et la mesure de Vout (jamais 100 - e).
-#   1. Loi PID incrementale de Lu et al., derivee sur l'erreur filtree
-#      (pole N = 64 122.9 rad/s, Forward Euler, comme le PID de reference) :
-#        g(k) = Tc N (e(k) - ef(k)),   ef(k+1) = ef(k) + Tc N (e(k) - ef(k)),
-#        u(k) = sat( u(k-1) + Kp (e(k) - e(k-1)) + Ki e(k) + Kd (g(k) - g(k-1)) ),
-#      sat = [0.01 ; 0.99] ; depart u = 0.5, premier pas sans a-coup.
-#   2. Fenetres de 0.5 ms (110 x Tc) : moyennes ybar, dbar, ebar, et
-#      sensibilite moyenne s de u aux trois gains. Une fenetre ou la loi a
-#      sature est suspecte.
+#   A chaque periode Tc = 1/220 000 s :
+#   1. Le bloc PID de la base commune (Parallel, derivee filtree N =
+#      64 122.9 rad/s, Forward Euler, sortie dans [0.01 ; 0.99], clamping,
+#      integrateur a 0.5 et filtre a 0.01 au depart) calcule u a partir de
+#      e = consigne - mesure, avec les gains P, I, D que lui donne
+#      l'adaptateur (M4). Sans adaptation, c'est le PID de Ziegler-Nichols.
+#   2. L'adaptateur recoit e, la mesure de Vout (jamais 100 - e) et u. Sur
+#      des fenetres de 0.5 ms (110 x Tc) : moyennes ybar, dbar, ebar, et
+#      sensibilite moyenne s de u aux trois gains (derivee exacte de la loi
+#      du bloc depuis le debut de la fenetre). Une fenetre ou u est en
+#      butee est suspecte.
 #   3. En fin de fenetre : l'ELM (elm_pid_modele.mat) predit ybar(n) a
 #      partir de [ybar(n-1), ybar(n-2), dbar(n), dbar(n-1), dbar(n-2)] et
 #      donne J = d ybar(n) / d dbar(n).
 #   4. Porte (M1) : ouverte si ni la fenetre ni les deux precedentes ne sont
-#      suspectes (saturation seulement). Porte ouverte :
+#      suspectes. Porte ouverte :
 #      a. OS-ELM (moindres carres recursifs, sans oubli) si
-#         |ybar - prediction| > ZONE_MORTE_ESTIMATION (zone morte
-#         d'estimation) ;
-#      b. si |ebar| > ZONE_MORTE et J > 0 : gains en multiplicateurs de
+#         |ybar - prediction| > ZONE_MORTE_ESTIMATION ;
+#      b. si |ebar| > ZONE_MORTE et J > 0 : multiplicateurs de
 #         Ziegler-Nichols x = K / K_ZN,
 #           phi = J (s .* K_ZN),
 #           dx = eta ebar phi / (eps + phi.phi) + alpha (x - x_prec),
-#         puis projection sur l'ensemble admissible (M2,
-#         ensemble_gains_elm.mat) avec glissement le long de sa frontiere.
+#         puis projection sur l'ensemble admissible (M2, M3,
+#         ensemble_gains_elm.mat).
+#   Les gains sortis par l'adaptateur ne dependent que de son etat : ceux
+#   d'une fin de fenetre servent a partir du pas suivant.
 #
 # COMMENT LANCER CE SCRIPT
 #   python banc_elm_pid.py      (une a deux minutes : ablations et
@@ -78,7 +82,7 @@ CODES_DEM = ["S1", "S8a", "S8b"]
 K30 = int(round(0.03 / TC))
 NF = 110
 CODES_REJEU = ["S1", "S3", "S7b", "S8b", "S9"]
-K_ZN = np.array([PID_P, PID_I * TC, PID_D / TC])   # Ziegler-Nichols, forme incrementale
+K_ZN = np.array([PID_P, PID_I, PID_D])   # Ziegler-Nichols, gains du bloc PID [P, I, D]
 
 REGLAGES = {"ETA": 0.5, "ZONE_MORTE": 0.1, "ZONE_MORTE_ESTIMATION": 0.1, "ALPHA": 0.001, "EPS_PHI": 1e-3,
             "LAMBDA": 1.0, "APPRENDRE": 1.0, "GLISSEMENT": 1.0, "JACOBIEN_CONSTANT": float("nan"),
@@ -109,28 +113,31 @@ def titre(texte):
     print("\n" + "=" * 78 + "\n " + texte + "\n" + "=" * 78)
 
 
-# %% ETAPE 1 : R0, projection et ELM-PID (copie de elm_pid_adaptatif.m)
+# %% ETAPE 1 : bloc PID, projection et adaptateur ELM (copie de elm_pid_adaptatif.m)
 
 TCN = TC * PID_N
 
 
-class LoiLu:
-    """Loi incrementale de Lu a derivee filtree, gains figes (R0)."""
+class BlocPID:
+    """Le bloc "PID Controller" de la base commune (memes operations que
+    PIDClassique du banc commun), gains P, I, D recus de l'exterieur a chaque
+    pas (ports de gains externes du bloc Simulink, comme pour le Fuzzy-PID).
+    Conditions initiales du bloc : integrateur 0.5, filtre 0.01."""
 
-    def __init__(self, K):
-        self.Kp, self.Ki, self.Kd = (float(x) for x in K)
-        self.u = 0.5
-        self.premier = True
+    def __init__(self):
+        self.xI = PID_CI_INTEGRATEUR
+        self.xF = PID_CI_FILTRE
 
-    def pas(self, e):
-        if self.premier:
-            self.e1, self.ef, self.g1, self.premier = e, e, 0.0, False
-        g = TCN * (e - self.ef)
-        brut = self.u + self.Kp * (e - self.e1) + self.Ki * e + self.Kd * (g - self.g1)
-        u = min(max(brut, D_MIN), D_MAX)
-        self.ef = self.ef + TCN * (e - self.ef)
-        self.e1, self.g1, self.u = e, g, u
-        return u
+    def pas(self, e, K):
+        P, I, D = K
+        derivee = PID_N * (D * e - self.xF)
+        u = P * e + self.xI + derivee
+        u_sat = min(max(u, D_MIN), D_MAX)
+        entree_I = I * e
+        if not ((u != u_sat) and (np.sign(entree_I) == np.sign(u - u_sat))):
+            self.xI += TC * entree_I
+        self.xF += TC * derivee
+        return u_sat
 
 
 def g_interp(x):
@@ -246,11 +253,14 @@ def projeter(xc, dx, r):
     return np.minimum(np.maximum(xb + a * reste, lo_), hi_)
 
 
-class ELMPID:
+class AdaptateurELM:
     """Copie Python de elm_pid_adaptatif.m (memes reglages, memes noms,
     meme ordre des operations : Tester_ELM_PID_Rejeu.m compare les deux pas
-    par pas). Les arguments servent aux ablations."""
-    utilise_mesure = True
+    par pas). Entrees a chaque pas : erreur e, mesure de Vout, commande u
+    sortie du bloc PID. Sortie : gains [P I D] du bloc PID. Les gains sortis
+    au pas k ne dependent que de l'etat (aucune traversee directe) : ils
+    changent en fin de fenetre et servent a partir du pas suivant. Les
+    arguments servent aux ablations."""
 
     def __init__(self, **modif):
         self.r = dict(REGLAGES, **modif)
@@ -271,15 +281,13 @@ class ELMPID:
         self.x = np.ones(3)                   # multiplicateurs de Ziegler-Nichols
         self.x_prec = self.x.copy()
         self.K = K_ZN * self.x
-        self.u, self.premier = 0.5, True
         self.cpt, self.sy, self.sd, self.se, self.hors = 0, 0.0, 0.0, 0.0, False
-        self.S1 = self.S2 = self.S3 = 0.0
+        self.SE, self.phiD = 0.0, 0.0          # somme des erreurs et filtre de sensibilite, remis a zero par fenetre
         self.sS1 = self.sS2 = self.sS3 = 0.0
         self.yb1 = self.yb2 = self.db1 = self.db2 = 0.0
         self.sus1 = self.sus2 = True
         self.nfen = 0
         self.journal = []
-        self.K_pas = []
 
     def modele(self, x):
         xn = (x - self.XM) / self.XE
@@ -289,25 +297,22 @@ class ELMPID:
         dy = ((gg * (1.0 - gg)) * self.BETA[:self.n]) @ self.W.T + self.BETA[self.n:self.n + 5]
         return y, dy[2] / self.XE[2] * self.TE_, h
 
-    def pas(self, e, mesure):
-        self.K_pas.append(self.K)
-        if self.premier:
-            self.e1, self.ef, self.g1, self.premier = e, e, 0.0, False
-        g = TCN * (e - self.ef)
-        x1, x2, x3 = e - self.e1, e, g - self.g1
-        brut = self.u + self.K[0] * x1 + self.K[1] * x2 + self.K[2] * x3
-        u = min(max(brut, D_MIN), D_MAX)
-        self.ef = self.ef + TCN * (e - self.ef)
-        self.e1, self.g1, self.u = e, g, u
-        self.S1, self.S2, self.S3 = self.S1 + x1, self.S2 + x2, self.S3 + x3
-        self.sS1, self.sS2, self.sS3 = self.sS1 + self.S1, self.sS2 + self.S2, self.sS3 + self.S3
+    def mise_a_jour(self, e, mesure, u):
+        # Sensibilite de u(k) a un changement des gains au debut de la fenetre
+        # (derivee exacte de la loi du bloc, hors clamping) :
+        #   du/dP = e(k) ; du/dI = Tc x (somme des e de la fenetre avant k) ;
+        #   du/dD = N (e(k) - phiD(k)), phiD(k+1) = phiD(k) + Tc N (e(k) - phiD(k)), phiD = 0 au debut.
+        self.sS1 += e
+        self.sS2 += TC * self.SE
+        self.sS3 += PID_N * (e - self.phiD)
+        self.SE += e
+        self.phiD += TCN * (e - self.phiD)
         self.sy, self.sd, self.se = self.sy + mesure, self.sd + u, self.se + e
-        if brut < D_MIN or brut > D_MAX:
+        if u <= D_MIN or u >= D_MAX:          # sortie du bloc en butee : la fenetre est suspecte
             self.hors = True
         self.cpt += 1
         if self.cpt >= NF:
             self.fin_de_fenetre()
-        return u
 
     def fin_de_fenetre(self):
         yb, db, eb = self.sy / NF, self.sd / NF, self.se / NF
@@ -338,19 +343,43 @@ class ELMPID:
                 self.K = K_ZN * self.x
         self.journal.append({"ybar": yb, "dbar": db, "ebar": eb, "err": err, "J": J, "porte": porte,
                              "adapte": adapte, "appris": appris, "change": change, "x": self.x.copy(),
-                             "K": self.K.copy()})
+                             "K": self.K.copy(), "s": s})
         self.yb2, self.yb1 = self.yb1, yb
         self.db2, self.db1 = self.db1, db
         self.sus2, self.sus1 = self.sus1, sus
         self.nfen += 1
         self.cpt, self.sy, self.sd, self.se, self.hors = 0, 0.0, 0.0, 0.0, False
-        self.S1 = self.S2 = self.S3 = self.sS1 = self.sS2 = self.sS3 = 0.0
+        self.SE, self.phiD = 0.0, 0.0
+        self.sS1 = self.sS2 = self.sS3 = 0.0
+
+
+class ELMPID:
+    """Le montage Simulink de l'option B : adaptateur ELM -> gains -> bloc
+    PID de la base commune -> u, et u renvoye a l'adaptateur."""
+    utilise_mesure = True
+
+    def __init__(self, **modif):
+        self.adapt = AdaptateurELM(**modif)
+        self.bloc = BlocPID()
+        self.journal = self.adapt.journal
+        self.K_pas = []
+
+    @property
+    def K(self):
+        return self.adapt.K
+
+    def pas(self, e, mesure):
+        K = self.adapt.K                       # sortie de l'adaptateur (son etat seulement)
+        self.K_pas.append(K)
+        u = self.bloc.pas(e, K)
+        self.adapt.mise_a_jour(e, mesure, u)
+        return u
 
 
 essai = ELMPID()
-ecart_y = max(abs(essai.modele(MODELE["X_TEST"][i].astype(float))[0] - MODELE["Y_TEST"][i, 0])
+ecart_y = max(abs(essai.adapt.modele(MODELE["X_TEST"][i].astype(float))[0] - MODELE["Y_TEST"][i, 0])
               for i in range(MODELE["X_TEST"].shape[0]))
-ecart_J = max(abs(essai.modele(MODELE["X_TEST"][i].astype(float))[1] - MODELE["J_TEST"][i, 0])
+ecart_J = max(abs(essai.adapt.modele(MODELE["X_TEST"][i].astype(float))[1] - MODELE["J_TEST"][i, 0])
               for i in range(MODELE["X_TEST"].shape[0]))
 print(f"Vecteurs de test du modele : ecart {ecart_y:.1e} V sur ybar, {ecart_J:.1e} sur le jacobien.")
 if ecart_y > 1e-9 or ecart_J > 1e-9:
@@ -434,18 +463,16 @@ J_FIGE = float(np.mean(termes(REF["meilleur PID fige"]) / T_ZN))
 print(f"  Meilleur PID fige sur grille : J = {J_FIGE:.3f}.")
 
 
-# %% ETAPE 3 : R0 et ELM-PID sur les onze essais
+# %% ETAPE 3 : ELM-PID sur les onze essais
 
-titre("ETAPE 3 : R0 (gains de Ziegler-Nichols figes) et ELM-PID")
-R0 = evaluer(lambda: LoiLu(K_ZN))
-J_R0 = bilan("R0", R0)
+titre("ETAPE 3 : ELM-PID (le point de depart, gains figes, est le PID de Ziegler-Nichols lui-meme)")
 ELM = evaluer(lambda: ELMPID())
 J_ELM = bilan("ELM-PID", ELM)
-fige = evaluer(lambda: ELMPID(ADAPTER=False), ["S1", "S8b"])
-ecart_r0 = max(float(np.max(np.abs(fige[c]["sim"]["d"] - R0[c]["sim"]["d"]))) for c in fige)
-print(f"\n  Controle : ELM-PID sans adaptation contre R0, ecart maximal sur d : {ecart_r0:.1e}.")
-if ecart_r0 > 1e-12:
-    raise RuntimeError("Sans adaptation, l'ELM-PID ne redonne pas la loi R0.")
+fige = evaluer(lambda: ELMPID(ADAPTER=False))
+ecart_zn = max(float(np.max(np.abs(fige[c]["sim"]["d"] - REF["Ziegler-Nichols"][c]["sim"]["d"]))) for c in fige)
+print(f"\n  Controle : ELM-PID sans adaptation contre le PID de Ziegler-Nichols, onze essais, ecart maximal sur d : {ecart_zn:.1e}.")
+if ecart_zn != 0.0:
+    raise RuntimeError("Sans adaptation, l'ELM-PID ne redonne pas le PID de Ziegler-Nichols a l'identique.")
 for code in ("S1", "S2", "S3"):
     reg = ELM[code]["reg"]
     for i in fenetres_adaptees(reg):
@@ -470,7 +497,7 @@ for nom, modif in ABLATIONS.items():
     J_ABL[nom] = float(np.mean(termes(RES_ABL[nom]) / T_ZN))
 print(f"\n  {'variante':28s} {'J':>6s}  {'non revenus':12s} {'S3':>7s} {'S5':>7s} {'S8b':>7s} {'S9':>8s} {'gains changes':>13s}")
 print("  (IAE de 30 ms a la fin en mV.s ; gains changes : fenetres ou les gains ont change, total des onze essais)")
-for nom, res, J in ([("ELM-PID", ELM, J_ELM), ("R0", R0, J_R0)] + [(n, RES_ABL[n], J_ABL[n]) for n in ABLATIONS]):
+for nom, res, J in ([("ELM-PID", ELM, J_ELM)] + [(n, RES_ABL[n], J_ABL[n]) for n in ABLATIONS]):
     non = [c for c in CODES_IAE if not res[c]["revenus"]]
     nb = sum(len(fenetres_changees(res[c]["reg"])) for c in res) if hasattr(res["S1"]["reg"], "journal") else 0
     print(f"  {nom:28s} {J:6.3f}  {(','.join(non) or '-'):12s} {res['S3']['o']['IAE'] * 1e3:7.2f} "
@@ -494,10 +521,25 @@ for nom_p, fl, fc in (("nominal", 1.0, 1.0), ("L - 0.1 %", 0.999, 1.0), ("L + 0.
 L_BOB, C_CONV = L_NOM, C_NOM
 
 
+# %% ETAPE 4c : analyse ajoutee apres le calcul (non prevue dans criteres_elm_pid.txt)
+
+titre("ETAPE 4c (ajoutee apres coup) : PID fige aux gains atteints sur S1 apres la premiere adaptation")
+X_S1 = ELM["S1"]["reg"].journal[-1]["x"]
+FIGE_S1 = evaluer(lambda: PIDParallele(*(K_ZN * X_S1)))
+r_ = termes(FIGE_S1) / T_ZN
+APRES_COUP = {"x": X_S1.tolist(), "J": float(np.mean(r_)), "apres30": float(np.mean(r_[:10])),
+              "demarrage": float(np.mean(r_[10:])), "non_revenus": [c for c in CODES_IAE if not FIGE_S1[c]["revenus"]],
+              "IAE_mVs": {c: FIGE_S1[c]["o"]["IAE"] * 1e3 for c in FIGE_S1}}
+print(f"  gains x({X_S1[0]:.3f}, {X_S1[1]:.3f}, {X_S1[2]:.3f}) figes des le depart : J = {APRES_COUP['J']:.3f} "
+      f"(apres 30 ms {APRES_COUP['apres30']:.3f}, demarrage {APRES_COUP['demarrage']:.3f}) ; ELM-PID {J_ELM:.3f}")
+print("  IAE apres 30 ms (mV.s), fige / ELM-PID : " + " ; ".join(
+    f"{c} {FIGE_S1[c]['o']['IAE'] * 1e3:.2f} / {ELM[c]['o']['IAE'] * 1e3:.2f}" for c in ("S2", "S3", "S4", "S5", "S8a", "S8b", "S9")))
+
+
 # %% ETAPE 5 : comparaison et previsions
 
-titre("ETAPE 5 : ELM-PID face aux references, previsions Q1 a Q7 de criteres_elm_pid.txt")
-TOUS = {"Ziegler-Nichols": REF["Ziegler-Nichols"], "meilleur PID fige": REF["meilleur PID fige"], "R0": R0, "ELM-PID": ELM}
+titre("ETAPE 5 : ELM-PID face aux references, previsions Q1 a Q8 de criteres_elm_pid.txt")
+TOUS = {"Ziegler-Nichols": REF["Ziegler-Nichols"], "meilleur PID fige": REF["meilleur PID fige"], "ELM-PID": ELM}
 J_TOUS = {n: float(np.mean(termes(r) / T_ZN)) for n, r in TOUS.items()}
 print("  " + " " * 28 + "".join(f"{n:>20s}" for n in TOUS))
 print("  " + f"{'cout J':28s}" + "".join(f"{J_TOUS[n]:20.3f}" for n in TOUS))
@@ -524,23 +566,27 @@ print("  Decomposition de J (apres 30 ms ; demarrage) : " +
 base = {c: (fenetres_changees(ELM[c]["reg"]), ELM[c]["reg"].journal[-1]["K"] / K_ZN) for c in ("S1", "S2", "S3")}
 apres30 = {c: [i for i in fenetres_adaptees(ELM[c]["reg"]) if (i + 1) * NF > K30] for c in ("S7a", "S7b")}
 J_SENS = [x["J"] for x in SENSIBILITE]
-dem_S1 = (ELM["S1"]["IAE_dem"], R0["S1"]["IAE_dem"])
+INCREMENTAL = {"J": 0.728, "apres30": 0.747, "demarrage": 0.664, "S2": 5.61e-3}   # version 3 (7 octobre), criteres
+iae_S2 = (ELM["S2"]["o"]["IAE"], REF["Ziegler-Nichols"]["S2"]["o"]["IAE"])
 P = {"Q1": all(len(a) >= 1 and np.any(np.abs(k - 1) > 0.01) for a, k in base.values()),
-     "Q2": 0.70 <= J_ELM <= 0.78 and all(ELM[c]["revenus"] for c in CODES_IAE),
-     "Q3": J_ELM <= 0.744,
-     "Q4": abs(J_ABL["Jacobien constant"] - J_ELM) <= 0.02,
-     "Q5": all(len(v) == 0 for v in apres30.values()),
-     "Q6": max(abs(j - J_ELM) for j in J_SENS) <= 0.02,
-     "Q7": abs(dem_S1[0] / dem_S1[1] - 1) <= 0.05}
+     "Q2": 0.66 <= J_ELM <= 0.78 and all(ELM[c]["revenus"] for c in CODES_IAE),
+     "Q3": DECOMP["ELM-PID"][0] < INCREMENTAL["apres30"],
+     "Q4": DECOMP["ELM-PID"][1] >= 0.90,
+     "Q5": iae_S2[0] <= iae_S2[1],
+     "Q6": abs(J_ABL["Jacobien constant"] - J_ELM) <= 0.02,
+     "Q7": all(len(v) == 0 for v in apres30.values()),
+     "Q8": max(abs(j - J_ELM) for j in J_SENS) <= 0.02}
 TEXTE = {"Q1": "; ".join(f"{c} : gains changes sur {len(a)} fenetres, finaux x{np.round(k, 3).tolist()}" for c, (a, k) in base.items()),
          "Q2": f"J = {J_ELM:.3f} ; " + ("tous les evenements reviennent" if all(ELM[c]["revenus"] for c in CODES_IAE)
                                        else "pas revenus : " + ",".join(c for c in CODES_IAE if not ELM[c]["revenus"])),
-         "Q3": f"J = {J_ELM:.3f} (M2 seule, calcul du 7 octobre : 0.744 ; ablation de ce calcul : "
-               f"{J_ABL['M2 seule (sans restauration)']:.3f})",
-         "Q4": f"jacobien constant {J_ABL['Jacobien constant']:.3f}, ELM-PID {J_ELM:.3f}",
-         "Q5": f"fenetres adaptees apres 30 ms : S7a {len(apres30['S7a'])}, S7b {len(apres30['S7b'])}",
-         "Q6": f"J de {min(J_SENS):.3f} a {max(J_SENS):.3f} (nominal {J_ELM:.3f})",
-         "Q7": f"IAE de demarrage de S1 {dem_S1[0] * 1e3:.3f} mV.s (R0 {dem_S1[1] * 1e3:.3f})"}
+         "Q3": f"apres 30 ms {DECOMP['ELM-PID'][0]:.3f} (loi incrementale {INCREMENTAL['apres30']:.3f})",
+         "Q4": f"demarrage {DECOMP['ELM-PID'][1]:.3f} (loi incrementale {INCREMENTAL['demarrage']:.3f}) ; "
+               f"J {J_ELM:.3f} contre {INCREMENTAL['J']:.3f}",
+         "Q5": f"S2 apres 30 ms {iae_S2[0] * 1e3:.2f} mV.s (Ziegler-Nichols {iae_S2[1] * 1e3:.2f}, "
+               f"loi incrementale {INCREMENTAL['S2'] * 1e3:.2f})",
+         "Q6": f"jacobien constant {J_ABL['Jacobien constant']:.3f}, ELM-PID {J_ELM:.3f}",
+         "Q7": f"fenetres adaptees apres 30 ms : S7a {len(apres30['S7a'])}, S7b {len(apres30['S7b'])}",
+         "Q8": f"J de {min(J_SENS):.3f} a {max(J_SENS):.3f} (nominal {J_ELM:.3f})"}
 for k in P:
     print(f"  {k} {'juste' if P[k] else 'FAUSSE'} : {TEXTE[k]}")
 
@@ -551,9 +597,9 @@ titre("ETAPE 6 : fichiers pour Simulink et MATLAB")
 pas_1ms = int(round(1e-3 / TC))
 REGL_JSON = {k: (None if (isinstance(v, float) and np.isnan(v)) else v) for k, v in REGLAGES.items()}
 predictions = {"version": 2, "Te": TC,              # format de la base commune v2 (lu par Simuler_ELM_PID.m)
-               "regulateur": "ELM-PID (loi de Lu a derivee filtree, ELM de Lu adapte, porte M1, projection M2-M3)",
+               "regulateur": "ELM-PID option B (bloc PID de la base commune a gains externes, ELM de Lu adapte, porte M1, projection M2-M3)",
                "reglages": REGL_JSON, "K_depart": K_ZN.tolist(),
-               "controle": {"ecart_vecteurs_test_V": ecart_y, "ecart_sans_adaptation_R0": ecart_r0},
+               "controle": {"ecart_vecteurs_test_V": ecart_y, "ecart_sans_adaptation_ZN": ecart_zn},
                "essais": {}}
 for code, r in ELM.items():
     Kp = np.array(r["reg"].K_pas)
@@ -578,8 +624,7 @@ savemat(os.path.join(DOSSIER_ELM, "elm_pid_reglages.mat"),
          "MULT_MIN": REGLAGES["MULT_MIN"], "MULT_MAX": REGLAGES["MULT_MAX"],
          "N_BISSECTIONS": REGLAGES["N_BISSECTIONS"], "H_GRADIENT": REGLAGES["H_GRADIENT"],
          "RESTAURATION": REGLAGES["RESTAURATION"], "N_PROJECTION": REGLAGES["N_PROJECTION"],
-         "NF": float(NF), "TC": TC, "N_FILTRE": PID_N, "D_MIN": D_MIN, "D_MAX": D_MAX, "U_DEPART": 0.5,
-         "VERSION": 3.0})
+         "NF": float(NF), "TC": TC, "N_FILTRE": PID_N, "D_MIN": D_MIN, "D_MAX": D_MAX, "VERSION": 4.0})
 print("  elm_pid_reglages.mat ecrit.")
 
 rejeu = {}
@@ -598,7 +643,8 @@ def resume_essais(res):
     return {c: {"grandeurs": res[c]["o"], "IAE_dem": res[c]["IAE_dem"], "revenus": res[c]["revenus"]} for c in res}
 
 
-sortie = {"version": 2, "reglages": REGL_JSON, "J": J_TOUS, "decomposition": DECOMP, "J_ablations": J_ABL,
+sortie = {"version": 3, "reglages": REGL_JSON, "J": J_TOUS, "decomposition": DECOMP, "J_ablations": J_ABL,
+          "apres_coup_pid_fige_gains_S1": APRES_COUP,
           "J_regression": J_REGRESSION, "sensibilite": SENSIBILITE,
           "previsions": {k: {"juste": bool(P[k]), "detail": TEXTE[k]} for k in P},
           "references": {n: resume_essais(TOUS[n]) for n in TOUS},
@@ -614,7 +660,7 @@ print("  banc_elm_pid_resultats.json ecrit.")
 
 fig, axes = plt.subplots(3, 4, figsize=(20, 9.5), sharex="col")
 for col, (code, xlim) in enumerate((("S1", (0, 30)), ("S2", (40, 90)), ("S3", (40, 90)), ("S8b", None))):
-    for nom, couleur in (("Ziegler-Nichols", "0.6"), ("R0", "tab:orange"), ("meilleur PID fige", "tab:green"),
+    for nom, couleur in (("Ziegler-Nichols", "0.6"), ("meilleur PID fige", "tab:green"),
                          ("ELM-PID", "tab:blue")):
         sim = TOUS[nom][code]["sim"]
         axes[0, col].plot(sim["t"] * 1e3, sim["v"], lw=0.6, color=couleur, label=nom)

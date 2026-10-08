@@ -1,21 +1,30 @@
-ELM-PID : PID AUTO-ADAPTATIF A MODELE INTERNE ELM
+ELM-PID : PID AUTO-ADAPTATIF A MODELE INTERNE ELM (OPTION B)
 Methode, modifications documentees, previsions et resultats
 =============================================================================
 
-Methode et previsions ecrites le 7 octobre 2026, avant le calcul sur les
-onze essais communs (commits 35e8708 puis d87e8aa du depot). Mesures faites avant les previsions : donnees
-d'apprentissage seulement (entrainement_elm.py, ensemble_gains_elm.py) et
-essais de mise au point E1 a E4, distincts des onze essais
-(mise_au_point_elm_pid.py). Resultats ajoutes apres le calcul, sans
-changer la methode ni les previsions.
-Origine des modifications. La version de depart (5 octobre 2026, J = 0.784)
-ne changeait ses gains sur aucun des essais S1 a S7b, dont les trois cas de
-base : elle se comportait exactement comme la meme loi a gains figes. Un
-premier calcul avec M1 et M2 seules (J = 0.744) les adaptait sur S4, S5,
-S8a, S8b et S9, mais toujours pas sur S1, S2, S3 (prevision fausse,
-diagnostic en section 3, verrou V3) : M3 a ete ajoutee, avec de nouvelles
-previsions. Ces versions sont conservees dans l'historique du depot et ne
-font pas partie de ce dossier ; "M2 seule" reste une ablation du banc.
+Methode et previsions ecrites le 8 octobre 2026, avant le calcul sur les
+onze essais communs (commit du depot qui ajoute ce fichier). Mesures faites
+avant les previsions : donnees d'apprentissage seulement
+(entrainement_elm.py, ensemble_gains_elm.py) et essais de mise au point E1
+a E4, distincts des onze essais (mise_au_point_elm_pid.py). Les resultats
+seront ajoutes apres le calcul, sans changer la methode ni les previsions.
+
+D'ou vient cette version. La version du 7 octobre (loi PID incrementale de
+Lu, modifications M1 a M3, J = 0.728, validee sous Simulink) adapte ses
+gains sur tous les essais. Le diagnostic du 8 octobre
+(COMPARAISON/diagnostic_lois) a montre que ce qui la penalise face aux
+perturbations n'est pas l'adaptation mais la loi incrementale elle-meme :
+avec les MEMES gains fixes (ceux du PSO-PID), la loi de Lu fait moins bien
+que le bloc PID parallele apres 30 ms (0.739 contre 0.672 en rapport a
+Ziegler-Nichols ; S4 23.50 contre 16.54 mV.s, S3 7.53 contre 5.46, S2
+6.56 contre 2.04), et mieux au demarrage (0.600 contre 0.855). La
+modification M4 (section 4) en tire la consequence : l'ELM ne regle plus
+une loi a lui, il regle les gains du bloc PID de la base commune. Le reste
+(modele, OS-ELM, gradient normalise, porte, zones mortes, critere
+d'admissibilite, projection) est garde tel quel, avec les memes reglages :
+seule la loi change, pour que la comparaison des deux versions au chapitre
+4 porte sur ce seul point. La version incrementale est gardee, entiere,
+dans le dossier ELM_PID_INCREMENTAL.
 
 
 1. CADRE (base commune v2.1)
@@ -33,11 +42,7 @@ font pas partie de ce dossier ; "M2 seule" reste une ablation du banc.
   Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller based
   on ELM and its implementation for Buck converters", International Journal
   of Control, Automation and Systems 19(7), 2479-2490, 2021.
-  Garde, tel qu'adapte a ce convertisseur dans la version de depart
-  (detail : en-tete de banc_elm_pid.py) :
-    - loi PID incrementale de Lu, derivee calculee sur l'erreur filtree
-      (meme filtre que le PID de Ziegler-Nichols), saturation [0.01 ; 0.99],
-      depart u = 0.5 aux gains de Ziegler-Nichols ;
+  Garde (detail : en-tete de banc_elm_pid.py) :
     - boucle lente toutes les 0.5 ms (fenetres de 110 x Tc) ;
     - modele interne : ELM a liaisons directes (RVFL), 12 neurones
       logistiques, C = 0.1, graine 1, entrees [ybar(n-1), ybar(n-2),
@@ -47,14 +52,20 @@ font pas partie de ce dossier ; "M2 seule" reste une ablation du banc.
       jacobien du modele, pas eta = 0.5, inertie alpha = 0.001 (Lu),
       epsilon = 1e-3, zone morte de 0.1 V sur ebar, signe du jacobien ;
     - critere d'admissibilite des gains : marge de phase nominale au moins
-      celle du depart (25.2 degres) et coupure au plus fs/10 aux neuf coins
-      nominaux (R = 4 a 6 ohms, Vin = 160 a 240 V), modele moyen discretise
-      (ensemble_gains_elm.py).
+      celle du depart et coupure au plus fs/10 aux neuf coins nominaux
+      (R = 4 a 6 ohms, Vin = 160 a 240 V), modele moyen discretise
+      (ensemble_gains_elm.py) ; avec la loi de cette version, la marge du
+      depart vaut 24.93 degres (25.2 avec la loi incrementale).
+  Change (M4, section 4) : la loi de commande. La loi PID incrementale de
+  Lu, u(k) = u(k-1) + Kp de + Ki e + Kd dg, est remplacee par le bloc PID
+  de la base commune (forme Parallel, derivee filtree, clamping), dont
+  l'ELM fournit les gains.
 
 
-
-3. DIAGNOSTIC : POURQUOI LES GAINS NE BOUGEAIENT PAS
-----------------------------------------------------
+3. DIAGNOSTIC DE LA VERSION DE DEPART : POURQUOI LES GAINS NE BOUGEAIENT PAS
+-------------------------------------------------------------------------
+  (Etabli le 7 octobre sur la loi incrementale ; M1 a M3 en sont tires et
+  sont gardes ici.)
   Trois verrous empiles, mesures sur le banc :
   V1. La porte. Une fenetre etait "suspecte" si la loi saturait OU si
       l'erreur de prediction du modele depassait 0.5 V ; les gains ne
@@ -112,7 +123,7 @@ M1. La porte : saturation seulement ; zone morte d'estimation pour l'OS-ELM
 
 M2. Projection sur l'ensemble admissible, avec glissement le long de sa
     frontiere, au lieu du plus grand pave
-  Pourquoi. Le critere d'admissibilite (marge nominale >= 25.2 degres,
+  Pourquoi. Le critere d'admissibilite (marge nominale >= celle du depart,
   coupure <= 2.2 kHz) est garde. Mais le pave a axes paralleles ne
   representait pas l'ensemble admissible autour du depart : une hausse de
   Ki accompagnee d'une hausse de Kd garde la marge (Ki x 1.2 avec
@@ -128,7 +139,8 @@ M2. Projection sur l'ensemble admissible, avec glissement le long de sa
     - gains exprimes en multiplicateurs x = K / K_ZN, chacun dans [1/4 ; 4]
       (meme etendue de deux octaves que la grille de la version de depart) ;
       sensibilite phi = J (s .* K_ZN) ;
-    - table de g = max((25.2 - marge)/25.2, (fc - 2200)/2200) sur une
+    - table de g = max((M0 - marge)/M0, (fc - 2200)/2200), M0 = marge du
+      depart (24.93 degres pour le bloc PID parallele), sur une
       grille de pas 2^(1/8) en log2 des multiplicateurs (33^3 points),
       interpolee trilineairement ; admissible si g <= 0. Controle : sur
       3000 points hors grille, aucun admis a tort ;
@@ -163,9 +175,69 @@ M3. Projection : point admissible le plus proche, avec restauration
   Le resultat est toujours admissible. La version M2 seule (sans
   restauration) est gardee comme ablation.
 
-Inchange (section 2) : tout le reste, dont le modele, eta, alpha, epsilon,
-la zone morte des gains, l'absence d'oubli, le critere d'admissibilite, le
-depart.
+M4. La loi : le bloc PID de la base commune, a gains externes (option B)
+  Pourquoi. Diagnostic du 8 octobre (COMPARAISON/diagnostic_lois, memes
+  gains fixes dans les deux lois, aucun reglage) :
+    - la forme incrementale (ou "en vitesse") ne garde de l'action
+      proportionnelle et derivee que leurs increments : quand la sortie
+      sature, ces increments sont perdus et la loi repart de la butee. Sur
+      une perturbation forte (S4, S9), elle revient moins vite que le bloc
+      parallele, a gains egaux ;
+    - avec la derivee sur l'erreur, un saut de consigne (S2, perturbation F1
+      ajoutee a la consigne) donne un a-coup de derivee que la saturation
+      tronque ; la loi incrementale ne le rend jamais, d'ou un ecart
+      maximal de 4.4 a 4.8 V sur S2 contre 2.0 V pour le bloc parallele ;
+    - en contrepartie, ces memes proprietes donnent a la loi incrementale
+      un demarrage sans depassement notable (pas d'integrateur a vider) :
+      c'est le prix de M4, attendu et a mesurer (prevision Q4).
+  Ce n'est donc pas l'adaptation qui manquait, mais la loi sur laquelle
+  elle agit. Le bloc parallele est aussi celui des autres methodes de la
+  comparaison (Ziegler-Nichols, PSO-PID, Fuzzy-PID) : avec M4, l'ELM-PID
+  se compare a elles a loi egale, ce qui est la question du travail.
+  References. K. J. Astrom, T. Hagglund, Advanced PID Control, ISA, 2006
+  (forme parallele, derivee filtree, anti-emballement par integration
+  conditionnelle ; algorithme en vitesse) ; A. Visioli, Practical PID
+  Control, Springer, 2006 (integration conditionnelle, "clamping") ;
+  K. J. Astrom, B. Wittenmark, Adaptive Control, 2e ed., Addison-Wesley,
+  1995 (gradient sur les parametres du regulateur a partir des derivees de
+  sensibilite, regle MIT) ; Lu et al. [1] pour le reste de la boucle.
+  Mise en oeuvre (banc_elm_pid.py, elm_pid_adaptatif.m) :
+    - le bloc "PID Controller" de la base commune, inchange (Parallel,
+      Forward Euler a Tc, pole N = 64 122.9 rad/s, sortie dans
+      [0.01 ; 0.99], clamping, integrateur a 0.5 et filtre a 0.01 au
+      depart), avec ses gains P, I, D pris sur des entrees externes, comme
+      pour le Fuzzy-PID ;
+    - l'adaptateur ELM recoit e, la mesure de Vout et la commande u du
+      bloc ; il sort les gains. Ses sorties ne dependent que de son etat
+      (aucune traversee directe) : des gains changes en fin de fenetre
+      servent a partir du pas suivant, et il n'y a pas de boucle algebrique
+      dans Simulink ;
+    - multiplicateurs x = K / K_ZN avec K_ZN = [P, I, D] de Ziegler-Nichols
+      (la version incrementale utilisait [P, I Tc, D / Tc]) ;
+    - sensibilite de u(k) a un changement des gains au debut de la fenetre,
+      derivee exacte de la loi du bloc (clamping mis a part : une fenetre
+      saturee ferme la porte, M1) :
+        du/dP = e(k) ;
+        du/dI = Tc x (somme des e(j) de la fenetre, j < k) ;
+        du/dD = N (e(k) - phiD(k)), phiD(k+1) = phiD(k) + Tc N (e(k) - phiD(k)),
+                phiD = 0 au debut de la fenetre ;
+      s = moyenne sur la fenetre ; phi = J (s .* K_ZN) comme avant. C'est le
+      meme principe que la sensibilite de Lu (somme des increments depuis
+      le debut de la fenetre), applique a la loi du bloc ;
+    - fenetre suspecte (M1) si la sortie du bloc est en butee
+      (u <= 0.01 ou u >= 0.99) a un pas de la fenetre ;
+    - ensemble admissible recalcule pour cette loi : terme integral
+      I Tc/(z-1) au lieu de Ki z/(z-1), derivee D N (z-1)/(z-1+Tc N)
+      (ensemble_gains_elm.py, version 2) ; marge du depart 24.93 degres,
+      coupure 1078 Hz ; 35.2 % de la table admissible ; aucun point admis a
+      tort sur 3000 points hors grille.
+  Controle a l'identique : sans adaptation, l'ELM-PID est le PID de
+  Ziegler-Nichols de la base commune, a 0 pres sur d (verifie sur E1 a E4,
+  verifie a nouveau sur les onze essais par le banc).
+
+Inchange : le modele, eta, alpha, epsilon, les deux zones mortes, l'absence
+d'oubli, le critere d'admissibilite, la projection M2-M3, le depart.
+Aucun de ces reglages n'a ete revu pour M4.
 
 
 5. LE MODELE ET SON JACOBIEN : VERIFIES, PAS MODIFIES (entrainement_elm.py)
@@ -201,99 +273,135 @@ depart.
 
 6. CONTROLES DE MISE AU POINT (avant les previsions ; mise_au_point_elm_pid.py)
 -----------------------------------------------------------------------------
-  Projection depuis le depart, 500 pas aleatoires : gains changes 500
-  (M3), 304 (M2 seule), 242 (sans glissement) ; aucun resultat hors de
-  l'ensemble ; distance moyenne a la cible 0.046 (M3), 0.075, 0.086.
+  Projection depuis le depart dans le nouvel ensemble, 500 pas aleatoires :
+  gains changes 499 (M3), 301 (M2 seule), 241 (sans glissement) ; aucun
+  resultat hors de l'ensemble ; distance moyenne a la cible 0.046 (M3),
+  0.075, 0.086.
   Essais de mise au point (points R, Vin absents des onze essais) : E1
   7 ohms, 190 V, charge a 4.5 ohms sur [40 ; 65) ms ; E2 15 ohms, 210 V, Vin
   175 V puis 235 V ; E3 60 ohms, 220 V, consigne +10 V sur [40 ; 65) ms ;
   E4 9 ohms, 200 V, bruit et CAN 12 bits.
-  IAE apres 30 ms (mV.s), R0 / M2 seule / ELM-PID :
-    E1 34.06 / 33.99 / 33.13 ; E2 3.02 / 1.88 / 1.52 ;
-    E3 33.92 / 20.16 / 20.19 ; E4 1.16 / 1.03 / 1.03.
-  Avec M3, les gains changent des le demarrage (2.5 a 4 ms) sur les quatre
-  essais. Jacobien constant : a 0.4 mV.s pres. Aucun reglage n'a ete change
-  apres ces essais.
+  IAE (mV.s), demarrage / apres 30 ms :
+                       Ziegler-Nichols   ELM-PID (B)    ELM-PID incremental (7 oct.)
+    E1                  87.02 / 35.69    86.93 / 32.80          - / 33.13
+    E2                  92.63 /  3.12    91.97 /  1.21          - /  1.52
+    E3                 166.05 / 28.58   161.57 /  9.97          - / 20.19
+    E4                  84.05 /  1.43    83.86 /  0.97          - /  1.03
+  Les gains changent des le demarrage (3.5 a 4.5 ms) sur les quatre
+  essais ; multiplicateurs finaux de 1.7 a 2.7 sur P, 1.6 a 2.0 sur I,
+  1.15 a 1.3 sur D. Le demarrage reste celui de Ziegler-Nichols a 3 % pres :
+  la premiere adaptation arrive apres le gros de la montee. Jacobien
+  constant : a 0.5 mV.s pres. Sans adaptation : ecart 0 a Ziegler-Nichols
+  sur d. Aucun reglage n'a ete change apres ces essais.
 
 
 7. PREVISIONS (ecrites avant le calcul sur les onze essais)
 -----------------------------------------------------------
+  Reperes : version incrementale (7 octobre) J = 0.728, dont 0.747 apres
+  30 ms et 0.664 au demarrage ; meilleur PID fige sur grille 0.738 ;
+  PSO-PID 0.714 (0.672 / 0.855).
   Q1. Les gains changent dans les trois cas de base : sur S1, S2 et S3, au
       moins une fenetre ou les gains changent et un multiplicateur final
       hors de [0.99 ; 1.01].
-  Q2. J entre 0.70 et 0.78 ; tous les evenements reviennent.
-  Q3. J au plus egal a celui de la version M1-M2 seules (0.744).
-  Q4. Jacobien constant : J a 0.02 pres de l'ELM-PID.
-  Q5. Aucune fenetre adaptee apres 30 ms sur S7a et S7b (pas de derive sur
+  Q2. J entre 0.66 et 0.78 ; tous les evenements reviennent dans la bande
+      (S8b et S9 compris).
+  Q3. Apres 30 ms, M4 fait mieux que la loi incrementale : partie "apres
+      30 ms" de J strictement inferieure a 0.747.
+  Q4. Le prix de M4 : partie "demarrage" de J au moins 0.90 (contre 0.664
+      pour la loi incrementale).
+      Pas de prevision sur le signe de l'ecart de J a 0.728 : le gain
+      apres 30 ms (10 termes) et la perte au demarrage (3 termes) sont du
+      meme ordre sur les essais de mise au point.
+  Q5. S2 (hors de J) : IAE apres 30 ms au plus celle de Ziegler-Nichols
+      (2.84 mV.s), donc loin des 5.61 de la loi incrementale.
+  Q6. Jacobien constant : J a 0.02 pres de l'ELM-PID.
+  Q7. Aucune fenetre adaptee apres 30 ms sur S7a et S7b (pas de derive sur
       le bruit et la quantification).
-  Q6. L ou C a +-0.1 % : J a 0.02 pres de sa valeur nominale.
-  Q7. Demarrage de S1 : IAE de 0 a 30 ms a 5 % pres de celle de R0.
-  Regle de conclusion : si Q1 est fausse, on s'arrete et on le dit ; on ne
-  touche ni aux zones mortes ni au critere d'admissibilite pour la rendre
-  juste. Ablations rapportees, jamais choisies : jacobien constant, sans
-  OS-ELM, M2 seule, sans glissement, R0 (gains figes).
+  Q8. L ou C a +-0.1 % : J a 0.02 pres de sa valeur nominale.
+  Regles de conclusion :
+    - si Q1 est fausse, on s'arrete et on le dit ; on ne touche ni aux zones
+      mortes ni au critere d'admissibilite pour la rendre juste ;
+    - si Q3 est fausse, M4 echoue sur sa propre raison d'etre : on le dit,
+      et le choix entre les deux versions revient a Jean-Riche, sans
+      reglage ajoute ;
+    - ablations rapportees, jamais choisies : jacobien constant, sans
+      OS-ELM, M2 seule, sans glissement.
+  Pour le chapitre 4, fixe ici avant le calcul : la comparaison des deux
+  versions (incrementale et B) se fait sur S4, le scenario deja retenu
+  pour comparer les cinq methodes, avec la decomposition de J ; S2 et S1
+  servent seulement a montrer les deux mecanismes (a-coup de consigne,
+  demarrage), quel que soit leur resultat.
 
 
-8. RESULTATS (7 octobre 2026 ; banc_elm_pid_sortie_console.txt)
+8. RESULTATS (8 octobre 2026 ; banc_elm_pid_sortie_console.txt)
 ---------------------------------------------------------------
+  Calcul fait apres le commit des previsions (1d16b45), sans rien changer.
                           J      apres 30 ms   demarrage   non revenus
     Ziegler-Nichols     1.000      1.000         1.000      S8b, S9
+      (= ELM-PID sans adaptation, ecart 0 sur d sur les onze essais)
     meilleur PID fige   0.738      0.710         0.831      -
       (sur grille, choisi sur les onze essais)
-    R0 (gains figes)    0.917      0.986         0.687      S8b, S9
-    ELM-PID             0.728      0.747         0.664      -
-  Fenetres ou les gains changent : S1 2, S2 4, S3 6, S4 6, S5 8, S6 2,
-  S7a 2, S7b 1, S8a 12, S8b 18, S9 16 (77 en tout). Gains finaux (x ZN) :
-  S1 (0.97, 1.03, 1.07) ; S2 (1.41, 1.18, 0.96) ; S3 (1.54, 1.26, 0.99) ;
-  S8b (3.38, 1.86, 1.30) ; S9 (3.05, 1.88, 1.28). Instants : 3.5 et 4 ms
-  sur S1, S2, S3 ; puis 52 et 52.5 ms sur S2 ; 52, 52.5, 53 et 72 ms sur S3.
-  IAE apres 30 ms (mV.s), R0 / ELM-PID : S3 8.48 / 7.79 ; S4 22.74 / 19.57 ;
-  S5 3.81 / 2.97 ; S8a 11.08 / 3.24 ; S8b 73.89 / 3.33 ; S9 537.3 / 307.0.
-  S2 (hors de J) : 5.27 / 5.61, un peu moins bon.
-  Ablations : jacobien constant 0.728 ; sans OS-ELM 0.728 ; M2 seule 0.744 ;
-  sans glissement 0.760. Sensibilite (L ou C a +-0.1 %) : J de 0.722 a
-  0.731.
-  Q1 a Q7 justes.
+    ELM-PID (B)         0.746      0.680         0.967      -
+    ELM-PID incremental 0.728      0.747         0.664      -
+      (version du 7 octobre, dossier ELM_PID_INCREMENTAL)
+  Fenetres ou les gains changent : S1 1, S2 1, S3 2, S4 2, S5 6, S6 1,
+  S7a 1, S7b 1, S8a 7, S8b 11, S9 7 (40 en tout, 77 pour la version
+  incrementale). Sur S1 a S3, le seul changement commun est a 4 ms (fin de
+  la montee) : x(1.469, 1.058, 1.152). Sur S3, un second a 72 ms (fin de
+  F2) : x(1.759, 1.308, 1.159). Gains finaux S8b x(3.47, 2.42, 1.50),
+  S9 x(3.36, 2.10, 1.36).
+  IAE apres 30 ms (mV.s), Ziegler-Nichols / ELM-PID B / incremental :
+    S2 2.84 / 2.41 / 5.61 ; S3 8.67 / 6.41 / 7.79 ; S4 23.61 / 18.87 / 19.57 ;
+    S5 3.87 / 2.46 / 2.97 ; S8a 12.07 / 2.96 / 3.24 ; S8b 77.19 / 3.03 / 3.33 ;
+    S9 531.8 / 294.9 / 307.0.
+  Ablations : jacobien constant 0.745 ; sans OS-ELM 0.746 ; M2 seule 0.747 ;
+  sans glissement 0.747. Sensibilite (L ou C a +-0.1 %) : J de 0.746 a
+  0.751.
+  Q1 a Q8 justes. Q4 dit le prix : M4 perd l'avantage de demarrage de la
+  loi incrementale (0.967 contre 0.664), et comme le demarrage pese 3
+  termes sur 13, J monte de 0.728 a 0.746 alors que tout ce qui suit 30 ms
+  s'ameliore (0.680 contre 0.747).
 
+  Ce que l'adaptation fait pendant une perturbation (constat apres calcul).
+  Sur S2 et S3, aucune adaptation n'a lieu pendant F1 et F2 : la fenetre de
+  l'evenement et les deux suivantes saturent ou suivent une saturation
+  (porte fermee, M1), et quand la porte se rouvre, 1.5 ms plus tard,
+  |ebar| est deja sous la zone morte de 0.1 V (S3 a 52 ms : -0.038 V).
+  Avec le bloc parallele, la perturbation est rattrapee avant que la
+  boucle lente puisse agir. Les gains utiles sur S2 a S4 sont donc ceux
+  trouves a la fin du demarrage.
+  Analyse ajoutee apres coup (etape 4c du banc, non prevue) : le PID fige
+  aux gains x(1.469, 1.058, 1.152) des le depart donne J = 0.754 (0.702
+  apres 30 ms, 0.928 au demarrage). L'adaptation au-dela de son premier
+  pas n'apporte rien sur S2 a S4 (S3 6.41 / 6.41 ; S4 18.94 / 18.87) ;
+  elle apporte aux charges legeres, ou elle continue a monter les gains
+  (S5 2.85 -> 2.46 ; S8a 3.87 -> 2.96 ; S8b 5.03 -> 3.03 mV.s).
 
-Validation Simulink (7 octobre 2026, sorties envoyees par Jean-Riche)
-  Tester_ELM_PID_Rejeu : le bloc MATLAB reproduit le banc pas par pas sur
-  S1, S3, S7b, S8b, S9 (ecart au plus 7.5e-10 sur u, 7.7e-10 en relatif
-  sur les gains, aucune decision de fenetre differente).
-  Construction_ELM_PID : T1 2.3 mV, gains a 19 ms a 0.1 % du banc ; T2
-  28.4 mV. verifier_modele_elm_pid.py : conforme.
-  Simuler_ELM_PID, onze essais : memes decisions d'adaptation que le banc
-  partout sauf S7a (mesure quantifiee : un arrondi de 1e-15 V change une
-  decision du CAN ; Simulink 0 fenetre adaptee, banc 2) ; IAE a 0.2 % pres
-  (S7a -2.9 %, S8b -0.7 %), memes retours dans la bande, gains a 0.35 %
-  pres (S7a excepte). Les modifications M1 a M3 sont validees dans
-  Simulink.
 
 9. LECTURE (pour le memoire)
 ----------------------------
-  1. L'ELM-PID adapte ses gains dans les trois cas de base et sur tous les
-     essais. Il fait mieux que R0 (0.728 contre 0.917), ramene S8b et S9
-     dans la bande, et fait un peu mieux que le meilleur PID fige sur grille
-     (0.738).
-  2. Les gains ne bougent que lorsque l'erreur moyenne d'une fenetre de
-     0.5 ms depasse 0.1 V (zone morte). En regime etabli, ils restent
-     constants : c'est voulu (pas d'information, pas d'adaptation, pas de
-     derive sur le bruit, Q5). Sur S1, S2, S3, cela fait 2 a 6 fenetres.
-  3. Le jacobien est bien estime en ligne a chaque fenetre par le reseau
-     (de 9.6 a 13.9 V par unite sur les essais ; mediane 10.3 sur S1, 11.5
-     sur S8b), mais il ne suit pas le vrai (11.2 a 15.8 ; correlation
-     -0.04 sur les fenetres de controle), et le remplacer par une constante
-     donne le meme J (0.728). Deux raisons : la charge n'est pas observable
-     avec les seules tensions et rapports cycliques passes (section 5) ; et
-     dans le gradient normalise de Lu, dx = eta ebar phi / (eps + phi.phi)
-     avec phi = J v, le jacobien ne fixe que le signe du pas et le divise
-     (dx ~ eta ebar v / (J |v|^2)) : une variation de 30 % de J change la
-     longueur du pas de 30 %, pas sa direction. Ce qui fait le resultat,
-     c'est la boucle d'adaptation (porte, zone morte, gradient normalise,
-     projection), pas le reseau. A dire tel quel dans le memoire.
-  4. Perspective (non faite ici) : un jacobien informatif demanderait une
-     entree qui renseigne sur la charge (courant de la bobine), ce qui
-     changerait la mesure disponible au regulateur dans la base commune.
+  1. M4 fait ce pour quoi elle a ete faite : a loi egale avec les autres
+     methodes, l'ELM-PID fait mieux que la loi incrementale sur toutes les
+     perturbations (apres 30 ms : 0.680 contre 0.747), et S2 n'est plus
+     degrade (2.41 contre 5.61 mV.s). Il ramene S8b et S9 dans la bande.
+  2. Il le paie au demarrage : sans adaptation pendant la montee (porte
+     fermee par la saturation), il demarre comme Ziegler-Nichols (14 % de
+     depassement sur S1). Sur J, la version B (0.746) est derriere la
+     version incrementale (0.728) et a egalite avec le meilleur PID fige
+     (0.738). Il faut le dire tel quel : B n'est pas "meilleure partout",
+     elle echange le demarrage contre les perturbations.
+  3. L'adaptation agit en deux temps, pas pendant les perturbations : un
+     reglage a la fin du demarrage, puis une derive lente des gains a
+     charge legere. Le constat "les gains ne changent pas pendant F1 et
+     F2" n'est pas un defaut de codage : c'est la consequence directe de
+     la boucle de Lu (fenetres de 0.5 ms, porte sur trois fenetres, zone
+     morte 0.1 V) face a une perturbation rattrapee en 1.5 ms. Pour une
+     adaptation pendant la perturbation, il faudrait une boucle plus
+     rapide que le regulateur qu'elle regle, ce que la methode de Lu
+     n'est pas.
+  4. Le jacobien du reseau, comme dans la version incrementale, ne change
+     pas le resultat (constante : 0.745). Ce qui fait le resultat, c'est
+     la boucle d'adaptation et la loi qu'elle regle.
 
 
 10. REFERENCES
@@ -333,7 +441,12 @@ Validation Simulink (7 octobre 2026, sorties envoyees par Jean-Riche)
   [14] J. B. Rosen, "The gradient projection method for nonlinear
       programming, Part II : Nonlinear constraints", Journal of the Society
       for Industrial and Applied Mathematics, 9(4), 1961.
+  [15] A. Visioli, Practical PID Control, Springer, 2006.
+  [16] K. J. Astrom, B. Wittenmark, Adaptive Control, 2e ed.,
+      Addison-Wesley, 1995.
   Les references [1] a [5], [7], [11] a [13] viennent du document de la
   methode (Regulateur_ELM_PID.docx) ; [6], [8], [9], [10], [14] justifient
-  les modifications et ont ete verifiees par leurs notices
-  bibliographiques (textes integraux non consultes ici, sauf [1]).
+  les modifications et ont ete verifiees par leurs notices bibliographiques
+  (textes integraux non consultes ici, sauf [1]). [15] et [16] (M4) sont
+  des ouvrages de reference cites sans consultation ici : notices a
+  verifier avant la redaction du memoire.

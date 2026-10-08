@@ -2,46 +2,40 @@
 # verifier_modele_elm_pid.py
 #
 # VERSION
-#   4 (8 octobre 2026), ELM-PID option B. Repris de
-#   verifier_modele_fuzzy_pid.py (meme montage : le PID de la base commune
-#   recoit ses gains d'un bloc MATLAB System), avec les deux entrees de plus
-#   de l'adaptateur (mesure et commande). La version 3 (bloc qui remplacait
-#   le PID) est dans ELM_PID_INCREMENTAL.
+#   1 (4 octobre 2026), ELM-PID sur la base commune v2.
 #
 # OBJECTIF
 #   Controle independant, sans MATLAB, du modele Buck_Commun_ELM_PID.slx
 #   construit par Construction_ELM_PID.m. Il doit etre identique a
 #   Buck_Commun.slx (deja verifie par verifier_modele_commun.py), sauf :
-#     - bloc "PID Controller" GARDE : seul ControllerParametersSource passe
-#       de internal a external (et ses entrees passent de 1 a 5) ; Simulink
-#       bascule alors seul quatre aiguillages internes du masque
-#       (ParallelPVariant, IVariant, DVariant, NVariant) de
-#       InternalParameters a ExternalParameters, et seulement ceux-la ;
-#     - six blocs ajoutes : "Echantillonneur Erreur ELM", "Echantillonneur
-#       Mesure ELM", "Echantillonneur Commande ELM" (Zero-Order Hold a
-#       1/(22000*10) s), "ELM-PID Adaptatif" (MATLAB System, classe
-#       elm_pid_adaptatif, execution interpretee, 3 entrees, 1 sortie),
-#       "Demux Gains ELM" (Demux a 3 sorties) et "Constante N Filtre"
-#       (Constant, meme valeur que le champ N du PID) ;
-#     - liaisons : Sum1 -> PID (sur l'entree u, dont le numero peut changer) ;
-#       Sum1 -> Echantillonneur Erreur -> entree 1 de l'adaptateur ;
-#       Quantification Mesure -> Echantillonneur Mesure -> entree 2 ;
-#       sortie du PID -> Echantillonneur Commande -> entree 3 (le PID
-#       alimente toujours le PWM) ; adaptateur -> Demux ; Demux 1, 2, 3 et
-#       Constante N -> quatre autres entrees du PID, toutes differentes.
-#       Toutes les autres liaisons restent.
-#   L'ordre des entrees P, I, D, N du PID n'est pas ecrit dans le .slx (il
-#   est dans la bibliotheque Simulink) : le script donne les numeros
-#   utilises, et c'est l'auto-test T0 de Construction_ELM_PID.m (gains de
-#   Ziegler-Nichols -> PID classique a 0.1 V pres) qui controle cet ordre.
+#     - le bloc "PID Controller", supprime ;
+#     - quatre blocs ajoutes : "Echantillonneur Erreur ELM" et
+#       "Echantillonneur Mesure ELM" (Zero-Order Hold a 1/(22000*10) s),
+#       "ELM-PID Adaptatif" (MATLAB System, classe elm_pid_adaptatif,
+#       execution interpretee) et "Terminaison Gains ELM" (Terminator) ;
+#     - liaisons : Sum1 -> Echantillonneur Erreur ELM -> ELM-PID (entree 1),
+#       Quantification Mesure -> Echantillonneur Mesure ELM -> ELM-PID
+#       (entree 2), ELM-PID (sortie 1) -> PWM, ELM-PID (sortie 2) ->
+#       Terminaison Gains ELM ; les deux liaisons du PID disparaissent,
+#       toutes les autres restent (dont Quantification Mesure -> Sum1).
+#
+# CE QUE LE SCRIPT CONTROLE
+#   1. Blocs gardes : memes reglages que dans Buck_Commun.slx (valeurs par
+#      defaut de Simulink pour les reglages absents ; lien de bibliotheque
+#      mis a jour a l'enregistrement note sans etre compte).
+#   2. Blocs ajoutes : exactement les quatre prevus, types et reglages.
+#   3. Liaisons de signal : celles de Buck_Commun.slx, moins les deux du
+#      PID, plus les six prevues. Liaisons electriques : identiques.
+#   4. Configuration de simulation et rappel InitFcn identiques.
 #
 # COMMENT LANCER CE SCRIPT :
 #   python verifier_modele_elm_pid.py
-#   depuis le dossier ou se trouvent Buck_Commun.slx et
-#   Buck_Commun_ELM_PID.slx. Bibliotheque standard de Python uniquement.
+#   (ou le notebook verifier_modele_elm_pid.ipynb, meme code), depuis le
+#   dossier ou se trouvent Buck_Commun.slx et Buck_Commun_ELM_PID.slx.
+#   Bibliotheque standard de Python uniquement.
 #   Doit finir par "RESULTAT : Buck_Commun_ELM_PID.slx est conforme."
 #
-# ORDRE D'EXECUTION
+# ORDRE D'EXECUTION (etape 3 de l'ELM-PID)
 #   1. entrainement_elm.py ; 2. ensemble_gains_elm.py ; 3. banc_elm_pid.py ;
 #   4. Tester_ELM_PID_Rejeu.m ; 5. Construction_ELM_PID.m ; 6. ce script ;
 #   7. Simuler_ELM_PID.m.
@@ -61,21 +55,15 @@ except NameError:
     DOSSIER = os.getcwd()
 FICHIER_SOURCE = os.path.join(DOSSIER, "Buck_Commun.slx")
 FICHIER_ELM = os.path.join(DOSSIER, "Buck_Commun_ELM_PID.slx")
-TC = 1.0 / (22000 * 10)                       # periode attendue de l'echantillonneur (s)
+TC = 1.0 / (22000 * 10)                       # periode attendue des echantillonneurs (s)
 PWM = "PWM Generator\n(DC-DC)"                # nom du bloc PWM (vrai saut de ligne)
-PID = "PID Controller"
 CLASSE = "elm_pid_adaptatif"                  # classe du bloc MATLAB System
 NOM_SYS = "ELM-PID Adaptatif"
 NOM_ZOHE = "Echantillonneur Erreur ELM"
 NOM_ZOHM = "Echantillonneur Mesure ELM"
-NOM_ZOHU = "Echantillonneur Commande ELM"
-NOM_DEMUX = "Demux Gains ELM"
-NOM_N = "Constante N Filtre"
-QUANT = "Quantification Mesure"
-TYPES_AJOUTES = {NOM_ZOHE: "ZeroOrderHold", NOM_ZOHM: "ZeroOrderHold", NOM_ZOHU: "ZeroOrderHold",
-                 NOM_SYS: "MATLABSystem", NOM_DEMUX: "Demux", NOM_N: "Constant"}
-# Aiguillages internes du masque du PID lies a la source de P, I, D et N (changent seuls avec elle)
-VARIANTES_PID = ("ParallelPVariant", "IVariant", "DVariant", "NVariant")
+NOM_TERM = "Terminaison Gains ELM"
+TYPES_AJOUTES = {NOM_ZOHE: "ZeroOrderHold", NOM_ZOHM: "ZeroOrderHold", NOM_SYS: "MATLABSystem",
+                 NOM_TERM: "Terminator"}
 print("Dossier de travail :", DOSSIER)
 
 # Valeurs par defaut internes de Simulink pour les reglages compares
@@ -189,133 +177,89 @@ for f in (FICHIER_SOURCE, FICHIER_ELM):
     if not os.path.exists(f):
         raise FileNotFoundError("Fichier introuvable : " + f)
 rs = lire_xml(FICHIER_SOURCE, "simulink/systems/system_root.xml")
-rf = lire_xml(FICHIER_ELM, "simulink/systems/system_root.xml")
+re_ = lire_xml(FICHIER_ELM, "simulink/systems/system_root.xml")
 bs = {b.get("Name"): b for b in rs.findall("Block")}
-bf = {b.get("Name"): b for b in rf.findall("Block")}
+be = {b.get("Name"): b for b in re_.findall("Block")}
 ok, pb, notes = [], [], []
 
-# 1. Blocs gardes (le PID compris)
+# 1. Blocs gardes
 n_pb = len(pb)
-for nom in sorted(bs):
-    if nom not in bf:
+if "PID Controller" in be:
+    pb.append("Le bloc 'PID Controller' est encore present.")
+for nom in sorted(set(bs) - {"PID Controller"}):
+    if nom not in be:
         pb.append(f"Bloc disparu : {nom!r}.")
         continue
-    a, b = reglages(bs[nom]), reglages(bf[nom])
+    a, b = reglages(bs[nom]), reglages(be[nom])
     diff = sorted(k for k in set(a) | set(b) if k not in ("Position", "ZOrder") and a.get(k) != b.get(k))
     lien = [k for k in diff if k in ("SourceBlock", "LibraryVersion")]
     if lien and a.get("LibrarySourceBlock") and a.get("LibrarySourceBlock") == b.get("LibrarySourceBlock"):
         notes.append(f"Bloc {nom!r} : lien de bibliotheque mis a jour par Simulink ("
                      + ", ".join(f"{k} {a.get(k)!r} -> {b.get(k)!r}" for k in lien) + ").")
         diff = [k for k in diff if k not in lien]
-    if nom == PID:
-        if a.get("ControllerParametersSource") != "internal" or b.get("ControllerParametersSource") != "external":
-            pb.append(f"PID : ControllerParametersSource {a.get('ControllerParametersSource')!r} -> "
-                      f"{b.get('ControllerParametersSource')!r} au lieu de 'internal' -> 'external'.")
-        # Aiguillages internes du masque que Simulink bascule seul avec la source des parametres :
-        # un par parametre devenu externe, et seulement de InternalParameters a ExternalParameters.
-        bascules = [k for k in diff if k in VARIANTES_PID]
-        for k in bascules:
-            if a.get(k) != "InternalParameters" or b.get(k) != "ExternalParameters":
-                pb.append(f"PID : {k} {a.get(k)!r} -> {b.get(k)!r} au lieu de 'InternalParameters' -> "
-                          "'ExternalParameters'.")
-        if bascules:
-            notes.append("PID : aiguillages internes du masque bascules par Simulink avec la source des parametres "
-                         "(InternalParameters -> ExternalParameters) : " + ", ".join(sorted(bascules)) + ".")
-        diff = [k for k in diff if k != "ControllerParametersSource" and k not in VARIANTES_PID]
     if diff:
         pb.append(f"Bloc {nom!r} modifie : " + ", ".join(f"{k} {a.get(k)!r} -> {b.get(k)!r}" for k in diff))
 if len(pb) == n_pb:
-    ok.append(f"Les {len(bs)} blocs de Buck_Commun.slx sont gardes avec leurs reglages ; le PID n'a change que "
-              "sa source de parametres (internal -> external).")
-ports_pid = bf[PID].find("PortCounts") if PID in bf else None
-if ports_pid is None or ports_pid.get("in") != "5" or ports_pid.get("out") != "1":
-    pb.append(f"PID : entrees/sorties {None if ports_pid is None else (ports_pid.get('in'), ports_pid.get('out'))} "
-              "au lieu de 5 entrees et 1 sortie.")
+    ok.append(f"Les {len(bs) - 1} blocs gardes ont les reglages de Buck_Commun.slx ; le PID a disparu.")
 
 # 2. Blocs ajoutes
 n_pb = len(pb)
-ajoutes = set(bf) - set(bs)
+ajoutes = set(be) - set(bs)
 if ajoutes != set(TYPES_AJOUTES):
     pb.append(f"Blocs ajoutes : {sorted(ajoutes)} au lieu de {sorted(TYPES_AJOUTES)}.")
 for nom, type_attendu in TYPES_AJOUTES.items():
-    if nom in bf and bf[nom].get("BlockType") != type_attendu:
-        pb.append(f"{nom!r} : type {bf[nom].get('BlockType')!r} au lieu de {type_attendu!r}.")
-for nom_z in (NOM_ZOHE, NOM_ZOHM, NOM_ZOHU):
-    if nom_z in bf:
-        periode = nombre(param(bf[nom_z], "SampleTime"))
+    if nom in be and be[nom].get("BlockType") != type_attendu:
+        pb.append(f"{nom!r} : type {be[nom].get('BlockType')!r} au lieu de {type_attendu!r}.")
+for nom in (NOM_ZOHE, NOM_ZOHM):
+    if nom in be:
+        periode = nombre(param(be[nom], "SampleTime"))
         if periode is None or abs(periode - TC) > 1e-9 * TC:
-            pb.append(f"{nom_z!r} : periode {param(bf[nom_z], 'SampleTime')!r} au lieu de 1/(22000*10).")
-if NOM_SYS in bf:
-    classe = param(bf[NOM_SYS], "System")
+            pb.append(f"{nom!r} : periode {param(be[nom], 'SampleTime')!r} au lieu de 1/(22000*10).")
+if NOM_SYS in be:
+    classe = param(be[NOM_SYS], "System")
     if classe is not None and classe != CLASSE:
         pb.append(f"{NOM_SYS!r} : classe {classe!r} au lieu de {CLASSE!r}.")
-    elif classe is None and not contient(bf[NOM_SYS], CLASSE):
+    elif classe is None and not contient(be[NOM_SYS], CLASSE):
         pb.append(f"{NOM_SYS!r} : la classe {CLASSE!r} n'apparait pas dans sa definition.")
-    mode = param(bf[NOM_SYS], "SimulateUsing")
+    mode = param(be[NOM_SYS], "SimulateUsing")
     if mode is None:
-        notes.append(f"{NOM_SYS!r} : reglage SimulateUsing non ecrit sous ce nom dans le fichier (a verifier a "
-                     "l'oeil : Simulate using = Interpreted execution).")
+        notes.append(f"{NOM_SYS!r} : reglage SimulateUsing non ecrit sous ce nom dans le fichier. Non bloquant : "
+                     "en mode Code generation, la simulation s'arreterait des la compilation (load et exist n'y "
+                     "sont pas pris en charge), l'erreur ne passerait donc pas inapercue. A verifier a l'oeil "
+                     "(bloc > Simulate using : Interpreted execution).")
     elif mode != "Interpreted execution":
         pb.append(f"{NOM_SYS!r} : SimulateUsing = {mode!r} au lieu de 'Interpreted execution'.")
-    gf = param(bf[NOM_SYS], "GainsFixes")
-    if gf is not None and gf.lower() not in ("false", "off", "0"):
-        pb.append(f"{NOM_SYS!r} : GainsFixes = {gf!r} ; le modele enregistre doit avoir GainsFixes = false.")
-    pc = bf[NOM_SYS].find("PortCounts")
-    if pc is not None and (pc.get("in") != "3" or pc.get("out") != "1"):
-        pb.append(f"{NOM_SYS!r} : {pc.get('in')} entrees et {pc.get('out')} sorties au lieu de 3 et 1.")
-if NOM_DEMUX in bf and (param(bf[NOM_DEMUX], "Outputs") or "") != "3":
-    pb.append(f"{NOM_DEMUX!r} : Outputs = {param(bf[NOM_DEMUX], 'Outputs')!r} au lieu de '3'.")
-if NOM_N in bf and PID in bs:
-    vn, vp = nombre(param(bf[NOM_N], "Value")), nombre(reglages(bs[PID]).get("N"))
-    if vn is None or vp is None or vn != vp:
-        pb.append(f"{NOM_N!r} : valeur {param(bf[NOM_N], 'Value')!r} au lieu de N = {reglages(bs[PID]).get('N')!r}.")
 if len(pb) == n_pb:
-    ok.append(f"Les six blocs ajoutes sont ceux prevus (trois echantillonneurs a 1/(22000*10) s, classe {CLASSE}, "
-              "Demux a 3 sorties, N egal au champ du PID).")
+    ok.append("Les quatre blocs ajoutes sont ceux prevus (echantillonneurs a 1/(22000*10) s, classe "
+              f"{CLASSE}, terminaison des gains).")
 
 # 3. Liaisons
 sig_s, elec_s = extremites(rs)
-sig_f, elec_f = extremites(rf)
-avant = ("Sum1#out:1", f"{PID}#in:1")
-if avant not in sig_s or (f"{QUANT}#out:1", "Sum1#in:2") not in sig_s or (f"{PID}#out:1", f"{PWM}#in:1") not in sig_s:
+sig_e, elec_e = extremites(re_)
+retirees = {("Sum1#out:1", "PID Controller#in:1"), ("PID Controller#out:1", f"{PWM}#in:1")}
+nouvelles = {("Sum1#out:1", f"{NOM_ZOHE}#in:1"), ("Quantification Mesure#out:1", f"{NOM_ZOHM}#in:1"),
+             (f"{NOM_ZOHE}#out:1", f"{NOM_SYS}#in:1"), (f"{NOM_ZOHM}#out:1", f"{NOM_SYS}#in:2"),
+             (f"{NOM_SYS}#out:1", f"{PWM}#in:1"), (f"{NOM_SYS}#out:2", f"{NOM_TERM}#in:1")}
+attendu = (sig_s - retirees) | nouvelles
+if not retirees <= sig_s or ("Quantification Mesure#out:1", "Sum1#in:2") not in sig_s:
     pb.append("Buck_Commun.slx n'a pas les liaisons du PID et de la mesure attendues : fichier de depart inattendu.")
-vers_pid = {}                                 # source -> entree du PID
-for src, dst in sig_f:
-    if dst.startswith(f"{PID}#in:"):
-        vers_pid[src] = int(dst.split(":")[-1])
-sources_pid = {"Sum1#out:1": "u", f"{NOM_DEMUX}#out:1": "P", f"{NOM_DEMUX}#out:2": "I", f"{NOM_DEMUX}#out:3": "D",
-               f"{NOM_N}#out:1": "N"}
-if set(vers_pid) != set(sources_pid) or len(set(vers_pid.values())) != 5 or set(vers_pid.values()) != {1, 2, 3, 4, 5}:
-    pb.append(f"Entrees du PID : {sorted(vers_pid.items())} ; attendu u, P, I, D, N sur cinq entrees differentes.")
+if sig_e == attendu:
+    ok.append(f"Liaisons de signal : les {len(sig_s) - 2} liaisons gardees et les {len(nouvelles)} prevues, rien d'autre.")
 else:
-    notes.append("Entrees du PID utilisees : " + ", ".join(f"{sources_pid[s]} = {vers_pid[s]}" for s in sources_pid)
-                 + " (ordre controle par l'auto-test T0 de Construction_ELM_PID.m).")
-nouvelles = {("Sum1#out:1", f"{NOM_ZOHE}#in:1"), (f"{NOM_ZOHE}#out:1", f"{NOM_SYS}#in:1"),
-             (f"{QUANT}#out:1", f"{NOM_ZOHM}#in:1"), (f"{NOM_ZOHM}#out:1", f"{NOM_SYS}#in:2"),
-             (f"{PID}#out:1", f"{NOM_ZOHU}#in:1"), (f"{NOM_ZOHU}#out:1", f"{NOM_SYS}#in:3"),
-             (f"{NOM_SYS}#out:1", f"{NOM_DEMUX}#in:1")}
-nouvelles |= {(s, f"{PID}#in:{n}") for s, n in vers_pid.items()}
-attendu = (sig_s - {avant}) | nouvelles
-if sig_f == attendu:
-    ok.append(f"Liaisons de signal : les {len(sig_s) - 1} liaisons gardees, Sum1 -> PID (entree u) et les "
-              f"{len(nouvelles) - 1} prevues, rien d'autre.")
-else:
-    manque = sorted(attendu - sig_f)
-    trop = sorted(sig_f - attendu)
+    manque = sorted(attendu - sig_e)
+    trop = sorted(sig_e - attendu)
     pb.append("Liaisons de signal differentes : manquantes " + str([f"{a} -> {b}" for a, b in manque])
               + ", en trop " + str([f"{a} -> {b}" for a, b in trop]))
-if (f"{PID}#out:1", f"{PWM}#in:1") not in sig_f:
-    pb.append("La sortie du PID n'alimente plus le PWM.")
-if elec_s == elec_f:
+if elec_s == elec_e:
     ok.append(f"Liaisons electriques identiques ({len(elec_s)} liaisons).")
 else:
     pb.append("Liaisons electriques differentes de celles de Buck_Commun.slx.")
 
 # 4. Configuration et rappel InitFcn
-cs, cf = configuration(FICHIER_SOURCE), configuration(FICHIER_ELM)
-diff_conf = sorted(k for k in set(cs) | set(cf) if cs.get(k) != cf.get(k))
+cs, ce = configuration(FICHIER_SOURCE), configuration(FICHIER_ELM)
+diff_conf = sorted(k for k in set(cs) | set(ce) if cs.get(k) != ce.get(k))
 if diff_conf:
-    pb.append("Configuration modifiee : " + ", ".join(f"{k}: {cs.get(k)!r} -> {cf.get(k)!r}" for k in diff_conf))
+    pb.append("Configuration modifiee : " + ", ".join(f"{k}: {cs.get(k)!r} -> {ce.get(k)!r}" for k in diff_conf))
 else:
     ok.append("Configuration de simulation identique.")
 if init_fcn(FICHIER_SOURCE) == init_fcn(FICHIER_ELM):

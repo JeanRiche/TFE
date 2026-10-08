@@ -18,7 +18,7 @@
 #   ../PSO_PID, ../FUZZY_PID, ../ELM_PID, ../PINN_PID (dossiers complets)
 #
 # COMMENT LANCER CE SCRIPT
-#   python simulations_scenario.py      (trois a cinq minutes)
+#   python simulations_scenario.py [S4|S8a|...]   (trois a cinq minutes ; S4 par defaut)
 # =============================================================================
 
 import os
@@ -33,7 +33,9 @@ try:
 except NameError:
     DOSSIER = os.getcwd()
 RACINE = os.path.dirname(DOSSIER)
-CODE = "S4"
+import sys
+CODE = sys.argv[1] if len(sys.argv) > 1 else "S4"   # scenario a rejouer (par defaut S4)
+DESCRIPTION = {"S4": "charge +-20 %", "S8a": "charge legere 25 ohms, echelons de charge"}.get(CODE, "")
 
 
 def charger(dossier, fichier, marque):
@@ -107,12 +109,12 @@ for nom, _, _ in VARIANTES:
 stable = all(ORDRES[n] == ORDRES["nominal"] for n in ORDRES)
 print(f"  Classement {'identique dans les cinq variantes' if stable else 'CHANGE avec le circuit'}.")
 
-np.savez_compressed(os.path.join(DOSSIER, "scenario_retenu.npz"),
+np.savez_compressed(os.path.join(DOSSIER, f"scenario_{CODE}.npz"),
                     **{f"{m}__{k}": v for m in SIG for k, v in SIG[m].items()})
-with open(os.path.join(DOSSIER, "robustesse_scenario.json"), "w", encoding="utf-8") as f:
+with open(os.path.join(DOSSIER, f"robustesse_{CODE}.json"), "w", encoding="utf-8") as f:
     json.dump({"scenario": CODE, "IAE_mVs": RES, "ordres": ORDRES, "stable": stable}, f, indent=1)
 
-# Figure : les deux evenements de charge forte (50 et 100 ms : 4 ohms ; 70 et 120 ms : retour)
+# Figure : demarrage et trois premiers evenements (S4 : 50 et 100 ms charge forte, 70 ms retour)
 COUL = {"Ziegler-Nichols": "0.5", "PSO-PID": "tab:orange", "Fuzzy-PID": "tab:green", "ELM-PID": "tab:blue",
         "PINN-PID": "tab:red"}
 fig, ax = plt.subplots(3, 4, figsize=(20, 10), sharex="col", gridspec_kw={"height_ratios": [2, 1, 1]})
@@ -124,10 +126,11 @@ for col, (t0, t1) in enumerate(((0.0, 8.0), (49.0, 56.0), (69.0, 76.0), (99.0, 1
         ax[1, col].plot(s["t"][k] * 1e3, s["iL"][k], color=COUL[m], lw=0.6)
         ax[2, col].plot(s["t"][k] * 1e3, s["d"][k], color=COUL[m], lw=0.6)
     ax[0, col].plot(SIG["PSO-PID"]["t"][k] * 1e3, SIG["PSO-PID"]["consigne"][k], "k--", lw=0.6)
-    ax[0, col].set_title(["demarrage (5 ohms)", "50 ms : 5 -> 4 ohms", "70 ms : 4 -> 5 ohms",
-                          "100 ms : 5 -> 6 ohms"][col], fontsize=10, loc="left")
+    TITRES = (["demarrage (5 ohms)", "50 ms : 5 -> 4 ohms", "70 ms : 4 -> 5 ohms", "100 ms : 5 -> 6 ohms"]
+              if CODE == "S4" else ["demarrage", "evenement a 50 ms", "evenement a 70 ms", "evenement a 100 ms"])
+    ax[0, col].set_title(TITRES[col], fontsize=10, loc="left")
     if col:
-        ax[0, col].set_ylim(87, 113)
+        ax[0, col].set_ylim(*((87, 113) if CODE == "S4" else (97.5, 102.5)))
     ax[2, col].set_xlabel("temps (ms)")
     for a in ax[:, col]:
         a.grid(alpha=0.3)
@@ -135,8 +138,8 @@ ax[0, 0].set_ylabel("Vout (V)")
 ax[1, 0].set_ylabel("iL (A)")
 ax[2, 0].set_ylabel("rapport cyclique")
 ax[0, 1].legend(fontsize=8, loc="lower right")
-fig.suptitle(f"{CODE} (charge +-20 %) : les cinq methodes sur le banc commun v2.1", fontsize=12)
+fig.suptitle(f"{CODE} ({DESCRIPTION}) : les cinq methodes sur le banc commun v2.1", fontsize=12)
 fig.tight_layout()
-fig.savefig(os.path.join(DOSSIER, "comparaison_S4.png"), dpi=110)
+fig.savefig(os.path.join(DOSSIER, f"comparaison_{CODE}.png"), dpi=110)
 plt.close(fig)
-print("\nscenario_retenu.npz, robustesse_scenario.json et comparaison_S4.png ecrits.")
+print(f"\nscenario_{CODE}.npz, robustesse_{CODE}.json et comparaison_{CODE}.png ecrits.")

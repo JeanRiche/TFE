@@ -1,0 +1,34 @@
+Dossier de travail : /home/user/TFE/ELM_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.2% admissibles ; jacobien constant des ablations 11.0687.
+Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
+Dossier de travail : /home/user/TFE/PSO_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Dossier de travail : /home/user/TFE/FUZZY_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Ku = 0.156517, Tu = 0.62380 ms ; Kp de 0.050085 a 0.093910 (0.533 a 1.000 fois P) ; Kd de 7.8108e-06 a 1.4645e-05 (1.067 a 2.000 fois D).
+Echelles : E_M = 100.0 V, DE_M = 0.37244 V par periode Tc.
+Controle du systeme flou : quatre points calcules a la main retrouves.
+Gains au repos (ZO, ZO) : Kp 0.991 P, Ki 0.661 I, Kd 1.983 D.
+Dossier de travail : /home/user/TFE/PINN_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Boite : Kp de 0.093910 a 0.223357, Ki de 3.4215e-04 a 1.3686e-03, Kd de 1.6110 a 3.8316 ; depart a Ziegler-Nichols.
+PINN : 3 couches cachees de 32 neurones (candidat A, plage nominale).
+Vecteurs de test du PINN : ecart maximal 6.4e-16.
+Gradient de l'horizon contre differences finies : ecart relatif maximal 6.7e-08.
+Scenario S8a : nominal, puis L ou C a +-0.1 % (IAE de 30 ms a la fin, mV.s)
+  Ziegler-Nichols  nominal  12.07  L - 0.1 %  11.98  L + 0.1 %  12.14  C - 0.1 %  12.11  C + 0.1 %  12.22   (fichier 12.07, ecart 0.0e+00)
+  PSO-PID          nominal   2.46  L - 0.1 %   2.46  L + 0.1 %   2.46  C - 0.1 %   2.46  C + 0.1 %   2.46   (fichier 2.46, ecart 0.0e+00)
+  Fuzzy-PID        nominal   4.12  L - 0.1 %   4.12  L + 0.1 %   4.13  C - 0.1 %   4.13  C + 0.1 %   4.13   (fichier 4.12, ecart 0.0e+00)
+  ELM-PID          nominal   2.96  L - 0.1 %   2.98  L + 0.1 %   2.95  C - 0.1 %   2.99  C + 0.1 %   2.96   (fichier 2.96, ecart 0.0e+00)
+  PINN-PID         nominal   3.14  L - 0.1 %   3.14  L + 0.1 %   3.13  C - 0.1 %   3.14  C + 0.1 %   3.13   (fichier 3.14, ecart 0.0e+00)
+
+Classement dans chaque variante du circuit :
+  nominal    PSO-PID > ELM-PID > PINN-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.8 %)
+  L - 0.1 %  PSO-PID > ELM-PID > PINN-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.4 %)
+  L + 0.1 %  PSO-PID > ELM-PID > PINN-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 6.2 %)
+  C - 0.1 %  PSO-PID > ELM-PID > PINN-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.2 %)
+  C + 0.1 %  PSO-PID > ELM-PID > PINN-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.9 %)
+  Classement identique dans les cinq variantes.
+
+scenario_S8a.npz, robustesse_S8a.json et comparaison_S8a.png ecrits.

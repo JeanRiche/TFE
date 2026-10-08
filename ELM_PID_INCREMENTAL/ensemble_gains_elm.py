@@ -2,9 +2,7 @@
 # ensemble_gains_elm.py
 #
 # VERSION
-#   2 (8 octobre 2026), option B : la loi est le bloc PID parallele de la
-#   base commune (gains externes), plus la loi incrementale de Lu. La
-#   version 1 (loi incrementale) reste dans le dossier ELM_PID_INCREMENTAL.
+#   1 (7 octobre 2026). Modification M2 de criteres_elm_pid.txt.
 #
 # OBJECTIF
 #   Construire, une fois pour toutes et hors ligne, l'ensemble des gains
@@ -13,16 +11,13 @@
 #
 # LE CRITERE (inchange par rapport a la version d'origine)
 #   Modele moyen du Buck, discretise avec un bloqueur d'ordre zero a Tc,
-#   G(s) = Vin / (L C s^2 + (L/R) s + 1), boucle C(z) G(z) avec le bloc PID
-#   de la base commune (forme Parallel, Forward Euler a Tc pour
-#   l'integrateur et le filtre de derivee) :
-#     C(z) = P + I Tc/(z-1) + D N (z-1)/(z-1+Tc N).
-#   (Version 1 : loi incrementale de Lu, Kp + Ki z/(z-1) + Kd Tc N (z-1)/(z-1+Tc N) ;
-#   les deux C(z) different par le terme integral, Tc/(z-1) au lieu de z/(z-1).)
+#   G(s) = Vin / (L C s^2 + (L/R) s + 1), boucle C(z) G(z) avec la loi
+#   incrementale de Lu a derivee filtree :
+#     C(z) = Kp + Ki z/(z-1) + Kd Tc N (z-1)/(z-1+Tc N).
 #   Un reglage est admissible si, aux neuf coins nominaux (R = 4, 5, 6 ohms ;
 #   Vin = 160, 200, 240 V) :
 #     1. sa plus petite marge de phase est au moins celle du point de depart
-#        (gains de Ziegler-Nichols dans ce bloc ; la valeur est imprimee) ;
+#        (gains de Ziegler-Nichols, 25.2 degres) ;
 #     2. sa plus haute frequence de coupure est au plus fs/10 = 2.2 kHz.
 #   La regle interdit a l'adaptation de reduire la marge nominale sous celle
 #   du regulateur dont elle part ; elle ne porte que sur la plage nominale :
@@ -78,7 +73,7 @@ MARQUE = "# === FIN DES DEFINITIONS DU BANC COMMUN ==="
 exec(SOURCE_BANC[:SOURCE_BANC.index(MARQUE)])
 
 T0 = time.time()
-K_ZN = np.array([PID_P, PID_I, PID_D])   # depart : gains de Ziegler-Nichols du bloc PID [P, I, D]
+K_ZN = np.array([PID_P, PID_I * TC, PID_D / TC])   # depart, forme incrementale [Kp, Ki, Kd]
 FC_MAXI = FSW / 10.0
 COINS_NOMINAUX = [(R, V) for R in (4.0, 5.0, 6.0) for V in (160.0, 200.0, 240.0)]
 COINS_LEGERS = [(R, V) for R in (25.0, 98.0) for V in (160.0, 200.0, 240.0)]
@@ -94,8 +89,8 @@ def reponse_buck(R, V):
 
 def preparer(coins):
     G = np.array([reponse_buck(R, V) for R, V in coins])
-    return (K_ZN[0] * G, K_ZN[1] * TC / (Z - 1.0) * G,
-            K_ZN[2] * PID_N * (Z - 1.0) / (Z - 1.0 + TC * PID_N) * G)
+    return (K_ZN[0] * G, K_ZN[1] * Z / (Z - 1.0) * G,
+            K_ZN[2] * TC * PID_N * (Z - 1.0) / (Z - 1.0 + TC * PID_N) * G)
 
 
 TERMES_NOM, TERMES_LEG = preparer(COINS_NOMINAUX), preparer(COINS_LEGERS)
@@ -119,7 +114,7 @@ def frequentiel(a, b, c, termes):
 
 
 M0, FC0 = frequentiel(1.0, 1.0, 1.0, TERMES_NOM)
-print(f"Depart (Ziegler-Nichols, bloc PID parallele) : marge nominale minimale {M0:.3f} degres, coupure {FC0:.0f} Hz.")
+print(f"Depart (Ziegler-Nichols, forme incrementale) : marge nominale minimale {M0:.3f} degres, coupure {FC0:.0f} Hz.")
 
 
 def g_de(a, b, c):
@@ -187,9 +182,9 @@ print(f"    Ki x 1.2 avec Kd x 1.3 : g = {g_de(*p)[0]:+.4f} (mouvement couple qu
 savemat(os.path.join(DOSSIER_ELM, "ensemble_gains_elm.mat"),
         {"G_TABLE": G, "LOG2_MIN": float(EXPOSANTS[0]), "PAS_LOG2": 1.0 / 8.0, "N_TABLE": float(n),
          "MULT_MIN": 2.0 ** EXPOSANTS[0], "MULT_MAX": 2.0 ** EXPOSANTS[-1], "K_DEPART": K_ZN.reshape(1, -1),
-         "MARGE_DEPART": M0, "FC_MAXI": FC_MAXI, "VERSION": 2.0})
+         "MARGE_DEPART": M0, "FC_MAXI": FC_MAXI, "VERSION": 1.0})
 with open(os.path.join(DOSSIER_ELM, "ensemble_gains_elm.json"), "w", encoding="utf-8") as f:
-    json.dump({"version": 2, "loi": "bloc PID parallele de la base commune", "K_depart": K_ZN.tolist(), "marge_depart_deg": M0, "coupure_depart_Hz": FC0,
+    json.dump({"version": 1, "K_depart": K_ZN.tolist(), "marge_depart_deg": M0, "coupure_depart_Hz": FC0,
                "fc_maxi_Hz": FC_MAXI, "coins_nominaux": COINS_NOMINAUX, "exposants_log2": EXPOSANTS.tolist(),
                "part_admissible": float(np.mean(G <= 0)), "controle_hors_grille": {"faux_admis": faux_admis,
                                                                                    "g_vrai_pire_admis": pire},

@@ -1,0 +1,131 @@
+ELM-PID : PID AUTO-ADAPTATIF A MODELE INTERNE ELM (7 octobre 2026), VERSION INCREMENTALE
+========================================================================================
+
+NOTE (8 octobre 2026) : ce dossier garde la version incrementale de
+l'ELM-PID (loi de Lu, J = 0.728), validee sous Simulink le 7 octobre.
+Elle sert au chapitre 4 pour justifier le choix de l'option B. La version
+retenue (option B, bloc PID commun a gains externes) est dans ELM_PID.
+Les deux dossiers ont des fichiers de memes noms : ne jamais les mettre
+ensemble sur le chemin MATLAB.
+
+DOSSIER COMPLET ET AUTONOME : il contient la base commune v2.1 (modele
+Buck_Commun.slx, tes trois modeles de base, essais, banc Python), les
+donnees d'apprentissage Simulink, le modele ELM et tout l'ELM-PID.
+Dezippe-le dans un dossier vide, fais de ce dossier le dossier courant
+MATLAB, et lance les etapes ci-dessous. Ne garde pas les dossiers PINN,
+FUZZY ou PSO sur le chemin MATLAB en meme temps (memes noms de fichiers de
+base). Tout ancien dossier ELM ne sert plus : le bloc elm_pid_adaptatif.m
+et elm_pid_reglages.mat ont change (version 3).
+
+A LIRE D'ABORD : criteres_elm_pid.txt
+  Methode de reference (Lu et al. 2021), diagnostic (pourquoi les gains ne
+  bougeaient pas), modifications M1 a M3 avec leurs references, controle du
+  modele et de son jacobien, previsions ecrites avant le calcul, resultats,
+  lecture pour le memoire et bibliographie.
+
+LA METHODE EN BREF
+- Loi PID incrementale de Lu, gains ajustes toutes les 0.5 ms par un
+  gradient normalise ; le jacobien vient d'un ELM du convertisseur appris
+  sur des enregistrements Simulink et mis a jour en ligne (OS-ELM).
+- M1 : la porte ne se ferme plus que sur saturation ; zone morte
+  d'estimation pour l'OS-ELM (Peterson et Narendra 1982 ; Egardt 1979 ;
+  Ioannou et Sun 1996).
+- M2 : projection des gains sur l'ensemble admissible lui-meme (marge
+  nominale >= celle du depart, coupure <= fs/10), pas sur une boite
+  (Goodwin et Sin 1984 ; Ioannou et Sun 1996).
+- M3 : projection au point admissible le plus proche, avec restauration
+  vers la frontiere (Rosen 1961) : le depart est sur la frontiere d'un
+  ensemble non convexe, et sans M3 tout pas qui en part etait annule.
+
+ORDRE D'EXECUTION
+-----------------
+Deja fait (ne pas relancer sans raison) :
+  python excitation_donnees_elm.py ; MATLAB Construction_Modele_Donnees_ELM,
+  python verifier_modele_donnees_elm.py, MATLAB Generer_Donnees_ELM
+  (donnees d'apprentissage, deja fournies : donnees_elm_*.mat) ;
+  python entrainement_elm.py (modele, elm_pid_modele.mat) ;
+  python ensemble_gains_elm.py (ensemble admissible, ensemble_gains_elm.mat) ;
+  python mise_au_point_elm_pid.py (controles avant les previsions) ;
+  python banc_elm_pid.py (jugement, une a deux minutes).
+A lancer :
+1. MATLAB : Tester_ELM_PID_Rejeu
+   Donne au bloc MATLAB les memes entrees que le banc, pas par pas, sur S1,
+   S3, S7b, S8b et S9. Fin attendue : chaque essai "identique" (ecart au
+   plus 1e-9 sur u et les gains, aucune decision de fenetre differente).
+   C'EST LA VALIDATION DU BLOC : si un essai est "DIFFERENT", arrete-toi et
+   envoie la sortie.
+2. MATLAB : Construction_ELM_PID
+   Copie Buck_Commun.slx en Buck_Commun_ELM_PID.slx et remplace le PID par
+   le bloc de l'ELM-PID. Auto-tests : T1 (20 ms de S1 : Vout a 0.05 V du
+   banc, gains a 20 ms a 1 % de ceux du banc), T2 (20 ms de S8b).
+3. python verifier_modele_elm_pid.py
+   Fin attendue : "RESULTAT : Buck_Commun_ELM_PID.slx est conforme."
+4. MATLAB : Simuler_ELM_PID
+   Onze essais, comparaison au banc. Dix a vingt minutes.
+5. MATLAB : Construction_ELM_PID_Trois_Modeles
+   Tes trois modeles de base -> ELM_PID_Control.slx,
+   ELM_PID_Control_control_disturbance.slx, ELM_PID_Control_load_disturbance.slx.
+6. python verifier_modeles_elm_pid_trois.py
+   Fin attendue : "RESULTAT : les trois modeles sont conformes."
+7. MATLAB : Simuler_ELM_PID_Trois_Modeles
+   Nominal, F1, F2 compares a S1, S2, S3 du banc ; une figure par modele,
+   avec les gains.
+
+Envoie-moi la sortie console des etapes 1 a 7. Si une etape s'arrete sur
+une erreur, envoie-la telle quelle sans passer a la suivante.
+Aucun script MATLAB n'a pu etre execute ici (pas de MATLAB) ; les
+verificateurs Python ont ete passes sur les modeles que tu avais construits
+le 5 octobre (meme structure, seul le code du bloc a change).
+
+CE QUE SIMULINK DOIT DONNER (banc)
+----------------------------------
+- Les gains changent sur les trois cas de base : a 3.5 et 4 ms sur S1, S2,
+  S3 ; puis a 52 et 52.5 ms sur F1 (S2) ; a 52, 52.5, 53 et 72 ms sur F2
+  (S3). Gains finaux (x Ziegler-Nichols) : nominal (0.97, 1.03, 1.07),
+  F1 (1.41, 1.18, 0.96), F2 (1.54, 1.26, 0.99).
+- Tous les evenements reviennent dans la bande ; S8b et S9 aussi.
+- Cout J : ELM-PID 0.728 ; R0 (meme loi, gains figes) 0.917 ;
+  Ziegler-Nichols 1.000 ; meilleur PID fige sur grille 0.738.
+- Chaque decision d'adaptation depend d'un seuil de 0.1 V : si un ecart de
+  quelques mV en fait basculer une, les gains suivent ensuite un autre
+  chemin. La validation du bloc est l'etape 1 ; ensuite on attend les memes
+  retours, les memes ordres de grandeur, et l'egalite point par point
+  jusqu'a la premiere decision qui bascule.
+
+CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
+---------------------------------------------
+- L'ELM-PID adapte ses gains sur tous les essais (77 fenetres en tout) et
+  donne J = 0.728, contre 0.917 pour la meme loi a gains figes.
+- En regime etabli, les gains restent constants par construction (zone
+  morte de 0.1 V) : pas d'information, pas d'adaptation, pas de derive sur
+  le bruit.
+- Le jacobien est estime en ligne a chaque fenetre par le reseau (9.6 a
+  13.9 V par unite), mais il ne suit pas le vrai, et une constante donne le
+  meme J : le gain vient de la boucle d'adaptation, pas du reseau.
+
+FICHIERS
+--------
+Base commune v2.1 (copies, ne pas modifier)
+Buck_Commun.slx, PID_Classique_Control.slx, PID_Classique_Control_control_disturbance.slx,
+PID_Classique_Control_load_disturbance.slx, verifier_modele_commun.py, charger_scenario.m,
+scenario_S1.mat ... scenario_S9.mat, scenarios_communs.json, banc_commun.py,
+predictions_banc_pid_classique.json, predictions_banc_pid_fige.json
+
+Donnees d'apprentissage
+excitation_donnees_elm.py, scenario_ELM_A1/A2/V1/V2.mat, predictions_banc_donnees_elm.mat,
+Construction_Modele_Donnees_ELM.m, verifier_modele_donnees_elm.py, Generer_Donnees_ELM.m,
+donnees_elm_ELM_A1/A2/V1/V2.mat
+
+ELM-PID
+criteres_elm_pid.txt                     methode, references, previsions, resultats
+entrainement_elm.py, entrainement_elm_resultats.json, entrainement_elm_sortie_console.txt,
+entrainement_elm.png, elm_pid_modele.mat                    modele ELM et son controle
+ensemble_gains_elm.py, ensemble_gains_elm.json, ensemble_gains_elm.mat   ensemble admissible
+mise_au_point_elm_pid.py, mise_au_point_elm_pid_sortie_console.txt       controles avant previsions
+banc_elm_pid.py, banc_elm_pid_sortie_console.txt, banc_elm_pid_resultats.json,
+banc_elm_pid.png                                            jugement sur les onze essais
+elm_pid_adaptatif.m, elm_pid_reglages.mat                   le bloc MATLAB et ses reglages
+predictions_banc_elm_pid.json, reference_rejeu_elm_pid.mat  ce que Simulink doit retrouver
+Tester_ELM_PID_Rejeu.m, Construction_ELM_PID.m, verifier_modele_elm_pid.py, Simuler_ELM_PID.m
+Construction_ELM_PID_Trois_Modeles.m, verifier_modeles_elm_pid_trois.py,
+Simuler_ELM_PID_Trois_Modeles.m

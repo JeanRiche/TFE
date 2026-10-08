@@ -2,7 +2,8 @@
 # mise_au_point_elm_pid.py
 #
 # VERSION
-#   1 (7 octobre 2026).
+#   2 (8 octobre 2026), option B (bloc PID parallele a gains externes).
+#   Version 1 : loi incrementale (dossier ELM_PID_INCREMENTAL).
 #
 # OBJECTIF
 #   Verifier le mecanisme de l'ELM-PID AVANT de le juger sur les onze essais
@@ -11,7 +12,7 @@
 #        depart (gains de Ziegler-Nichols, sur la frontiere de l'ensemble
 #        admissible) ;
 #     2. quatre essais de mise au point E1 a E4 (points R, Vin absents des
-#        onze essais) : R0 (gains figes), ELM-PID, et les variantes des
+#        onze essais) : Ziegler-Nichols (point de depart), ELM-PID, et les variantes des
 #        ablations ; IAE du demarrage et apres 30 ms, fenetres ou les gains
 #        changent, gains finaux.
 #   Rien n'est regle sur ces essais : ils montrent seulement que chaque
@@ -90,7 +91,7 @@ for sc in E:                                   # aucun point de mise au point n'
             raise RuntimeError(f"Le point {sc['code']} apparait dans l'essai {s_['code']}.")
 
 titre("ETAPE 2 : essais de mise au point E1 a E4 (IAE en mV.s)")
-VARIANTES = (("R0 (gains figes)", lambda: LoiLu(K_ZN)), ("ELM-PID", lambda: ELMPID()),
+VARIANTES = (("Ziegler-Nichols", lambda: PIDClassique()), ("ELM-PID", lambda: ELMPID()),
              ("M2 seule", lambda: ELMPID(RESTAURATION=0.0)),
              ("jacobien constant", lambda: ELMPID(JACOBIEN_CONSTANT=J_REGRESSION)))
 for sc in E:

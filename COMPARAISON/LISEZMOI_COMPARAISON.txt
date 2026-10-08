@@ -36,3 +36,19 @@ DANS SIMULINK
   S4 est simule par Simuler_<methode>.m de chaque dossier (onze essais).
   Deja fait et conforme au banc : Fuzzy-PID, ELM-PID, PINN-PID. A faire :
   PSO-PID (Construction_PSO_PID, verifier_pso_pid.py, Simuler_PSO_PID).
+
+
+MISE A JOUR DU 8 OCTOBRE 2026
+- L'ELM-PID compare est l'option B (dossier ELM_PID) ; la version
+  incrementale est dans ELM_PID_INCREMENTAL (les scripts de diagnostic_lois
+  la lisent la).
+- comparaison_methodes.py relance avec banc_elm_pid_resultats.json de la
+  version B : la regle designe maintenant S8a (S4 passe toujours). Voir
+  criteres_comparaison.txt, derniere section : le choix entre S4 et S8a
+  reste a trancher.
+- simulations_scenario.py prend le code de l'essai en argument
+  (python simulations_scenario.py S8a) ; sorties comparaison_<code>.png,
+  robustesse_<code>.json, scenario_<code>.npz.
+- elm_incremental_contre_B.py : les deux versions de l'ELM-PID sur S4, S2
+  et S1 (chapitre 4) ; sorties elm_incremental_contre_B.png, .json et
+  _sortie_console.txt.

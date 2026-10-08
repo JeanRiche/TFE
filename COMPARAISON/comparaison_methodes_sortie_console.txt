@@ -3,75 +3,75 @@
  ETAPE 1 : controle des donnees et cout J
 ====================================================================================================
   Ziegler-Nichols identique dans les quatre fichiers : ecart relatif maximal 0.0e+00
-  Cout J (13 termes) : PINN-PID 0.684 ; PSO-PID 0.714 ; ELM-PID 0.728 ; Fuzzy-PID 0.877 ; Ziegler-Nichols 1.000
+  Cout J (13 termes) : PINN-PID 0.684 ; PSO-PID 0.714 ; ELM-PID 0.746 ; Fuzzy-PID 0.877 ; Ziegler-Nichols 1.000
 
 ====================================================================================================
  ETAPE 2 : IAE de 30 ms a la fin (mV.s) par essai et par methode ; classement ; criteres
 ====================================================================================================
   essai Ziegler-Nichols         PSO-PID       Fuzzy-PID         ELM-PID        PINN-PID  C3 sep.  C1 ecart  C2 tau  classement
-  S1              1.49            1.49            1.49            1.49            1.49     0.001      0.0%    0.20  PINN-PID > Ziegler-Nichols > ELM-PID > PSO-PID > Fuzzy-PID
-  S2              2.84            2.04            2.43            5.61            4.70     0.388     16.8%    0.00  PSO-PID > Fuzzy-PID > Ziegler-Nichols > PINN-PID > ELM-PID
-  S3              8.67            5.46            7.94            7.79            6.25     0.171      2.0%    0.80  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols
-  S4             23.61           16.54           22.38           19.57           17.64     0.135      5.5%    0.80  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols
-  S5              3.87            2.46            4.05            2.97            3.05     0.183      2.6%    0.40  PSO-PID > ELM-PID > PINN-PID > Ziegler-Nichols > Fuzzy-PID
-  S6              1.65            1.55            1.71            1.64            1.63     0.031      0.3%    0.60  PSO-PID > PINN-PID > ELM-PID > Ziegler-Nichols > Fuzzy-PID
-  S7a             4.16            4.03            4.72            4.40            3.79     0.075      3.4%    0.60  PINN-PID > PSO-PID > Ziegler-Nichols > ELM-PID > Fuzzy-PID
-  S7b             2.93            3.14            3.71            3.03            2.60     0.116      3.6%    0.20  PINN-PID > Ziegler-Nichols > ELM-PID > PSO-PID > Fuzzy-PID
-  S8a            12.07            2.46            4.12            3.24            3.14     0.558      3.2%    0.80  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols
-  S8b            77.19*           2.46            4.25            3.33            3.18     1.280      4.6%    0.80  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols
-  S9            531.80*         283.25          276.11          307.01          317.18     0.241      2.6%    0.00  Fuzzy-PID > PSO-PID > ELM-PID > PINN-PID > Ziegler-Nichols
+  S1              1.49            1.49            1.49            1.49            1.49     0.001      0.0%    0.20  ELM-PID > PINN-PID > Ziegler-Nichols > PSO-PID > Fuzzy-PID
+  S2              2.84            2.04            2.43            2.41            4.70     0.286      1.1%    0.20  PSO-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols > PINN-PID
+  S3              8.67            5.46            7.94            6.41            6.25     0.168      2.5%    0.80  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols
+  S4             23.61           16.54           22.38           18.87           17.64     0.137      5.5%    0.80  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols
+  S5              3.87            2.46            4.05            2.46            3.05     0.213      0.1%    0.20  ELM-PID > PSO-PID > PINN-PID > Ziegler-Nichols > Fuzzy-PID
+  S6              1.65            1.55            1.71            1.60            1.63     0.032      1.1%    0.40  PSO-PID > ELM-PID > PINN-PID > Ziegler-Nichols > Fuzzy-PID
+  S7a             4.16            4.03            4.72            3.76            3.79     0.082      0.6%    0.40  ELM-PID > PINN-PID > PSO-PID > Ziegler-Nichols > Fuzzy-PID
+  S7b             2.93            3.14            3.71            2.66            2.60     0.129      2.3%    0.40  PINN-PID > ELM-PID > Ziegler-Nichols > PSO-PID > Fuzzy-PID
+  S8a            12.07            2.46            4.12            2.96            3.14     0.567      5.8%    0.60  PSO-PID > ELM-PID > PINN-PID > Fuzzy-PID > Ziegler-Nichols
+  S8b            77.19*           2.46            4.25            3.03            3.18     1.289      4.9%    0.60  PSO-PID > ELM-PID > PINN-PID > Fuzzy-PID > Ziegler-Nichols
+  S9            531.80*         283.25          276.11          294.86          317.18     0.244      2.6%    0.00  Fuzzy-PID > PSO-PID > ELM-PID > PINN-PID > Ziegler-Nichols
   (* : un evenement au moins ne revient pas dans +-1 V ; classement : meilleur a gauche)
 
   Demarrage (IAE de 0 a 30 ms, mV.s) :
-    S1    Ziegler-Nichols  93.77  PSO-PID  87.62  Fuzzy-PID 110.91  ELM-PID  81.12  PINN-PID  80.85
-    S8a   Ziegler-Nichols 112.56  PSO-PID  93.00  Fuzzy-PID 116.31  ELM-PID  71.14  PINN-PID  68.99
-    S8b   Ziegler-Nichols 216.89  PSO-PID 174.18  Fuzzy-PID 196.80  ELM-PID 107.38  PINN-PID 103.58
+    S1    Ziegler-Nichols  93.77  PSO-PID  87.62  Fuzzy-PID 110.91  ELM-PID  93.72  PINN-PID  80.85
+    S8a   Ziegler-Nichols 112.56  PSO-PID  93.00  Fuzzy-PID 116.31  ELM-PID 108.36  PINN-PID  68.99
+    S8b   Ziegler-Nichols 216.89  PSO-PID 174.18  Fuzzy-PID 196.80  ELM-PID 203.87  PINN-PID 103.58
 
 ====================================================================================================
  ETAPE 3 : choix du scenario
 ====================================================================================================
-  S2   C1 oui ( 16.8 %) ; C2 non (tau 0.00, 5 paire(s) inversee(s)) ; C3 0.388 ; C4 1 phenomene(s)
-  S3   C1 non (  2.0 %) ; C2 oui (tau 0.80, 1 paire(s) inversee(s)) ; C3 0.171 ; C4 1 phenomene(s)
-  S4   C1 oui (  5.5 %) ; C2 oui (tau 0.80, 1 paire(s) inversee(s)) ; C3 0.135 ; C4 1 phenomene(s)
-  S5   C1 non (  2.6 %) ; C2 non (tau 0.40, 3 paire(s) inversee(s)) ; C3 0.183 ; C4 1 phenomene(s)
-  S6   C1 non (  0.3 %) ; C2 oui (tau 0.60, 2 paire(s) inversee(s)) ; C3 0.031 ; C4 1 phenomene(s)
-  S7b  C1 non (  3.6 %) ; C2 non (tau 0.20, 4 paire(s) inversee(s)) ; C3 0.116 ; C4 1 phenomene(s)
-  S8a  C1 non (  3.2 %) ; C2 oui (tau 0.80, 1 paire(s) inversee(s)) ; C3 0.558 ; C4 2 phenomene(s)
-  S8b  C1 non (  4.6 %) ; C2 oui (tau 0.80, 1 paire(s) inversee(s)) ; C3 1.280 ; C4 2 phenomene(s)
-  S9   C1 non (  2.6 %) ; C2 non (tau 0.00, 5 paire(s) inversee(s)) ; C3 0.241 ; C4 6 phenomene(s)
+  S2   C1 non (  1.1 %) ; C2 non (tau 0.20, 4 paire(s) inversee(s)) ; C3 0.286 ; C4 1 phenomene(s)
+  S3   C1 non (  2.5 %) ; C2 oui (tau 0.80, 1 paire(s) inversee(s)) ; C3 0.168 ; C4 1 phenomene(s)
+  S4   C1 oui (  5.5 %) ; C2 oui (tau 0.80, 1 paire(s) inversee(s)) ; C3 0.137 ; C4 1 phenomene(s)
+  S5   C1 non (  0.1 %) ; C2 non (tau 0.20, 4 paire(s) inversee(s)) ; C3 0.213 ; C4 1 phenomene(s)
+  S6   C1 non (  1.1 %) ; C2 non (tau 0.40, 3 paire(s) inversee(s)) ; C3 0.032 ; C4 1 phenomene(s)
+  S7b  C1 non (  2.3 %) ; C2 non (tau 0.40, 3 paire(s) inversee(s)) ; C3 0.129 ; C4 1 phenomene(s)
+  S8a  C1 oui (  5.8 %) ; C2 oui (tau 0.60, 2 paire(s) inversee(s)) ; C3 0.567 ; C4 2 phenomene(s)
+  S8b  C1 non (  4.9 %) ; C2 oui (tau 0.60, 2 paire(s) inversee(s)) ; C3 1.289 ; C4 2 phenomene(s)
+  S9   C1 non (  2.6 %) ; C2 non (tau 0.00, 5 paire(s) inversee(s)) ; C3 0.244 ; C4 6 phenomene(s)
 
-  Essais qui passent C1 et C2 : S4. Retenu (plus grand C3) : S4.
+  Essais qui passent C1 et C2 : S4, S8a. Retenu (plus grand C3) : S8a.
 
 ====================================================================================================
- ETAPE 4 : classement des cinq methodes sur S4
+ ETAPE 4 : classement des cinq methodes sur S8a
 ====================================================================================================
-  1. PSO-PID          IAE    16.54 mV.s ; demarrage   87.62 mV.s ; depassement   7.1 % ; ecart max  11.23 V ; activite |dd| 0.0081 ; tous les evenements reviennent
-       evenement a   50.0 ms : IAE    5.02 mV.s, ecart max  10.47 V, retour 0.65 ms
-       evenement a   70.0 ms : IAE    5.44 mV.s, ecart max  11.23 V, retour 0.88 ms
-       evenement a  100.0 ms : IAE    2.68 mV.s, ecart max   6.61 V, retour 0.49 ms
-       evenement a  120.0 ms : IAE    3.24 mV.s, ecart max   6.61 V, retour 0.50 ms
-  2. PINN-PID         IAE    17.64 mV.s ; demarrage   80.86 mV.s ; depassement   2.4 % ; ecart max  11.49 V ; activite |dd| 0.0039 ; tous les evenements reviennent
-       evenement a   50.0 ms : IAE    5.14 mV.s, ecart max  10.47 V, retour 0.73 ms
-       evenement a   70.0 ms : IAE    5.86 mV.s, ecart max  11.49 V, retour 0.75 ms
-       evenement a  100.0 ms : IAE    3.07 mV.s, ecart max   6.89 V, retour 0.55 ms
-       evenement a  120.0 ms : IAE    3.40 mV.s, ecart max   6.61 V, retour 0.56 ms
-  3. ELM-PID          IAE    19.57 mV.s ; demarrage   81.13 mV.s ; depassement   2.4 % ; ecart max  11.52 V ; activite |dd| 0.0033 ; tous les evenements reviennent
-       evenement a   50.0 ms : IAE    6.41 mV.s, ecart max  10.47 V, retour 1.26 ms
-       evenement a   70.0 ms : IAE    6.00 mV.s, ecart max  11.52 V, retour 0.70 ms
-       evenement a  100.0 ms : IAE    3.49 mV.s, ecart max   6.89 V, retour 1.22 ms
-       evenement a  120.0 ms : IAE    3.49 mV.s, ecart max   6.61 V, retour 0.53 ms
-  4. Fuzzy-PID        IAE    22.38 mV.s ; demarrage  110.90 mV.s ; depassement  27.3 % ; ecart max  11.23 V ; activite |dd| 0.0058 ; tous les evenements reviennent
-       evenement a   50.0 ms : IAE    6.43 mV.s, ecart max  10.47 V, retour 1.58 ms
-       evenement a   70.0 ms : IAE    7.25 mV.s, ecart max  11.23 V, retour 1.66 ms
-       evenement a  100.0 ms : IAE    4.11 mV.s, ecart max   6.89 V, retour 1.36 ms
-       evenement a  120.0 ms : IAE    4.42 mV.s, ecart max   6.61 V, retour 1.32 ms
-  5. Ziegler-Nichols  IAE    23.61 mV.s ; demarrage   93.77 mV.s ; depassement  14.0 % ; ecart max  11.52 V ; activite |dd| 0.0032 ; tous les evenements reviennent
-       evenement a   50.0 ms : IAE    6.44 mV.s, ecart max  10.47 V, retour 1.24 ms
-       evenement a   70.0 ms : IAE    7.40 mV.s, ecart max  11.52 V, retour 1.69 ms
-       evenement a  100.0 ms : IAE    4.78 mV.s, ecart max   6.90 V, retour 1.53 ms
-       evenement a  120.0 ms : IAE    4.82 mV.s, ecart max   6.61 V, retour 1.52 ms
+  1. PSO-PID          IAE     2.46 mV.s ; demarrage   93.00 mV.s ; depassement  43.5 % ; ecart max   0.60 V ; activite |dd| 0.0081 ; tous les evenements reviennent
+       evenement a   50.0 ms : IAE    0.42 mV.s, ecart max   0.56 V, retour 0.00 ms
+       evenement a   70.0 ms : IAE    0.55 mV.s, ecart max   0.60 V, retour 0.00 ms
+       evenement a  100.0 ms : IAE    0.41 mV.s, ecart max   0.44 V, retour 0.00 ms
+       evenement a  120.0 ms : IAE    0.90 mV.s, ecart max   0.40 V, retour 0.00 ms
+  2. ELM-PID          IAE     2.96 mV.s ; demarrage  108.36 mV.s ; depassement  52.2 % ; ecart max   0.97 V ; activite |dd| 0.0048 ; tous les evenements reviennent
+       evenement a   50.0 ms : IAE    0.83 mV.s, ecart max   0.97 V, retour 0.00 ms
+       evenement a   70.0 ms : IAE    0.67 mV.s, ecart max   0.77 V, retour 0.00 ms
+       evenement a  100.0 ms : IAE    0.39 mV.s, ecart max   0.49 V, retour 0.00 ms
+       evenement a  120.0 ms : IAE    0.90 mV.s, ecart max   0.42 V, retour 0.00 ms
+  3. PINN-PID         IAE     3.14 mV.s ; demarrage   68.99 mV.s ; depassement  21.0 % ; ecart max   1.05 V ; activite |dd| 0.0054 ; tous les evenements reviennent
+       evenement a   50.0 ms : IAE    0.77 mV.s, ecart max   1.05 V, retour 0.44 ms
+       evenement a   70.0 ms : IAE    0.71 mV.s, ecart max   0.97 V, retour 0.00 ms
+       evenement a  100.0 ms : IAE    0.49 mV.s, ecart max   0.62 V, retour 0.00 ms
+       evenement a  120.0 ms : IAE    0.99 mV.s, ecart max   0.54 V, retour 0.00 ms
+  4. Fuzzy-PID        IAE     4.12 mV.s ; demarrage  116.31 mV.s ; depassement  58.7 % ; ecart max   1.40 V ; activite |dd| 0.0057 ; tous les evenements reviennent
+       evenement a   50.0 ms : IAE    0.91 mV.s, ecart max   1.14 V, retour 0.61 ms
+       evenement a   70.0 ms : IAE    1.06 mV.s, ecart max   1.40 V, retour 0.62 ms
+       evenement a  100.0 ms : IAE    0.68 mV.s, ecart max   0.98 V, retour 0.00 ms
+       evenement a  120.0 ms : IAE    1.29 mV.s, ecart max   0.76 V, retour 0.00 ms
+  5. Ziegler-Nichols  IAE    12.07 mV.s ; demarrage  112.56 mV.s ; depassement  52.2 % ; ecart max   1.43 V ; activite |dd| 0.0031 ; tous les evenements reviennent
+       evenement a   50.0 ms : IAE    5.22 mV.s, ecart max   1.35 V, retour 0.57 ms
+       evenement a   70.0 ms : IAE    3.01 mV.s, ecart max   1.43 V, retour 0.53 ms
+       evenement a  100.0 ms : IAE    1.09 mV.s, ecart max   0.98 V, retour 0.00 ms
+       evenement a  120.0 ms : IAE    2.59 mV.s, ecart max   0.93 V, retour 0.00 ms
 
-  Accord avec le classement par J : tau 0.80 (1 paire(s) inversee(s)) ; ordre par J : PINN-PID > PSO-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols
+  Accord avec le classement par J : tau 0.60 (2 paire(s) inversee(s)) ; ordre par J : PINN-PID > PSO-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols
 
   comparaison_resultats.json ecrit.
   classement_par_essai.png ecrit.

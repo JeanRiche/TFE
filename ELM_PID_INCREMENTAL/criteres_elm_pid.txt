@@ -1,0 +1,339 @@
+ELM-PID : PID AUTO-ADAPTATIF A MODELE INTERNE ELM
+Methode, modifications documentees, previsions et resultats
+=============================================================================
+
+Methode et previsions ecrites le 7 octobre 2026, avant le calcul sur les
+onze essais communs (commits 35e8708 puis d87e8aa du depot). Mesures faites avant les previsions : donnees
+d'apprentissage seulement (entrainement_elm.py, ensemble_gains_elm.py) et
+essais de mise au point E1 a E4, distincts des onze essais
+(mise_au_point_elm_pid.py). Resultats ajoutes apres le calcul, sans
+changer la methode ni les previsions.
+Origine des modifications. La version de depart (5 octobre 2026, J = 0.784)
+ne changeait ses gains sur aucun des essais S1 a S7b, dont les trois cas de
+base : elle se comportait exactement comme la meme loi a gains figes. Un
+premier calcul avec M1 et M2 seules (J = 0.744) les adaptait sur S4, S5,
+S8a, S8b et S9, mais toujours pas sur S1, S2, S3 (prevision fausse,
+diagnostic en section 3, verrou V3) : M3 a ete ajoutee, avec de nouvelles
+previsions. Ces versions sont conservees dans l'historique du depot et ne
+font pas partie de ce dossier ; "M2 seule" reste une ablation du banc.
+
+
+1. CADRE (base commune v2.1)
+----------------------------
+  Circuit L = 10 mH, C = 47 uF, R = 5 ohms, Vin = 200 V, fs = 22 kHz ;
+  regulateur a Tc = 1/220 000 s ; onze essais S1 a S9 ; cout J = moyenne
+  de 13 rapports d'IAE a Ziegler-Nichols (10 apres 30 ms, 3 de demarrage) ;
+  tous les evenements doivent revenir dans +-1 V ; banc Python valide
+  contre Simulink ; previsions ecrites avant le calcul. Depart : les gains
+  de Ziegler-Nichols (P = 0.093910, I = 301.089, D = 7.3227e-6).
+
+
+2. LA METHODE DE REFERENCE ET CE QUI EN EST GARDE
+-------------------------------------------------
+  Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller based
+  on ELM and its implementation for Buck converters", International Journal
+  of Control, Automation and Systems 19(7), 2479-2490, 2021.
+  Garde, tel qu'adapte a ce convertisseur dans la version de depart
+  (detail : en-tete de banc_elm_pid.py) :
+    - loi PID incrementale de Lu, derivee calculee sur l'erreur filtree
+      (meme filtre que le PID de Ziegler-Nichols), saturation [0.01 ; 0.99],
+      depart u = 0.5 aux gains de Ziegler-Nichols ;
+    - boucle lente toutes les 0.5 ms (fenetres de 110 x Tc) ;
+    - modele interne : ELM a liaisons directes (RVFL), 12 neurones
+      logistiques, C = 0.1, graine 1, entrees [ybar(n-1), ybar(n-2),
+      dbar(n), dbar(n-1), dbar(n-2)], appris sur quatre enregistrements
+      Simulink en boucle ouverte ; mise a jour en ligne OS-ELM sans oubli ;
+    - gradient normalise (NLMS) sur le critere E(n) = ebar(n)^2 / 2 avec le
+      jacobien du modele, pas eta = 0.5, inertie alpha = 0.001 (Lu),
+      epsilon = 1e-3, zone morte de 0.1 V sur ebar, signe du jacobien ;
+    - critere d'admissibilite des gains : marge de phase nominale au moins
+      celle du depart (25.2 degres) et coupure au plus fs/10 aux neuf coins
+      nominaux (R = 4 a 6 ohms, Vin = 160 a 240 V), modele moyen discretise
+      (ensemble_gains_elm.py).
+
+
+
+3. DIAGNOSTIC : POURQUOI LES GAINS NE BOUGEAIENT PAS
+----------------------------------------------------
+  Trois verrous empiles, mesures sur le banc :
+  V1. La porte. Une fenetre etait "suspecte" si la loi saturait OU si
+      l'erreur de prediction du modele depassait 0.5 V ; les gains ne
+      changeaient que si la fenetre et les deux precedentes etaient propres.
+      Or l'erreur de prediction du modele vaut 1.4 V en moyenne (0.76 V
+      meme entre 4 et 6 ohms) : chaque fois que l'erreur moyenne d'une
+      fenetre depassait la zone morte (0.1 V), la porte etait fermee. Sur
+      S1, S2 et S3 : 0 fenetre adaptee.  -> M1
+  V2. La boite. Les gains etaient projetes sur le plus grand pave (axes
+      paralleles) de gains admissibles contenant le depart. Le depart ayant
+      exactement la marge-seuil, il etait un COIN du pave : Ki ne pouvait
+      que baisser, Kp et Kd que monter ; une hausse de Ki avec une hausse de
+      Kd, pourtant admissible (Ki x 1.2 avec Kd x 1.3), etait interdite.
+      -> M2
+  V3. La frontiere. Meme projete sur l'ensemble admissible lui-meme, le
+      depart est SUR sa frontiere (g(1, 1, 1) = 0, le critere etant "marge
+      au moins egale a celle du depart"), et l'ensemble y est localement
+      non convexe : sur 200 pas de 0.05 tires dans le plan tangent, 18
+      seulement restent admissibles. Un glissement tangent coupe par
+      bissection (M2 seule) y est donc ramene a zero : sur S1 a S3, tous
+      les pas calcules partent du depart et sont annules (calcul avec M1 et
+      M2 seules : 2, 4 et 6 pas calcules, 0 changement).  -> M3
+  Constat (pas corrige) : avec les cinq entrees de Lu, le modele ne voit
+  pas la charge ; son jacobien n'est pas plus juste qu'une constante
+  (section 5).
+
+
+4. MODIFICATIONS ET LEURS REFERENCES
+------------------------------------
+M1. La porte : saturation seulement ; zone morte d'estimation pour l'OS-ELM
+  Pourquoi. La condition de saturation a une raison mecanique et reste :
+  pendant une saturation, le rapport cyclique ne depend plus des gains,
+  alors que la sensibilite s(n) est calculee comme s'il en dependait ; la
+  direction du gradient serait fausse. Le seuil sur l'erreur de prediction
+  n'a pas de raison equivalente pour le pas des gains : le gradient
+  n'utilise du modele que le signe et l'ordre de grandeur du jacobien,
+  garantis hors ligne sur toute la plage par les criteres de choix du
+  modele (J > 0 et J >= J_vrai / 2 sur les fenetres de controle). Pour
+  l'apprentissage en ligne, la regle classique est inverse de celle de la
+  version de depart : en estimation adaptative robuste, on ne met a jour
+  les parametres que si l'erreur de prediction DEPASSE une borne des
+  residus (bruit, quantification), pour eviter la derive sur les petites
+  erreurs ; on ne refuse pas les grandes.
+  References. B. B. Peterson, K. S. Narendra, "Bounded error adaptive
+  control", IEEE Trans. Automatic Control 27(6), 1161-1168, 1982 ;
+  B. Egardt, Stability of Adaptive Controllers, Springer, 1979 ;
+  P. A. Ioannou, J. Sun, Robust Adaptive Control, Prentice Hall, 1996
+  (zone morte) ; N.-Y. Liang et al., IEEE Trans. Neural Networks 17(6),
+  2006 (OS-ELM).
+  Mise en oeuvre. Porte ouverte si la loi n'a sature ni dans la fenetre n
+  ni dans les deux precedentes (n - 1 et n - 2 fournissent les entrees du
+  modele). Porte ouverte : mise a jour OS-ELM si |ybar - prediction| >
+  0.1 V (meme borne que la zone morte des gains, dimensionnee sur les
+  memes residus) ; correction des gains si |ebar| > 0.1 V et J > 0.
+
+M2. Projection sur l'ensemble admissible, avec glissement le long de sa
+    frontiere, au lieu du plus grand pave
+  Pourquoi. Le critere d'admissibilite (marge nominale >= 25.2 degres,
+  coupure <= 2.2 kHz) est garde. Mais le pave a axes paralleles ne
+  representait pas l'ensemble admissible autour du depart : une hausse de
+  Ki accompagnee d'une hausse de Kd garde la marge (Ki x 1.2 avec
+  Kd x 1.3 : admissible), et le pave l'interdisait.
+  References. Projection des parametres sur un ensemble admissible :
+  G. C. Goodwin, K. S. Sin, Adaptive Filtering, Prediction and Control,
+  Prentice Hall, 1984 ; P. A. Ioannou, J. Sun, Robust Adaptive Control,
+  1996 (operateur de projection : la composante du pas qui sort de
+  l'ensemble par la normale a sa frontiere est retiree, la composante
+  tangente est gardee).
+  Mise en oeuvre (ensemble_gains_elm.py, banc_elm_pid.py,
+  elm_pid_adaptatif.m) :
+    - gains exprimes en multiplicateurs x = K / K_ZN, chacun dans [1/4 ; 4]
+      (meme etendue de deux octaves que la grille de la version de depart) ;
+      sensibilite phi = J (s .* K_ZN) ;
+    - table de g = max((25.2 - marge)/25.2, (fc - 2200)/2200) sur une
+      grille de pas 2^(1/8) en log2 des multiplicateurs (33^3 points),
+      interpolee trilineairement ; admissible si g <= 0. Controle : sur
+      3000 points hors grille, aucun admis a tort ;
+    - pas : x_nouveau = x + dx (dx = pas NLMS + inertie), borne a [1/4 ; 4].
+      S'il n'est pas admissible : point de sortie xb sur le segment
+      (30 bissections), normale n = gradient de g en xb (differences
+      centrees, h = 1e-4), reste du pas r = (1 - t) dx dont on retire la
+      composante sortante max(0, n.r) n / |n|^2, puis xb + r. S'il sort
+      encore : M2 seule le raccourcit par bissection ; M3 (ci-dessous)
+      remplace ce raccourcissement par une restauration.
+
+M3. Projection : point admissible le plus proche, avec restauration
+  Pourquoi. Le depart est sur la frontiere de l'ensemble admissible et
+  l'ensemble y est non convexe : le glissement de M2 seul (pas tangent coupe
+  par bissection) y est annule (verrou V3 de la section 3). L'operateur de
+  projection des references de M2 (Goodwin et Sin ; Ioannou et Sun)
+  ramene le pas au point admissible le plus proche ; sur un ensemble a
+  frontiere courbe, cela demande, apres le pas tangent, un retour sur la
+  frontiere.
+  Reference. J. B. Rosen, "The gradient projection method for nonlinear
+  programming, Part II : Nonlinear constraints", Journal of the Society
+  for Industrial and Applied Mathematics, 9(4), 1961 (projection du pas
+  sur le plan tangent aux contraintes actives, puis restauration vers la
+  frontiere le long de la normale).
+  Mise en oeuvre (banc_elm_pid.py, elm_pid_adaptatif.m) : cible
+  z = x + dx (bornee a [1/4 ; 4]) ; si z n'est pas admissible : point de
+  sortie y sur le segment (30 bissections) ; puis, au plus 10 fois :
+  normale n = gradient de g en y ; d = z - y privee de sa composante
+  sortante max(0, n.d) n / |n|^2 ; p = y + d ; si p n'est pas admissible,
+  restauration : recul le long de -n / |n| (pas doubles a partir de 1e-6,
+  puis 30 bissections) ; p remplace y seulement s'il est plus proche de z.
+  Le resultat est toujours admissible. La version M2 seule (sans
+  restauration) est gardee comme ablation.
+
+Inchange (section 2) : tout le reste, dont le modele, eta, alpha, epsilon,
+la zone morte des gains, l'absence d'oubli, le critere d'admissibilite, le
+depart.
+
+
+5. LE MODELE ET SON JACOBIEN : VERIFIES, PAS MODIFIES (entrainement_elm.py)
+---------------------------------------------------------
+  Ordre. Regle ecrite avant le calcul : quotients de Lipschitz (X. He,
+  H. Asada, "A new method for identifying orders of input-output models
+  for nonlinear dynamic systems", Proc. American Control Conference, 1993 ;
+  J. D. Bomberger, D. E. Seborg, "Determination of model order for NARX
+  models directly from input-output data", J. Process Control 8(5-6),
+  1998), ordre retenu = plus petit n tel que q(n)/q(n+1) <= 1.1. Resultat :
+  n = 2, l'ordre de Lu (q(2)/q(3) = 1.078).
+  Constat, a dire dans le memoire. Un ordre plus eleve reduit l'erreur de
+  prediction (regression lineaire : 1.44 V a l'ordre 2, 0.66 V a l'ordre
+  4, 0.59 V a l'ordre 6), mais aucun ne donne un jacobien qui suive le
+  vrai : celui de toute regression lineaire est une constante (11 a
+  12.4 V par unite), et celui du reseau retenu a une correlation de -0.04
+  avec le vrai (en logarithme) sur 4615 fenetres de controle. Le gain du
+  convertisseur sur une fenetre varie pourtant d'un facteur 1.4 avec la
+  charge (11.2 V par unite a 4-6 ohms, 15.8 a 50-99 ohms) : avec les seules
+  tensions et rapports cycliques passes, la charge n'est pas observable a
+  l'echelle de la fenetre. Changer l'ordre n'apporterait donc rien a la
+  loi d'adaptation, et le modele n'est pas modifie.
+  Fragilite du choix, publiee. Les trois enregistrements de controle a
+  98 ohms ont ete refaits (graines 51 a 53). Avec eux, la configuration
+  retenue (12 neurones, C = 0.1) n'a plus que 8 tirages sur 20 qui passent
+  les criteres (11 sur 20 le 4 octobre) et la regle "plus de la moitie" ne
+  l'admettrait plus ; aucune autre configuration ne passe. Le tirage
+  exporte (graine 1) passe lui-meme les deux criteres sur les nouvelles
+  fenetres (J / J_vrai >= 0.506). Il est garde, identique a celui du
+  4 octobre (poids de sortie a 2e-8 pres).
+
+
+
+6. CONTROLES DE MISE AU POINT (avant les previsions ; mise_au_point_elm_pid.py)
+-----------------------------------------------------------------------------
+  Projection depuis le depart, 500 pas aleatoires : gains changes 500
+  (M3), 304 (M2 seule), 242 (sans glissement) ; aucun resultat hors de
+  l'ensemble ; distance moyenne a la cible 0.046 (M3), 0.075, 0.086.
+  Essais de mise au point (points R, Vin absents des onze essais) : E1
+  7 ohms, 190 V, charge a 4.5 ohms sur [40 ; 65) ms ; E2 15 ohms, 210 V, Vin
+  175 V puis 235 V ; E3 60 ohms, 220 V, consigne +10 V sur [40 ; 65) ms ;
+  E4 9 ohms, 200 V, bruit et CAN 12 bits.
+  IAE apres 30 ms (mV.s), R0 / M2 seule / ELM-PID :
+    E1 34.06 / 33.99 / 33.13 ; E2 3.02 / 1.88 / 1.52 ;
+    E3 33.92 / 20.16 / 20.19 ; E4 1.16 / 1.03 / 1.03.
+  Avec M3, les gains changent des le demarrage (2.5 a 4 ms) sur les quatre
+  essais. Jacobien constant : a 0.4 mV.s pres. Aucun reglage n'a ete change
+  apres ces essais.
+
+
+7. PREVISIONS (ecrites avant le calcul sur les onze essais)
+-----------------------------------------------------------
+  Q1. Les gains changent dans les trois cas de base : sur S1, S2 et S3, au
+      moins une fenetre ou les gains changent et un multiplicateur final
+      hors de [0.99 ; 1.01].
+  Q2. J entre 0.70 et 0.78 ; tous les evenements reviennent.
+  Q3. J au plus egal a celui de la version M1-M2 seules (0.744).
+  Q4. Jacobien constant : J a 0.02 pres de l'ELM-PID.
+  Q5. Aucune fenetre adaptee apres 30 ms sur S7a et S7b (pas de derive sur
+      le bruit et la quantification).
+  Q6. L ou C a +-0.1 % : J a 0.02 pres de sa valeur nominale.
+  Q7. Demarrage de S1 : IAE de 0 a 30 ms a 5 % pres de celle de R0.
+  Regle de conclusion : si Q1 est fausse, on s'arrete et on le dit ; on ne
+  touche ni aux zones mortes ni au critere d'admissibilite pour la rendre
+  juste. Ablations rapportees, jamais choisies : jacobien constant, sans
+  OS-ELM, M2 seule, sans glissement, R0 (gains figes).
+
+
+8. RESULTATS (7 octobre 2026 ; banc_elm_pid_sortie_console.txt)
+---------------------------------------------------------------
+                          J      apres 30 ms   demarrage   non revenus
+    Ziegler-Nichols     1.000      1.000         1.000      S8b, S9
+    meilleur PID fige   0.738      0.710         0.831      -
+      (sur grille, choisi sur les onze essais)
+    R0 (gains figes)    0.917      0.986         0.687      S8b, S9
+    ELM-PID             0.728      0.747         0.664      -
+  Fenetres ou les gains changent : S1 2, S2 4, S3 6, S4 6, S5 8, S6 2,
+  S7a 2, S7b 1, S8a 12, S8b 18, S9 16 (77 en tout). Gains finaux (x ZN) :
+  S1 (0.97, 1.03, 1.07) ; S2 (1.41, 1.18, 0.96) ; S3 (1.54, 1.26, 0.99) ;
+  S8b (3.38, 1.86, 1.30) ; S9 (3.05, 1.88, 1.28). Instants : 3.5 et 4 ms
+  sur S1, S2, S3 ; puis 52 et 52.5 ms sur S2 ; 52, 52.5, 53 et 72 ms sur S3.
+  IAE apres 30 ms (mV.s), R0 / ELM-PID : S3 8.48 / 7.79 ; S4 22.74 / 19.57 ;
+  S5 3.81 / 2.97 ; S8a 11.08 / 3.24 ; S8b 73.89 / 3.33 ; S9 537.3 / 307.0.
+  S2 (hors de J) : 5.27 / 5.61, un peu moins bon.
+  Ablations : jacobien constant 0.728 ; sans OS-ELM 0.728 ; M2 seule 0.744 ;
+  sans glissement 0.760. Sensibilite (L ou C a +-0.1 %) : J de 0.722 a
+  0.731.
+  Q1 a Q7 justes.
+
+
+Validation Simulink (7 octobre 2026, sorties envoyees par Jean-Riche)
+  Tester_ELM_PID_Rejeu : le bloc MATLAB reproduit le banc pas par pas sur
+  S1, S3, S7b, S8b, S9 (ecart au plus 7.5e-10 sur u, 7.7e-10 en relatif
+  sur les gains, aucune decision de fenetre differente).
+  Construction_ELM_PID : T1 2.3 mV, gains a 19 ms a 0.1 % du banc ; T2
+  28.4 mV. verifier_modele_elm_pid.py : conforme.
+  Simuler_ELM_PID, onze essais : memes decisions d'adaptation que le banc
+  partout sauf S7a (mesure quantifiee : un arrondi de 1e-15 V change une
+  decision du CAN ; Simulink 0 fenetre adaptee, banc 2) ; IAE a 0.2 % pres
+  (S7a -2.9 %, S8b -0.7 %), memes retours dans la bande, gains a 0.35 %
+  pres (S7a excepte). Les modifications M1 a M3 sont validees dans
+  Simulink.
+
+9. LECTURE (pour le memoire)
+----------------------------
+  1. L'ELM-PID adapte ses gains dans les trois cas de base et sur tous les
+     essais. Il fait mieux que R0 (0.728 contre 0.917), ramene S8b et S9
+     dans la bande, et fait un peu mieux que le meilleur PID fige sur grille
+     (0.738).
+  2. Les gains ne bougent que lorsque l'erreur moyenne d'une fenetre de
+     0.5 ms depasse 0.1 V (zone morte). En regime etabli, ils restent
+     constants : c'est voulu (pas d'information, pas d'adaptation, pas de
+     derive sur le bruit, Q5). Sur S1, S2, S3, cela fait 2 a 6 fenetres.
+  3. Le jacobien est bien estime en ligne a chaque fenetre par le reseau
+     (de 9.6 a 13.9 V par unite sur les essais ; mediane 10.3 sur S1, 11.5
+     sur S8b), mais il ne suit pas le vrai (11.2 a 15.8 ; correlation
+     -0.04 sur les fenetres de controle), et le remplacer par une constante
+     donne le meme J (0.728). Deux raisons : la charge n'est pas observable
+     avec les seules tensions et rapports cycliques passes (section 5) ; et
+     dans le gradient normalise de Lu, dx = eta ebar phi / (eps + phi.phi)
+     avec phi = J v, le jacobien ne fixe que le signe du pas et le divise
+     (dx ~ eta ebar v / (J |v|^2)) : une variation de 30 % de J change la
+     longueur du pas de 30 %, pas sa direction. Ce qui fait le resultat,
+     c'est la boucle d'adaptation (porte, zone morte, gradient normalise,
+     projection), pas le reseau. A dire tel quel dans le memoire.
+  4. Perspective (non faite ici) : un jacobien informatif demanderait une
+     entree qui renseigne sur la charge (courant de la bobine), ce qui
+     changerait la mesure disponible au regulateur dans la base commune.
+
+
+10. REFERENCES
+--------------
+  [1] Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller
+      based on ELM and its implementation for Buck converters",
+      International Journal of Control, Automation and Systems, 19(7),
+      2479-2490, 2021. doi:10.1007/s12555-019-0989-1
+  [2] G.-B. Huang, Q.-Y. Zhu, C.-K. Siew, "Extreme learning machine:
+      theory and applications", Neurocomputing, 70(1-3), 489-501, 2006.
+  [3] N.-Y. Liang, G.-B. Huang, P. Saratchandran, N. Sundararajan, "A fast
+      and accurate online sequential learning algorithm for feedforward
+      networks", IEEE Transactions on Neural Networks, 17(6), 1411-1423,
+      2006.
+  [4] Y.-H. Pao, G.-H. Park, D. J. Sobajic, "Learning and generalization
+      characteristics of the random vector functional-link net",
+      Neurocomputing, 6(2), 163-180, 1994.
+  [5] B. B. Peterson, K. S. Narendra, "Bounded error adaptive control",
+      IEEE Transactions on Automatic Control, 27(6), 1161-1168, 1982.
+  [6] B. Egardt, Stability of Adaptive Controllers, Lecture Notes in
+      Control and Information Sciences 20, Springer, 1979.
+  [7] P. A. Ioannou, J. Sun, Robust Adaptive Control, Prentice Hall, 1996.
+  [8] G. C. Goodwin, K. S. Sin, Adaptive Filtering, Prediction and Control,
+      Prentice Hall, 1984.
+  [9] X. He, H. Asada, "A new method for identifying orders of
+      input-output models for nonlinear dynamic systems", Proceedings of
+      the American Control Conference, 1993.
+  [10] J. D. Bomberger, D. E. Seborg, "Determination of model order for
+      NARX models directly from input-output data", Journal of Process
+      Control, 8(5-6), 1998.
+  [11] S. Haykin, Adaptive Filter Theory, 4e ed., Prentice Hall, 2002
+      (filtre LMS normalise).
+  [12] K. S. Narendra, K. Parthasarathy, "Identification and control of
+      dynamical systems using neural networks", IEEE Transactions on
+      Neural Networks, 1(1), 4-27, 1990.
+  [13] K. J. Astrom, T. Hagglund, Advanced PID Control, ISA, 2006.
+  [14] J. B. Rosen, "The gradient projection method for nonlinear
+      programming, Part II : Nonlinear constraints", Journal of the Society
+      for Industrial and Applied Mathematics, 9(4), 1961.
+  Les references [1] a [5], [7], [11] a [13] viennent du document de la
+  methode (Regulateur_ELM_PID.docx) ; [6], [8], [9], [10], [14] justifient
+  les modifications et ont ete verifiees par leurs notices
+  bibliographiques (textes integraux non consultes ici, sauf [1]).

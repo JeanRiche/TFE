@@ -1,27 +1,30 @@
 %% SIMULER_ELM_PID.m
 %
-% COPIE DE Simuler_Scenarios.m (base commune, version 2.1) pour l'ELM-PID.
-% Seuls les trois reglages du debut changent : modele Buck_Commun_ELM_PID.slx
-% (Construction_ELM_PID.m), bloc "ELM-PID Adaptatif" (sa deuxieme sortie,
-% les gains, est enregistree et comparee au banc), resultats attendus
-% predictions_banc_elm_pid.json (banc_elm_pid.py). Les resultats sont
-% ecrits dans resultats_Buck_Commun_ELM_PID.mat.
+% COPIE DE Simuler_Fuzzy_PID.m (elle-meme copie de Simuler_Scenarios.m,
+% base commune 2.1) pour l'ELM-PID, option B (meme montage que le
+% Fuzzy-PID). Changent seulement les quatre reglages du debut : modele
+% Buck_Commun_ELM_PID.slx, bloc "PID Controller" dont la sortie est la
+% commande, resultats attendus predictions_banc_elm_pid.json, et
+% BLOC_GAINS : les gains [P I D] sont enregistres a la sortie de
+% "ELM-PID Adaptatif" et compares au banc. Les resultats sont ecrits dans
+% resultats_Buck_Commun_ELM_PID.mat.
 % Ordre : entrainement_elm.py ; ensemble_gains_elm.py ; banc_elm_pid.py ;
 % Tester_ELM_PID_Rejeu.m ; Construction_ELM_PID.m ;
 % verifier_modele_elm_pid.py ; ce script.
-% Duree : dix a vingt minutes (le bloc MATLAB System tourne en execution
+% Duree : dix a vingt minutes (l'adaptateur tourne en execution
 % interpretee, 44 001 appels par essai de 0.2 s).
-% Ce qu'on attend : l'ELM-PID change ses gains sur tous les essais (de 1 a
-% 18 fenetres de 0.5 ms selon l'essai), chaque fois que l'erreur moyenne
-% d'une fenetre depasse la zone morte de 0.1 V. Chaque decision depend de
-% ce seuil, franchi parfois a quelques mV pres : un ecart de quelques mV
-% entre Simulink et le banc peut faire apparaitre ou disparaitre une
-% adaptation, et les gains peuvent alors suivre un autre chemin (sur le
-% banc, changer L ou C de 0.1 % fait varier J de 0.722 a 0.731, etape 4b
-% de banc_elm_pid.py). La validation du bloc est le test de rejeu
-% (Tester_ELM_PID_Rejeu.m, identique au banc a 1e-9 pres). Ici, on attend :
-% memes retours dans la bande, memes ordres de grandeur des gains et des
-% IAE, egalite point par point jusqu'a la premiere decision qui bascule.
+% Ce qu'on attend : les gains changent sur tous les essais, de 1 a 11
+% fenetres de 0.5 ms (40 en tout sur le banc), chaque fois que l'erreur
+% moyenne d'une fenetre depasse la zone morte de 0.1 V, porte ouverte.
+% Chaque decision depend de ce seuil : un ecart de quelques mV entre
+% Simulink et le banc peut faire apparaitre ou disparaitre une adaptation,
+% et les gains suivent alors un autre chemin (sur le banc, L ou C a
+% +-0.1 % font varier J de 0.746 a 0.751). La validation du bloc est le
+% test de rejeu (Tester_ELM_PID_Rejeu.m). Ici, on attend : memes retours
+% dans la bande, memes ordres de grandeur des gains et des IAE, egalite
+% point par point jusqu'a la premiere decision qui bascule. Sur S1, S2 et
+% S3, la seule adaptation commune (4 ms, ebar = 0.20 V, loin du seuil) doit
+% se retrouver.
 %
 % Le reste de l'en-tete est celui de Simuler_Scenarios.m.
 %
@@ -121,8 +124,9 @@ clear; clc;
 
 % --- Les trois reglages propres a chaque methode ---
 MODELE = 'Buck_Commun_ELM_PID';                           % modele a simuler
-BLOC_REGULATEUR = 'ELM-PID Adaptatif';                    % bloc dont la sortie 1 est la commande
+BLOC_REGULATEUR = 'PID Controller';                       % bloc dont la sortie 1 est la commande
 FICHIER_PREDICTIONS = 'predictions_banc_elm_pid.json';    % '' : pas de comparaison
+BLOC_GAINS = 'ELM-PID Adaptatif';                         % sortie 1 : gains [P I D] ('' : pas de gains a part)
 
 TE = 1/(22000*10);                                        % periode commune des enregistrements (s)
 TE_TXT = '1/(22000*10)';                                  % la meme, en texte exact pour Simulink
@@ -187,9 +191,18 @@ for i = 1:numel(codes)
     ajouter_enregistrement(MODELE, [MODELE '/Log d sc'], 'sc_log_d', TE_TXT, src_pwm.bloc, src_pwm.port);
     ajouter_enregistrement(MODELE, [MODELE '/Log iL sc'], 'sc_log_iL', TE_TXT, [MODELE '/iL'], 1);
     ph_reg = get_param(bloc_reg, 'PortHandles');
-    avec_gains = numel(ph_reg.Outport) >= 2;               % deuxieme sortie : gains d'une methode adaptative
-    if avec_gains
-        ajouter_enregistrement(MODELE, [MODELE '/Log K sc'], 'sc_log_K', TE_TXT, bloc_reg, 2);
+    if ~isempty(BLOC_GAINS)                                % gains sortis par un autre bloc (sortie 1)
+        if getSimulinkBlockHandle([MODELE '/' BLOC_GAINS]) == -1
+            close_system(MODELE, 0);
+            error('Bloc des gains introuvable : %s', BLOC_GAINS);
+        end
+        avec_gains = true;
+        ajouter_enregistrement(MODELE, [MODELE '/Log K sc'], 'sc_log_K', TE_TXT, [MODELE '/' BLOC_GAINS], 1);
+    else
+        avec_gains = numel(ph_reg.Outport) >= 2;           % deuxieme sortie : gains d'une methode adaptative
+        if avec_gains
+            ajouter_enregistrement(MODELE, [MODELE '/Log K sc'], 'sc_log_K', TE_TXT, bloc_reg, 2);
+        end
     end
     neutraliser_enregistrements_modele(MODELE);
     t_debut = tic;
@@ -284,7 +297,7 @@ for i = 1:numel(codes)
             n_k = min(size(Kb, 1), size(Ks, 1));
             ecart_K = max(max(abs(Ks(1:n_k, :) - Kb(1:n_k, :)) ./ abs(Kb(1:n_k, :))));
             fprintf(['  gains : ecart relatif maximal Simulink - banc (toutes les ms) %.2g ; gains finaux ' ...
-                     'Simulink [%.5f %.4e %.4f], banc [%.5f %.4e %.4f]\n'], ecart_K, K(end, 1), K(end, 2), ...
+                     'Simulink [%.5f %.4e %.4e], banc [%.5f %.4e %.4e]\n'], ecart_K, K(end, 1), K(end, 2), ...
                     K(end, 3), Kb(end, 1), Kb(end, 2), Kb(end, 3));
         end
         evb = gb.evenements;                              % structure, cellule ou vide selon jsondecode

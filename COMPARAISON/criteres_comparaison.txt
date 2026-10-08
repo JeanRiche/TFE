@@ -137,3 +137,59 @@ Lecture (pour le memoire)
      classement ci-dessus, le tableau de J, et en annexe la figure
      classement_par_essai.png (IAE rapportee a Ziegler-Nichols et rang,
      essai par essai).
+
+
+MISE A JOUR DU 8 OCTOBRE 2026 : ELM-PID OPTION B
+=============================================================================
+L'ELM-PID retenu est desormais l'option B (ELM_PID/criteres_elm_pid.txt,
+M4 : bloc PID commun a gains externes). La regle ci-dessus n'a pas change ;
+elle a ete reappliquee telle quelle avec le fichier de resultats de la
+version B (comparaison_methodes_sortie_console.txt). Les resultats du
+7 octobre (version incrementale) restent dans l'historique du depot.
+
+Cout J : PINN-PID 0.684, PSO-PID 0.714, ELM-PID 0.746 (0.728 avant),
+Fuzzy-PID 0.877, Ziegler-Nichols 1.000.
+IAE de 30 ms a la fin de l'ELM-PID (B / incrementale) : S2 2.41 / 5.61 ;
+S3 6.41 / 7.79 ; S4 18.87 / 19.57 ; S5 2.46 / 2.97 ; S6 1.60 / 1.64 ;
+S7b 2.66 / 3.03 ; S8a 2.96 / 3.24 ; S8b 3.03 / 3.33 ; S9 294.86 / 307.01.
+
+Ce que donne la regle
+  Passent C1 et C2 : S4 (C3 0.137) et S8a (C3 0.567). Retenu par la regle
+  (plus grand C3) : S8a, charge legere 25 ohms avec echelons de charge.
+  S8a ne passait pas C1 avec la version incrementale (ELM-PID 3.24 contre
+  PINN-PID 3.14 : 3.2 %) ; avec la version B, l'ecart est 6.1 %.
+  Classement sur S8a : PSO-PID 2.46 > ELM-PID 2.96 > PINN-PID 3.14 >
+  Fuzzy-PID 4.12 > Ziegler-Nichols 12.07 mV.s ; ecart minimal entre
+  voisins 5.8 % ; meme ordre avec L ou C a +-0.1 % (ecart minimal 5.2 a
+  6.2 %) ; tau 0.60 avec l'ordre par J (deux paires inversees).
+  Classement sur S4, inchange : PSO-PID 16.54 > PINN-PID 17.64 > ELM-PID
+  18.87 > Fuzzy-PID 22.38 > Ziegler-Nichols 23.61 ; ecart minimal 5.5 % ;
+  stable avec L ou C a +-0.1 % ; tau 0.80.
+
+A trancher par Jean-Riche (non tranche ici)
+  La regle designe S8a. S4 reste admissible (il passe C1 et C2) et est
+  plus proche de l'ordre par J (une paire inversee au lieu de deux), mais
+  la regle departage par C3 et non par C2. S8a passe C1 de peu (5.8 % pour
+  un seuil de 5 %). Garder S4 au motif qu'il etait deja dans le plan
+  serait un choix fait apres avoir vu les resultats : s'il est garde, il
+  faut l'ecrire comme tel.
+
+Comparaison des deux versions de l'ELM-PID pour le chapitre 4
+(elm_incremental_contre_B.py ; essais fixes avant le calcul, commit 1d16b45)
+  J : incrementale 0.728 (0.747 apres 30 ms, 0.664 au demarrage) ;
+  B 0.746 (0.680 ; 0.967).
+  S4 (comparaison) : 19.57 contre 18.87 mV.s, soit 3.6 % en faveur de B ;
+  evenement a 50 ms 6.41 contre 5.36, a 70 ms 6.00 contre 6.20, a 100 ms
+  3.49 contre 3.46, a 120 ms 3.49 contre 3.67. Sur S4 seul, l'avantage de B
+  est faible et pas uniforme d'un evenement a l'autre.
+  S2 (mecanisme, saut de consigne) : 5.61 contre 2.41 mV.s ; ecart maximal
+  5.34 contre 2.01 V. Avec la loi incrementale, la tension part d'abord
+  dans le mauvais sens (96.7 V pour une consigne qui monte a 102 V) :
+  l'a-coup de derivee est tronque a la montee par la saturation, pas a la
+  descente.
+  S1 (mecanisme, demarrage) : 81.1 contre 93.7 mV.s de 0 a 30 ms ;
+  depassement 2.4 % contre 14.0 %. C'est le prix de B.
+  Lecture : le choix de B se justifie par le comportement apres 30 ms sur
+  l'ensemble des essais (0.680 contre 0.747), par S2, et par la
+  comparaison a loi egale avec les autres methodes. S4 seul ne suffit pas
+  a le justifier ; le memoire doit le dire.

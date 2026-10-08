@@ -4,7 +4,7 @@
   "Ziegler-Nichols": 1.0,
   "PSO-PID": 0.7141282130005576,
   "Fuzzy-PID": 0.8767986720234339,
-  "ELM-PID": 0.7281874601535949,
+  "ELM-PID": 0.7462728259497472,
   "PINN-PID": 0.6841585883586545
  },
  "ordre_J": [
@@ -17,9 +17,9 @@
  "essais": {
   "S1": {
    "ordre": [
+    "ELM-PID",
     "PINN-PID",
     "Ziegler-Nichols",
-    "ELM-PID",
     "PSO-PID",
     "Fuzzy-PID"
    ],
@@ -27,7 +27,7 @@
     "Ziegler-Nichols": 1.4908775046297125,
     "PSO-PID": 1.4909869184258573,
     "Fuzzy-PID": 1.4939933304342057,
-    "ELM-PID": 1.4909095568305946,
+    "ELM-PID": 1.490688267800831,
     "PINN-PID": 1.4906955550061693
    },
    "revenus": {
@@ -37,24 +37,24 @@
     "ELM-PID": true,
     "PINN-PID": true
    },
-   "C1_ecart_min": 2.1498882894599447e-05,
+   "C1_ecart_min": 4.888483726483983e-06,
    "C2_tau": 0.2,
    "C2_paires_inversees": 4,
-   "C3_separation": 0.0008402654267701759
+   "C3_separation": 0.0008560164196473406
   },
   "S2": {
    "ordre": [
     "PSO-PID",
+    "ELM-PID",
     "Fuzzy-PID",
     "Ziegler-Nichols",
-    "PINN-PID",
-    "ELM-PID"
+    "PINN-PID"
    ],
    "IAE_mVs": {
     "Ziegler-Nichols": 2.8414567097184946,
     "PSO-PID": 2.0416351005727607,
     "Fuzzy-PID": 2.4325247323146195,
-    "ELM-PID": 5.614042017644115,
+    "ELM-PID": 2.4061738124407044,
     "PINN-PID": 4.695478852409689
    },
    "revenus": {
@@ -64,10 +64,10 @@
     "ELM-PID": true,
     "PINN-PID": true
    },
-   "C1_ecart_min": 0.16811010057635212,
-   "C2_tau": 0.0,
-   "C2_paires_inversees": 5,
-   "C3_separation": 0.3878568834818957
+   "C1_ecart_min": 0.010951378382422883,
+   "C2_tau": 0.2,
+   "C2_paires_inversees": 4,
+   "C3_separation": 0.28595775352248565
   },
   "S3": {
    "ordre": [
@@ -81,7 +81,7 @@
     "Ziegler-Nichols": 8.665347394998436,
     "PSO-PID": 5.462614108329642,
     "Fuzzy-PID": 7.9413046307074655,
-    "ELM-PID": 7.78875803496474,
+    "ELM-PID": 6.4057300380839814,
     "PINN-PID": 6.2475332499122525
    },
    "revenus": {
@@ -91,10 +91,10 @@
     "ELM-PID": true,
     "PINN-PID": true
    },
-   "C1_ecart_min": 0.01958548398318749,
+   "C1_ecart_min": 0.025321479989554252,
    "C2_tau": 0.8,
    "C2_paires_inversees": 1,
-   "C3_separation": 0.17079952090027026
+   "C3_separation": 0.16811273694341156
   },
   "S4": {
    "ordre": [
@@ -108,7 +108,7 @@
     "Ziegler-Nichols": 23.614080609315362,
     "PSO-PID": 16.544520963512806,
     "Fuzzy-PID": 22.37871959492496,
-    "ELM-PID": 19.567734300212866,
+    "ELM-PID": 18.874984274422463,
     "PINN-PID": 17.640421805052775
    },
    "revenus": {
@@ -121,12 +121,12 @@
    "C1_ecart_min": 0.05520248864776689,
    "C2_tau": 0.8,
    "C2_paires_inversees": 1,
-   "C3_separation": 0.1354625029853916
+   "C3_separation": 0.13676287383027827
   },
   "S5": {
    "ordre": [
-    "PSO-PID",
     "ELM-PID",
+    "PSO-PID",
     "PINN-PID",
     "Ziegler-Nichols",
     "Fuzzy-PID"
@@ -135,7 +135,7 @@
     "Ziegler-Nichols": 3.8703883036315845,
     "PSO-PID": 2.464026220021012,
     "Fuzzy-PID": 4.053451549602561,
-    "ELM-PID": 2.972890294297189,
+    "ELM-PID": 2.4611744657646275,
     "PINN-PID": 3.050590798230637
    },
    "revenus": {
@@ -145,16 +145,16 @@
     "ELM-PID": true,
     "PINN-PID": true
    },
-   "C1_ecart_min": 0.026136350904874872,
-   "C2_tau": 0.4,
-   "C2_paires_inversees": 3,
-   "C3_separation": 0.18313838357315526
+   "C1_ecart_min": 0.0011586965069128041,
+   "C2_tau": 0.2,
+   "C2_paires_inversees": 4,
+   "C3_separation": 0.21324515298539357
   },
   "S6": {
    "ordre": [
     "PSO-PID",
-    "PINN-PID",
     "ELM-PID",
+    "PINN-PID",
     "Ziegler-Nichols",
     "Fuzzy-PID"
    ],
@@ -162,7 +162,7 @@
     "Ziegler-Nichols": 1.6465148287117457,
     "PSO-PID": 1.5537873758558471,
     "Fuzzy-PID": 1.7148487510533617,
-    "ELM-PID": 1.6412568917750898,
+    "ELM-PID": 1.6013901607909302,
     "PINN-PID": 1.6284561883476028
    },
    "revenus": {
@@ -172,24 +172,24 @@
     "ELM-PID": true,
     "PINN-PID": true
    },
-   "C1_ecart_min": 0.003203603873961125,
-   "C2_tau": 0.6,
-   "C2_paires_inversees": 2,
-   "C3_separation": 0.03145347054365943
+   "C1_ecart_min": 0.01108942352478448,
+   "C2_tau": 0.4,
+   "C2_paires_inversees": 3,
+   "C3_separation": 0.03248857146053056
   },
   "S7a": {
    "ordre": [
+    "ELM-PID",
     "PINN-PID",
     "PSO-PID",
     "Ziegler-Nichols",
-    "ELM-PID",
     "Fuzzy-PID"
    ],
    "IAE_mVs": {
     "Ziegler-Nichols": 4.1606437162296634,
     "PSO-PID": 4.025068736803014,
     "Fuzzy-PID": 4.720829684889813,
-    "ELM-PID": 4.398563990131438,
+    "ELM-PID": 3.7641040694539347,
     "PINN-PID": 3.786756863126217
    },
    "revenus": {
@@ -199,16 +199,16 @@
     "ELM-PID": true,
     "PINN-PID": true
    },
-   "C1_ecart_min": 0.033682649487951855,
-   "C2_tau": 0.6,
-   "C2_paires_inversees": 2,
-   "C3_separation": 0.07538465343226206
+   "C1_ecart_min": 0.006018110353566586,
+   "C2_tau": 0.4,
+   "C2_paires_inversees": 3,
+   "C3_separation": 0.08234730343375996
   },
   "S7b": {
    "ordre": [
     "PINN-PID",
-    "Ziegler-Nichols",
     "ELM-PID",
+    "Ziegler-Nichols",
     "PSO-PID",
     "Fuzzy-PID"
    ],
@@ -216,7 +216,7 @@
     "Ziegler-Nichols": 2.9253525305630745,
     "PSO-PID": 3.1387893786362824,
     "Fuzzy-PID": 3.7137502487207783,
-    "ELM-PID": 3.030448330973875,
+    "ELM-PID": 2.65767745781312,
     "PINN-PID": 2.5990099243523996
    },
    "revenus": {
@@ -226,16 +226,16 @@
     "ELM-PID": true,
     "PINN-PID": true
    },
-   "C1_ecart_min": 0.03575083150406022,
-   "C2_tau": 0.2,
-   "C2_paires_inversees": 4,
-   "C3_separation": 0.11568797723061335
+   "C1_ecart_min": 0.022573031719122394,
+   "C2_tau": 0.4,
+   "C2_paires_inversees": 3,
+   "C3_separation": 0.12907727290802762
   },
   "S8a": {
    "ordre": [
     "PSO-PID",
-    "PINN-PID",
     "ELM-PID",
+    "PINN-PID",
     "Fuzzy-PID",
     "Ziegler-Nichols"
    ],
@@ -243,7 +243,7 @@
     "Ziegler-Nichols": 12.071919968078197,
     "PSO-PID": 2.4576071930509333,
     "Fuzzy-PID": 4.12122362677574,
-    "ELM-PID": 3.237232725752159,
+    "ELM-PID": 2.964964205793134,
     "PINN-PID": 3.1380018526140927
    },
    "revenus": {
@@ -253,16 +253,16 @@
     "ELM-PID": true,
     "PINN-PID": true
    },
-   "C1_ecart_min": 0.03162231184006559,
-   "C2_tau": 0.8,
-   "C2_paires_inversees": 1,
-   "C3_separation": 0.5575832340886545
+   "C1_ecart_min": 0.05836078779058007,
+   "C2_tau": 0.6,
+   "C2_paires_inversees": 2,
+   "C3_separation": 0.5665032460055026
   },
   "S8b": {
    "ordre": [
     "PSO-PID",
-    "PINN-PID",
     "ELM-PID",
+    "PINN-PID",
     "Fuzzy-PID",
     "Ziegler-Nichols"
    ],
@@ -270,7 +270,7 @@
     "Ziegler-Nichols": 77.18532053091205,
     "PSO-PID": 2.4576912382398985,
     "Fuzzy-PID": 4.253107713174352,
-    "ELM-PID": 3.3258708917547994,
+    "ELM-PID": 3.031015289491466,
     "PINN-PID": 3.180292064956441
    },
    "revenus": {
@@ -280,10 +280,10 @@
     "ELM-PID": true,
     "PINN-PID": true
    },
-   "C1_ecart_min": 0.045775301080831055,
-   "C2_tau": 0.8,
-   "C2_paires_inversees": 1,
-   "C3_separation": 1.2798128813196814
+   "C1_ecart_min": 0.04924975996740022,
+   "C2_tau": 0.6,
+   "C2_paires_inversees": 2,
+   "C3_separation": 1.289147142931544
   },
   "S9": {
    "ordre": [
@@ -297,7 +297,7 @@
     "Ziegler-Nichols": 531.7988998300216,
     "PSO-PID": 283.25360659584993,
     "Fuzzy-PID": 276.10861090962976,
-    "ELM-PID": 307.0112852977248,
+    "ELM-PID": 294.85850834734106,
     "PINN-PID": 317.1782420298714
    },
    "revenus": {
@@ -310,14 +310,14 @@
    "C1_ecart_min": 0.02587748228018416,
    "C2_tau": 0.0,
    "C2_paires_inversees": 5,
-   "C3_separation": 0.24056850911644176
+   "C3_separation": 0.24374486530074274
   }
  },
- "retenu": "S4",
+ "retenu": "S8a",
  "classement_retenu": [
   "PSO-PID",
-  "PINN-PID",
   "ELM-PID",
+  "PINN-PID",
   "Fuzzy-PID",
   "Ziegler-Nichols"
  ]
