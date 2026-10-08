@@ -116,6 +116,9 @@ Les copies de la base commune présentes dans chaque dossier sont identiques et 
 | 7 oct. | PINN : revenir à la version de départ (« Ok fais ça »). |
 | 7 oct. | Comparaison : choisir un seul scénario et classer les cinq méthodes. |
 | 8 oct. | Demande de rédiger cet état de reprise avant de trancher la suite. |
+| 8 oct. | **Option B adoptée** pour l'ELM-PID (même bloc PID que les autres méthodes). La version actuelle à loi incrémentale est conservée pour justifier ce choix au chapitre 4 (S4 ou autre scénario adapté). |
+| 8 oct. | Les chapitres du mémoire seront rédigés ensemble ; rédaction et conversation suivent les skills humanizer, remove-ai-marks et doc-to-markdown (voir `CLAUDE.md`). |
+| 8 oct. | PINN-PID : à reprendre plus tard en suivant entièrement l'article d'Ito et Wasa, après l'ELM. |
 
 ### 3.2 Décisions prises par Claude sans arbitrage explicite (Jean-Riche n'a pas objecté)
 
@@ -239,6 +242,24 @@ Adaptation de l'ELM sur S4 : les gains changent à 52.0, 52.5, 102.0 et 102.5 ms
 
 ---
 
+## 4bis. Lecture de la proposition de TFE et de l'article de Lu et al. (8 octobre)
+
+Points de l'article de référence (Lu et al. 2021) qui comptent pour la suite :
+
+- La sortie μ du PID de Lu n'est pas le rapport cyclique. Elle monte à 800 au démarrage et oscille autour de ±2 en régime (fig. 9), et c'est le bloc PWM qui borne. Notre loi de Lu bornait μ à [0.01 ; 0.99] à l'intérieur de la loi : c'est un écart à l'article, déjà présent dans la version d'octobre, qui n'avait pas été écrit comme tel.
+- Les gains partent de zéro chez Lu (Kp(0) = Ki(0) = Kd(0) = 0) et se stabilisent à 17.97, 10.96 et 1.65e-4. Nous partons des gains de Ziegler-Nichols.
+- La sensibilité de Lu (éq. 16) utilise les incréments du pas courant (xc1, xc2, xc3), pas des sommes sur une fenêtre.
+- Lu compare l'ELM-PID à une commande en boucle ouverte, jamais à un PID classique. Notre comparaison à Ziegler-Nichols et aux autres méthodes va plus loin que l'article.
+- **F1 est appliqué « au terminal de commande »**, c'est-à-dire sur le signal de commande, pas sur la consigne. En boucle ouverte, la tension monte vers 190 V (fig. 12), ce qu'une perturbation de consigne de 5.4 V ne peut pas produire. Notre essai S2 et le modèle `PID_Classique_Control_control_disturbance.slx` ajoutent F1 à la consigne : c'est probablement un écart à l'article, à trancher (S2 n'entre pas dans J).
+- Circuit de Lu : L = 50 µH, C = 40 µF ; base commune v2 : L = 10 mH, C = 47 µF (redimensionnement déjà décidé).
+
+Points de la proposition de TFE à revoir plus tard avec Jean-Riche :
+
+- Le résumé proposé pour l'article 2 annonce déjà le résultat (« l'ELM-PID offre le meilleur compromis… »). Il faudra l'écrire après les résultats.
+- La proposition annonce un Fuzzy-PID de type Mamdani ; la méthode retenue est l'ordonnancement flou de Zhao, Tomizuka et Isaka (1993).
+- Chapitre 3 : la proposition prévoit une discrétisation de Tustin, comme Lu ; le banc simule le circuit commuté exactement et les marges sont calculées avec un bloqueur d'ordre zéro. Le chapitre devra expliquer les deux.
+- Le titre du 4.1 (« Rappel sur le PID incrémental ») change avec l'option B.
+
 ## 5. Bugs rencontrés et corrections
 
 | Méthode / outil | Problème | Correction |
@@ -269,7 +290,7 @@ Adaptation de l'ELM sur S4 : les gains changent à 52.0, 52.5, 102.0 et 102.5 ms
 
 ## 6. Ce qui reste ouvert, dans l'ordre de traitement prévu
 
-1. **Trancher P1 (loi des méthodes adaptatives : A, B ou C).** C'est bloquant pour l'ELM, le PINN et la comparaison. Si B : critères et prévisions écrits avant calcul, nouvelle sensibilité de l'ELM, nouveau gradient du PINN, nouvelles tables d'admissibilité, blocs MATLAB, rejeux, revalidation Simulink des deux méthodes.
+1. **ELM-PID, option B (adoptée le 8 oct.).** Le premier point de cette liste. C'est bloquant pour l'ELM, le PINN et la comparaison. Si B : critères et prévisions écrits avant calcul, nouvelle sensibilité de l'ELM, nouveau gradient du PINN, nouvelles tables d'admissibilité, blocs MATLAB, rejeux, revalidation Simulink des deux méthodes.
 2. **PSO sous Simulink** (côté Jean-Riche, indépendant de P1) : `Construction_PSO_PID`, `verifier_pso_pid.py`, `Simuler_PSO_PID`, puis les trois scripts « Trois_Modeles ». Seule méthode dont aucun fichier n'a tourné sous MATLAB.
 3. **ELM, trois modèles sous Simulink** (côté Jean-Riche) : `Construction_ELM_PID_Trois_Modeles`, `verifier_modeles_elm_pid_trois.py`, `Simuler_ELM_PID_Trois_Modeles` (version 3 jamais lancée). À faire seulement si P1 ≠ B, sinon après la refonte.
 4. **Rafraîchir les copies et rappels périmés.** Copies `banc_elm_pid_resultats.json` dans `PSO_PID/` et `FUZZY_PID/`, rappels dans `LISEZMOI_PSO.txt` et dans les sorties console : ELM 0.784 → 0.728. À faire après P1, puisque l'ELM peut encore changer.
