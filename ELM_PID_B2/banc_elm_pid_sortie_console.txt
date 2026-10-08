@@ -1,0 +1,120 @@
+Dossier de travail : /home/user/TFE/ELM_PID_B2
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.2% admissibles ; jacobien constant des ablations 11.0687.
+Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
+
+==============================================================================
+ ETAPE 2 : les references
+==============================================================================
+  Meilleur PID fige sur grille : J = 0.738.
+
+==============================================================================
+ ETAPE 3 : ELM-PID B2, cadence par pas (le point de depart, gains figes, est le PID de Ziegler-Nichols)
+==============================================================================
+
+  ELM-PID B2 : J = 0.830 ; tous les evenements reviennent
+    S1   depassement  14.0 %, IAE    1.49 mV.s, efficace    10.0 mV, |dd| 0.0031 ; pas adaptes   550, gains changes sur   550 pas (dont     0 apres 30 ms), projections    0, finaux x(1.064, 0.986, 0.993)
+    S2   depassement  14.0 %, IAE    2.71 mV.s, efficace    76.7 mV, |dd| 0.0032 ; pas adaptes  1029, gains changes sur  1029 pas (dont   479 apres 30 ms), projections    0, finaux x(1.127, 0.982, 0.987)
+    S3   depassement  14.0 %, IAE    7.81 mV.s, efficace   343.6 mV, |dd| 0.0032 ; pas adaptes  1329, gains changes sur  1329 pas (dont   779 apres 30 ms), projections    0, finaux x(1.151, 0.975, 0.980)
+    S4   depassement  14.0 %, IAE   21.30 mV.s, efficace   826.5 mV, |dd| 0.0032 ; pas adaptes  2099, gains changes sur  2099 pas (dont  1548 apres 30 ms), projections    0, finaux x(1.233, 0.960, 0.969)
+    S5   depassement  14.0 %, IAE    3.54 mV.s, efficace    85.5 mV, |dd| 0.0031 ; pas adaptes  1423, gains changes sur  1423 pas (dont   873 apres 30 ms), projections    0, finaux x(1.145, 0.987, 0.995)
+    S6   depassement  14.0 %, IAE    1.64 mV.s, efficace    11.8 mV, |dd| 0.0031 ; pas adaptes   550, gains changes sur   550 pas (dont     0 apres 30 ms), projections    0, finaux x(1.064, 0.986, 0.993)
+    S7a  depassement  14.0 %, IAE    4.23 mV.s, efficace    30.4 mV, |dd| 0.0064 ; pas adaptes   569, gains changes sur   569 pas (dont    60 apres 30 ms), projections    0, finaux x(1.064, 0.986, 0.999)
+    S7b  depassement  14.0 %, IAE    2.84 mV.s, efficace    20.7 mV, |dd| 0.0046 ; pas adaptes   516, gains changes sur   516 pas (dont     0 apres 30 ms), projections    0, finaux x(1.059, 0.988, 0.993)
+    S8a  depassement  52.2 %, IAE    5.55 mV.s, efficace   108.5 mV, |dd| 0.0033 ; pas adaptes  3642, gains changes sur  3642 pas (dont  2054 apres 30 ms), projections    0, finaux x(1.356, 0.989, 1.004)
+    S8b  depassement  82.4 %, IAE    7.47 mV.s, efficace   122.4 mV, |dd| 0.0034 ; pas adaptes  5527, gains changes sur  5527 pas (dont  3043 apres 30 ms), projections    0, finaux x(1.510, 0.990, 1.013)
+    S9   depassement  14.0 %, IAE  319.96 mV.s, efficace  6284.1 mV, |dd| 0.0028 ; pas adaptes 13020, gains changes sur 13020 pas (dont 12472 apres 30 ms), projections    0, finaux x(1.444, 0.975, 0.995)
+
+  Controle : ELM-PID sans adaptation contre le PID de Ziegler-Nichols, onze essais, ecart maximal sur d : 0.0e+00.
+  S1 : x a 2, 5, 30, 50, 55, 70 ms et final : (1.004, 0.996, 1.001) ; (1.064, 0.986, 0.993) ; (1.064, 0.986, 0.993) ; (1.064, 0.986, 0.993) ; (1.064, 0.986, 0.993) ; (1.064, 0.986, 0.993) ; (1.064, 0.986, 0.993)
+  S2 : x a 2, 5, 30, 50, 55, 70 ms et final : (1.004, 0.996, 1.001) ; (1.064, 0.986, 0.993) ; (1.064, 0.986, 0.993) ; (1.064, 0.986, 0.993) ; (1.100, 0.985, 0.989) ; (1.100, 0.985, 0.989) ; (1.127, 0.982, 0.987)
+  S3 : x a 2, 5, 30, 50, 55, 70 ms et final : (1.004, 0.996, 1.001) ; (1.064, 0.986, 0.993) ; (1.064, 0.986, 0.993) ; (1.064, 0.986, 0.993) ; (1.109, 0.978, 0.986) ; (1.109, 0.978, 0.986) ; (1.151, 0.975, 0.980)
+  Controle : gains admissibles a tous les pas des onze essais : oui.
+
+==============================================================================
+ ETAPE 4 : ce que chaque piece apporte (ablations, jamais choisies)
+==============================================================================
+
+  variante                             J  non revenus   S1 dem     S2     S3     S5     S8b       S9
+  (IAE en mV.s : demarrage pour S1 dem, de 30 ms a la fin pour les autres)
+  ELM-PID B2                       0.830  -              93.63   2.71   7.81   3.54    7.47   319.96
+  Cadence par fenetre (option B)   0.746  -              93.72   2.41   6.41   2.46    3.03   294.86
+  Sans zone morte par pas          0.798  -              93.63   2.60   7.37   3.34    4.34   294.69
+  Zone morte R2 d'origine          0.825  -              93.63   2.69   7.71   3.49    5.92   303.49
+  Jacobien constant                0.828  -              93.62   2.71   7.77   3.54    7.66   319.19
+
+  Controle : la cadence par fenetre doit redonner l'option B publiee (J = 0.746) : J = 0.7463 (oui).
+
+==============================================================================
+ ETAPE 4b : sensibilite (L ou C a +-0.1 %)
+==============================================================================
+  nominal      J = 0.830 ; gains changes sur 30254 pas ; tous revenus
+  L - 0.1 %    J = 0.829 ; gains changes sur 30363 pas ; tous revenus
+  L + 0.1 %    J = 0.830 ; gains changes sur 30488 pas ; tous revenus
+  C - 0.1 %    J = 0.822 ; gains changes sur 30595 pas ; tous revenus
+  C + 0.1 %    J = 0.829 ; gains changes sur 31015 pas ; tous revenus
+
+==============================================================================
+ ETAPE 5 : ELM-PID B2 face aux references, previsions H1 a H6 de criteres_elm_pid.txt
+==============================================================================
+                                   Ziegler-Nichols   meilleur PID fige           ELM-PID B          ELM-PID B2
+  cout J                                     1.000               0.738               0.746               0.830
+  evenements non revenus                    S8b,S9                   -                   -                   -
+  S1 IAE dem. mV.s                           93.77               88.36               93.72               93.63
+  S1 depassement %                            14.0                 8.8                14.0                14.0
+  S1 IAE mV.s                                 1.49                1.49                1.49                1.49
+  S1 ecart efficace mV                        10.0                10.0                10.0                10.0
+  S1 iL crete dem. A                          24.1                23.2                24.1                24.1
+  S2 IAE dem. mV.s                           93.77               88.36               93.72               93.63
+  S2 IAE mV.s                                 2.84                2.15                2.41                2.71
+  S2 ecart maximal V                          2.01                2.01                2.01                2.01
+  S2 ecart efficace mV                        79.5                60.5                68.5                76.7
+  S3 IAE dem. mV.s                           93.77               88.36               93.72               93.63
+  S3 IAE mV.s                                 8.67                5.93                6.41                7.81
+  S3 ecart maximal V                          5.73                5.52                5.66                5.73
+  S3 ecart efficace mV                       359.4               302.2               316.7               343.6
+  S4 IAE dem. mV.s                           93.77               88.36               93.72               93.63
+  S4 IAE mV.s                                23.61               17.67               18.87               21.30
+  S4 ecart efficace mV                       845.8               787.7               807.9               826.5
+  S5 IAE dem. mV.s                           93.77               88.36               93.72               93.63
+  S5 IAE mV.s                                 3.87                2.49                2.46                3.54
+  S5 ecart efficace mV                        91.3                47.6                53.2                85.5
+  S6 IAE dem. mV.s                           93.77               88.36               93.72               93.63
+  S6 IAE mV.s                                 1.65                1.56                1.60                1.64
+  S6 ecart efficace mV                        11.9                10.5                11.2                11.8
+  S7a IAE dem. mV.s                          94.05               88.91               94.00               93.97
+  S7a IAE mV.s                                4.16                4.66                3.76                4.23
+  S7a ecart efficace mV                       29.7                33.6                26.5                30.4
+  S7b IAE dem. mV.s                          93.98               88.68               93.89               93.83
+  S7b IAE mV.s                                2.93                3.50                2.66                2.84
+  S7b ecart efficace mV                       21.3                25.7                19.4                20.7
+  S8a IAE dem. mV.s                         112.56               88.63              108.36              110.24
+  S8a depassement %                           52.2                41.6                52.2                52.2
+  S8a IAE mV.s                               12.07                2.46                2.96                5.55
+  S8a ecart efficace mV                      173.6                49.2                59.7               108.5
+  S8b IAE dem. mV.s                         216.89              165.23              203.87              207.56
+  S8b depassement %                           82.4                70.3                82.4                82.4
+  S8b IAE mV.s                               77.19                2.46                3.03                7.47
+  S8b ecart efficace mV                      854.6                49.5                52.2               122.4
+  S8b iL crete dem. A                         12.0                11.4                12.0                12.0
+  S9 IAE dem. mV.s                           93.76               88.36               93.71               93.63
+  S9 IAE mV.s                               531.80              278.25              294.86              319.96
+  S9 ecart efficace mV                      6394.1              6245.4              6294.1              6284.1
+  Decomposition de J (apres 30 ms ; demarrage) : Ziegler-Nichols 1.000 / 1.000 ; meilleur PID fige 0.710 / 0.831 ; ELM-PID B 0.680 / 0.967 ; ELM-PID B2 0.786 / 0.978
+  H1 enonce vrai ; prevu vrai -> prevision juste : S2 : 275 pas changes entre 50 et 55 ms, max |x(55 ms) - x(50 ms)| = 0.0361 ; S3 : 398 pas changes entre 50 et 55 ms, max |x(55 ms) - x(50 ms)| = 0.0452
+  H2 enonce vrai ; prevu vrai -> prevision juste : S1 dem 93.63 contre 93.77 mV.s ; S2 2.71 contre 2.84 mV.s ; S3 7.81 contre 8.67 mV.s ; S1 a S3 reviennent
+  H3 enonce FAUX ; prevu faux -> prevision juste : S1 dem B2 93.63 contre B 93.72 mV.s ; S2 B2 2.71 contre B 2.41 mV.s ; S3 B2 7.81 contre B 6.41 mV.s
+  H4 enonce vrai ; prevu vrai -> prevision juste : S7a : variation max apres 30 ms 0.0063, pas changes apres 30 ms 60 sur 37401 ; S7b : variation max apres 30 ms 0.0000, pas changes apres 30 ms 0 sur 37401
+  H5a enonce vrai ; prevu vrai -> prevision juste : J = 0.830 (fourchette 0.81 a 0.93)
+  H5b enonce vrai ; prevu vrai -> prevision juste : apres 30 ms 0.786 (0.77 a 0.89), demarrage 0.978 (0.97 a 1.00)
+  H5c enonce FAUX ; prevu vrai -> prevision FAUSSE : non revenus : aucun
+  H6 enonce vrai ; prevu vrai -> prevision juste : J de 0.822 a 0.830 (nominal 0.830)
+
+==============================================================================
+ ETAPE 6 : fichiers
+==============================================================================
+  predictions_banc_elm_pid.json ecrit.
+  elm_pid_reglages.mat ecrit (cadence par pas : a porter dans elm_pid_adaptatif.m).
+  reference_rejeu_elm_pid.mat ecrit (S1, S3, S7b, S8b, S9).
+  banc_elm_pid_resultats.json ecrit.
+  banc_elm_pid.png ecrit. Duree totale : 104 s.

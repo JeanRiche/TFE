@@ -515,8 +515,120 @@ d'oubli, le critere d'admissibilite, la projection M2-M3, le depart.
 
 8. RESULTATS
 ------------
-  A ajouter apres le calcul (python banc_elm_pid.py), sans changer les
-  sections 1 a 7.
+  Calcul du 8 octobre 2026 : python banc_elm_pid.py, une seule execution,
+  sans erreur, 104 s (banc_elm_pid_sortie_console.txt,
+  banc_elm_pid_resultats.json, banc_elm_pid.png). Les sections 1 a 7 et
+  les reglages n'ont pas change. Controle sans adaptation : ecart 0 a
+  Ziegler-Nichols sur d, onze essais. Gains admissibles a tous les pas ;
+  aucune projection sur les onze essais.
+
+  Controle de la cadence par fenetre : J = 0.7463 (attendu 0.7463 a
+  0.0005 pres) ; S1 93.72, S2 2.41, S3 6.41 : l'option B publiee est
+  retrouvee. Le banc n'a pas change.
+
+  Cout J et decomposition (apres 30 ms ; demarrage)
+                            J      apres 30 ms   demarrage   non revenus
+    Ziegler-Nichols       1.000      1.000        1.000      S8b, S9
+    meilleur PID fige     0.738      0.710        0.831      aucun
+    ELM-PID B (memoire)   0.746      0.680        0.967      aucun
+    ELM-PID B2            0.830      0.786        0.978      aucun
+
+  IAE (mV.s) ; demarrage pour S1, S7a, S7b, S8a, S8b ; de 30 ms a la fin
+  pour S2 a S9
+                    Ziegler-Nichols  PID fige      B        B2
+    S1  demarrage        93.77        88.36      93.72    93.63
+    S7a demarrage        94.05        88.91      94.00    93.97
+    S7b demarrage        93.98        88.68      93.89    93.83
+    S8a demarrage       112.56        88.63     108.36   110.24
+    S8b demarrage       216.89       165.23     203.87   207.56
+    S2                    2.84         2.15       2.41     2.71
+    S3                    8.67         5.93       6.41     7.81
+    S4                   23.61        17.67      18.87    21.30
+    S5                    3.87         2.49       2.46     3.54
+    S6                    1.65         1.56       1.60     1.64
+    S7a                   4.16         4.66       3.76     4.23
+    S7b                   2.93         3.50       2.66     2.84
+    S8a                  12.07         2.46       2.96     5.55
+    S8b                  77.19         2.46       3.03     7.47
+    S9                  531.80       278.25     294.86   319.96
+  Depassement au demarrage : celui de Ziegler-Nichols partout (14.0 % ;
+  S8a 52.2 % ; S8b 82.4 %). Apres 30 ms, B2 est moins bon que B sur les
+  dix essais et moins bon que Ziegler-Nichols sur S7a (4.23 contre 4.16).
+
+  Quand les gains changent (x a la resolution de 1 ms,
+  banc_elm_pid_resultats.json, x_toutes_les_ms)
+    - Demarrage : entre 1 et 5 ms (509 a 551 pas avant 30 ms) ;
+      x(5 ms) = (1.064, 0.986, 0.993) au point nominal, puis plus rien
+      jusqu'au premier evenement. S8a : 1 a 12 ms (max 0.199) ; S8b : 3 a
+      18 ms (max 0.312).
+    - F1 (S2) : 275 pas changes dans [50 ; 55) ms, concentres entre 50 et
+      52 ms ; x passe de (1.064, 0.986, 0.993) a (1.100, 0.985, 0.989),
+      max |x(55 ms) - x(50 ms)| = 0.0361. A 70 ms : 0.0271 entre 70 et
+      72 ms. Final (1.127, 0.982, 0.987).
+    - F2 (S3) : 398 pas changes dans [50 ; 55) ms, entre 50 et 53 ms ;
+      x(55 ms) = (1.109, 0.978, 0.986), variation 0.0452. A 70 ms : 0.0413
+      entre 70 et 73 ms. Final (1.151, 0.975, 0.980).
+    - S4, S5, S8a, S8b : changements dans les 2 a 11 ms qui suivent chaque
+      evenement (0.013 a 0.097). S6 : rien apres 5 ms (les evenements
+      restent sous la zone morte de 126 mV). S9 : changements a 50, 90 a
+      100, 120 a 130, 154 a 162, 210 a 237, 270 a 296, 330 a 334 et
+      370 ms (max 0.134 entre 270 et 296 ms).
+    - Pas ou les gains changent, onze essais : 30 254 ; S1 et S6 : 550,
+      tous avant 30 ms ; S9 : 13 020.
+    - Gains finaux : x_P de 1.06 (S1, S6) a 1.51 (S8b) ; x_I de 0.960 a
+      0.990 ; x_D de 0.969 a 1.013.
+
+  Retour dans +-1 V : tous les evenements des onze essais reviennent avec
+  B2, y compris S8b et S9 (Ziegler-Nichols : S8b et S9 ne reviennent pas).
+
+  Ablations (rapportees, non choisies)
+                                     J      S1 dem  S2    S3    S5    S8b    S9
+    ELM-PID B2                     0.830   93.63  2.71  7.81  3.54  7.47  319.96
+    Cadence par fenetre (B)        0.746   93.72  2.41  6.41  2.46  3.03  294.86
+    Sans zone morte par pas        0.798   93.63  2.60  7.37  3.34  4.34  294.69
+    Zone morte R2 d'origine        0.825   93.63  2.69  7.71  3.49  5.92  303.49
+    Jacobien constant (11.0687)    0.828   93.62  2.71  7.77  3.54  7.66  319.19
+  Tous les evenements reviennent dans chaque variante. "Sans zone morte"
+  et "R2 d'origine" ont un J plus bas que B2 ; elles restent ecartees
+  (derive sur E4, section 6, regle de la section 9). Le jacobien de l'ELM
+  n'apporte presque rien face au jacobien constant (0.830 contre 0.828).
+
+  Sensibilite (L ou C a +-0.1 %) : J = 0.829 (L - 0.1 %), 0.830
+  (L + 0.1 %), 0.822 (C - 0.1 %), 0.829 (C + 0.1 %), nominal 0.830 ; tous
+  les evenements reviennent ; 30 363 a 31 015 pas changes.
+
+  Previsions
+    H1  juste. S2 : 275 pas changes dans [50 ; 55) ms, variation 0.0361 ;
+        S3 : 398 pas, 0.0452 (seuil 0.005 ; attendu 0.02 a 0.10).
+    H2  juste. S1 demarrage 93.63 < 93.77 ; S2 2.71 < 2.84 ; S3 7.81 <
+        8.67 ; S1 a S3 reviennent. Les trois valeurs tombent dans les
+        fourchettes prevues (93.55 a 93.77 ; 2.45 a 2.80 ; 7.1 a 8.3).
+        L'ecart au demarrage est de 0.15 %.
+    H3  enonce faux, comme prevu : prevision juste. B2 fait mieux que B au
+        demarrage de S1 (93.63 contre 93.72) mais moins bien sur S2 (2.71
+        contre 2.41) et S3 (7.81 contre 6.41).
+    H4  juste. S7a : max |x(t) - x(30 ms)| = 0.0063, 60 pas changes sur
+        37 401 apres 30 ms (0.16 %) ; S7b : 0, aucun pas.
+    H5a juste. J = 0.830 (fourchette 0.81 a 0.93, attendu 0.87).
+    H5b juste. Apres 30 ms 0.786 (0.77 a 0.89) ; demarrage 0.978 (0.97 a
+        1.00).
+    H5c FAUSSE. Prevu : S8b ou S9 ne revient pas. Resultat : tous les
+        evenements de S8b et S9 reviennent dans +-1 V.
+    H6  juste. J de 0.822 a 0.830, a 0.009 au plus du nominal (seuil
+        0.02).
+    Controle cadence par fenetre : 0.7463, conforme.
+
+  Application de la regle de conclusion (section 9) : H2 est vraie ; H3
+  est fausse, comme prevu, donc B2 ne remplace pas B d'office. B2
+  (J = 0.830) est moins bon que B (0.746) et que le meilleur PID fige
+  (0.738). Il adapte pendant F1 et F2, de 0.036 a 0.045 sur les gains
+  relatifs, et fait revenir S8b et S9. Le choix entre B et B2 revient a
+  Jean-Riche.
+
+  Bloc Simulink : le banc a reecrit elm_pid_reglages.mat en version 5
+  (cadence par pas). elm_pid_adaptatif.m n'accepte que la version 4 et
+  s'arrete avec un message d'erreur tant qu'il n'est pas porte a la
+  cadence par pas (section 9, dernier point).
 
 
 9. REGLE DE CONCLUSION (ecrite avant le calcul)
