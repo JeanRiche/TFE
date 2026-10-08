@@ -1,0 +1,203 @@
+SCENARIO S10 : CHANGEMENT DURABLE DU POINT DE FONCTIONNEMENT
+Criteres et previsions ecrits le 8 octobre 2026, AVANT tout calcul sur S10
+=============================================================================
+
+Origine
+  Scenario defini par Jean-Riche et son encadrant le 8 octobre 2026. Il a
+  ete ajoute APRES les onze essais du banc commun (S1 a S9), apres le
+  calcul des couts J et apres les classements par essai de
+  criteres_comparaison.txt. Ce n'est pas un essai de jugement d'origine :
+  il faudra l'ecrire ainsi dans le memoire. Aucune methode n'est modifiee
+  ni reglee pour lui ; les cinq methodes sont prises telles qu'elles sont
+  gelees dans leurs dossiers (PSO_PID, FUZZY_PID, ELM_PID option B,
+  PINN_PID version finale, Ziegler-Nichols du banc commun).
+
+Pourquoi ce scenario
+  Les onze essais perturbent le convertisseur puis le ramenent presque
+  toujours au point nominal (5 ohms, 200 V) : une methode adaptative n'y a
+  rien a retenir, et un PID fixe bien regle autour du nominal la bat
+  (PSO-PID premier sur J). Or une adaptation sert a suivre un changement
+  qui DURE. S10 change le point de fonctionnement pour de bon :
+    - Vin passe de 200 a 160 V (-20 %) : le gain statique du convertisseur
+      (dVout/dd = Vin) baisse de 20 %, le rapport cyclique de regime passe
+      de 0.50 a 0.625 ;
+    - la charge passe de 5 a 25 ohms : charge legere, le circuit LC est
+      beaucoup moins amorti par la resistance (amortissement apporte par
+      la charge, sqrt(L/C)/(2R) : 1.46 a 5 ohms, 0.29 a 25 ohms).
+  On laisse 50 ms aux methodes pour se reajuster, puis on mesure le rejet
+  d'echelons de charge AU NOUVEAU POINT. C'est la que l'adaptation doit
+  montrer ce qu'elle apporte, ou montrer qu'elle n'apporte rien.
+
+Definition (fixee, ne pas changer)
+  Construction comme essai_mise_au_point de ELM_PID/mise_au_point_elm_pid.py :
+  R0 = 5 ohms, gx = conductance ajoutee a 1/R0, paliers sur la grille
+  t = k Tc (Tc = 1/220000 s), duree 0.200 s, sans bruit, q = 1e-9 V
+  (comme les essais sans CAN), dvref = 0.
+    0 a 50 ms     : demarrage et regime nominal, R = 5 ohms, Vin = 200 V
+                    (identique a S1 sur cet intervalle).
+    50 ms a la fin: Vin = 160 V ; charge 25 ohms (gx = 1/25 - 1/5).
+    50 a 100 ms   : reajustement, non mesure dans le classement.
+    echelons de 15 ms autour de 25 ohms :
+      [100 ; 115) ms -> 20 ohms (gx = 1/20 - 1/5)
+      [130 ; 145) ms -> 30 ohms (gx = 1/30 - 1/5)
+      [160 ; 175) ms -> 20 ohms
+      retour a 25 ohms apres chacun.
+  evenements = [0.05, 0.10, 0.115, 0.13, 0.145, 0.16, 0.175].
+  Echelons de courant de charge (a 100 V) : +1 A, -1 A, -0.667 A,
+  +0.667 A, +1 A, -1 A (somme des valeurs absolues 5.33 A).
+
+Grandeurs
+  Classement : IAE de 100 ms a la fin (e = consigne - Vout vraie, aux
+  instants k Tc, k >= 22000), en mV.s.
+  Publiees a cote, sans changer l'ordre :
+    - IAE par echelon (fenetre de chaque evenement de 100 ms a la fin,
+      jusqu'a l'evenement suivant ; la derniere va de 175 a 200 ms) ;
+    - ecart maximal de 100 ms a la fin et par echelon ;
+    - retours dans +-1 V (definition du banc commun : temps de retour,
+      "revenu" si l'ecart reste sous 1 V sur les 10 dernieres ms de la
+      fenetre) ;
+    - IAE de 50 a 100 ms (reajustement, hors classement) et ecart maximal
+      au changement de 50 ms.
+
+Methodes classees
+  Les QUATRE methodes PSO-PID, Fuzzy-PID, ELM-PID, PINN-PID.
+  Ziegler-Nichols est calcule comme reference de normalisation (IAE / IAE
+  de Ziegler-Nichols publie pour chaque methode), hors classement.
+
+Regle de clarte
+  Les quatre IAE sont rangees par ordre croissant. Deux voisines dont l'IAE
+  differe de moins de 5 % (b/a - 1 < 0.05) sont declarees A EGALITE ("=").
+  Un ordre n'est affirme qu'entre methodes separees d'au moins 5 %.
+
+Contribution de l'adaptation (ELM-PID et PINN-PID)
+  Variante "gains figes a 50 ms" : meme simulation, adaptation coupee a
+  partir de k = 11000 (t = 50 ms). Coupure par le drapeau existant de
+  chaque classe, sans rien changer d'autre : attribut adapt.adapter de
+  ELMPID (AdaptateurELM, utilise par l'option B pour bloquer le pas de
+  gradient sur les gains ; l'apprentissage OS-ELM continue mais ne sert
+  qu'au calcul des gains) et attribut adapt.adapter de PINNPID
+  (AdaptateurPINN : l'observateur continue, l'optimisation des gains ne
+  tourne plus). Un enrobage minimal passe le drapeau a False juste avant
+  l'appel du pas k = 11000. Controle : la coupure a t = 200 ms
+  (k = 44000) doit redonner EXACTEMENT la version adaptative (Vout, d et
+  gains identiques bit a bit), et avec la coupure a 50 ms les gains
+  doivent rester constants de k = 11000 a la fin, la simulation etant
+  identique a la version adaptative avant k = 11000.
+  Gain de l'adaptation = 1 - IAE(adaptatif) / IAE(fige a 50 ms), sur
+  l'IAE de 100 ms a la fin. Meme regle de clarte : sous 5 % d'ecart,
+  "adaptation sans effet mesurable".
+
+Robustesse
+  Classement recalcule avec L a +-0.1 % puis C a +-0.1 % (le circuit seul
+  change, le regulateur et son modele non), comme simulations_scenario.py.
+  Le classement est dit robuste si aucune paire separee d'au moins 5 % au
+  nominal ne change d'ordre dans les quatre variantes.
+
+Controle d'identite
+  S10 n'est aucun des onze essais : ses signaux (R0, Vin, gx, dvref,
+  evenements) sont compares a ceux de S1 a S9 ; le script s'arrete s'ils
+  coincident. A noter des maintenant : le point de fonctionnement
+  25 ohms / 160 V est visite par S8a entre 50 et 70 ms (echelon de Vin a
+  charge legere). Les essais de reglage du PSO-PID et de mise au point de
+  l'ELM-PID et du PINN-PID (E1 a E4 : 7 ohms / 190 V, 15 ohms / 175 a
+  235 V, 60 ohms / 220 V, 9 ohms / 200 V) n'ont aucun echelon de charge a
+  25 ohms sous 160 V. Les donnees d'entrainement de l'ELM et du PINN ne
+  sont pas examinees ici. Aucun reglage n'est fait sur S10.
+
+
+PREVISIONS (ecrites sans aucune simulation de S10, meme partielle)
+=============================================================================
+
+Sur quoi elles s'appuient (resultats deja publies, banc commun v2.1)
+  a. Rejet d'echelons de charge a 5 ohms / 200 V (S3, 3.08 A deux fois) :
+     IAE de 30 ms a la fin, moins l'ondulation de S1 (1.49 mV.s), par
+     ampere d'echelon : ZN 1.17, PSO 0.65, Fuzzy 1.05, ELM 0.80,
+     PINN 0.80 mV.s/A. L'ecart maximal est le meme pour toutes les
+     methodes (5.52 V au premier echelon) : il est fixe par le
+     condensateur avant que le regulateur agisse.
+  b. Le point 25 ohms / 160 V dans S8a (fenetre de 50 a 70 ms, Vin
+     200 -> 160 V) contre le meme echelon a 5 ohms (S5) : IAE de la
+     fenetre, ondulation (0.175 mV.s) deduite. ZN 0.73 -> 5.05 (x 7 :
+     mode lent peu amorti, periode ~10 ms) ; PSO 0.25 -> 0.25 (x 1) ;
+     Fuzzy 0.78 -> 0.74 (x 0.95) ; ELM 0.38 -> 0.66 (x 1.75) ; PINN
+     0.46 -> 0.47 (x 1.0). Ordre a ce point : PSO 0.42 < PINN 0.64 <
+     ELM 0.83 < Fuzzy 0.91 << ZN 5.22.
+  c. Gains : le PSO-PID a un D 2.6 fois celui de ZN, le Fuzzy-PID au
+     repos ~2 fois ; l'ELM-PID garde D entre 1.15 et 1.5 fois ZN et
+     monte surtout P et I (x 2 a 3 apres quelques evenements, un
+     changement par evenement environ) ; le PINN-PID bouge par pas de
+     0.05 au plus par fenetre (Adam, 5 iterations), environ +0.05 a +0.1
+     par evenement sur P et D. A 50 ms, apres un demarrage a 5 ohms
+     (= S1), les multiplicateurs sont ELM (1.47, 1.06, 1.15) et
+     PINN (1.30, 0.90, 1.06).
+  d. Modele simple de prevision : IAE(100-200 ms) = ondulation +
+     somme des |echelons| x IAE par ampere. Ondulation a 160 V : celle de
+     S1 (8.8 mV moyen) x (1 - 0.625)/(1 - 0.5) = 6.6 mV, soit ~0.7 mV.s
+     sur 100 ms. IAE par ampere = (a) x 1.2 (gain de boucle -20 %) x
+     facteur de charge legere (b). Pour ZN le facteur 7 de (b) vient d'un
+     echelon de Vin ; un echelon de charge de 1 A excite sans doute moins
+     le mode lent, d'ou une prevision plus basse que le modele brut
+     (52 mV.s).
+
+Previsions chiffrees (IAE de 100 ms a la fin, mV.s). Une valeur est
+"juste" si le calcul tombe a moins d'un facteur 2 de la prevision.
+  P1  PSO-PID     4.5  (juste entre 2.3 et 9)
+  P2  PINN-PID    6.0  (3.0 a 12)
+  P3  ELM-PID     6.5  (3.3 a 13)
+  P4  Fuzzy-PID   8.0  (4.0 a 16)
+  P5  Ziegler-Nichols 25 (12 a 50), loin derriere les quatre : chacune
+      des quatre methodes classees a une IAE inferieure a 0.5 fois celle
+      de ZN.
+
+Classement prevu (les quatre methodes)
+  P6  PSO-PID premier, devant la deuxieme d'au moins 5 % (confiance
+      forte : premier sur S3, S4, S8a, et seul a ne pas se degrader a
+      25 ohms en (b)).
+  P7  ELM-PID et PINN-PID a egalite (moins de 5 % d'ecart), comme sur S3,
+      S4 et S8a. Fausse si l'une devance l'autre d'au moins 5 %.
+      (Risque declare : (b) met le PINN devant de 23 % a ce point ; mais
+      le PINN arrive a 50 ms avec des gains plus faibles que dans S8a.)
+  P8  Fuzzy-PID dernier des quatre, a plus de 5 % de la methode qui le
+      precede (S3 et (b) le placent dernier ; incertitude la plus grande
+      de ce classement, car son D eleve l'aide a charge legere).
+  Classement prevu : PSO-PID < PINN-PID = ELM-PID < Fuzzy-PID.
+
+Robustesse
+  P9  Classement robuste au sens defini plus haut (aucune paire separee
+      d'au moins 5 % ne s'inverse avec L ou C a +-0.1 %). L'ordre interne
+      de la paire ELM-PID / PINN-PID pourra changer (sans importance si
+      elle est a egalite).
+
+Contribution de l'adaptation (adaptatif contre fige a 50 ms)
+  P10 ELM-PID : l'adaptation aide nettement. Gain ~25 % (juste entre 12
+      et 50 %). Raison : fige, il reste a (1.47, 1.06, 1.15) fois ZN,
+      trop pres des gains de ZN qui sont mal amortis a ce point (b) ;
+      adaptatif, il monte P et I au changement de 50 ms puis a chaque
+      echelon.
+  P11 PINN-PID : l'adaptation aide, moins que pour l'ELM. Gain ~10 %
+      (juste entre 5 et 20 %), plus petit que celui de l'ELM-PID. Raison :
+      pas de 0.05 par fenetre, peu de fenetres actives (zone morte de
+      0.1 V efficace).
+  P12 Dans les deux cas, adaptatif meilleur que fige (le contraire
+      rendrait P10 ou P11 fausse).
+
+Retours dans +-1 V et ecarts
+  P13 Les six echelons font sortir Vout de +-1 V pour les quatre methodes
+      classees (ecart maximal ~2 V pour 1 A, ~1.3 V pour 0.667 A ; juste
+      si les echelons de 1 A depassent 1.2 V). L'ecart maximal d'un
+      meme echelon differe de moins de 15 % entre les quatre methodes
+      (fixe par le condensateur, comme sur S3 et S4).
+  P14 Les 6 x 5 = 30 fenetres reviennent dans +-1 V avant l'evenement
+      suivant, Ziegler-Nichols compris ; ZN a les temps de retour les plus
+      longs ; PSO-PID revient en moins de 1 ms a chaque echelon.
+  P15 Reajustement (50 a 100 ms, hors classement) : ecart maximal au
+      changement de 50 ms entre 20 et 80 V (chute de 16 A du courant de
+      charge, rapport cyclique en butee basse), a 10 % pres le meme pour
+      les cinq methodes ; ZN a la plus grande IAE de 50 a 100 ms.
+
+Ce que les previsions engagent
+  Si P6 a P8 sont fausses, l'ordre des onze essais ne se transpose pas au
+  point leger / Vin bas, et il faudra le dire. Si P10 ou P11 sont fausses
+  (adaptation sans effet ou nuisible), S10 montrera que l'adaptation de
+  ces deux methodes ne sert pas au cas pour lequel elle est faite, et il
+  faudra le publier tel quel.
