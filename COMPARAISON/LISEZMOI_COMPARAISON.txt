@@ -1,5 +1,5 @@
-COMPARAISON DES CINQ METHODES (7 octobre 2026)
-==============================================
+COMPARAISON DES CINQ METHODES (7 octobre 2026, mis a jour le 8 octobre)
+=======================================================================
 
 Ce dossier choisit, par une regle ecrite avant le calcul, le scenario de la
 comparaison du memoire, et classe les cinq methodes (Ziegler-Nichols,
@@ -7,35 +7,46 @@ PSO-PID, Fuzzy-PID, ELM-PID, PINN-PID) sur ce scenario.
 
 A LIRE : criteres_comparaison.txt (regle, resultats, lecture).
 
-RESULTAT
-  Scenario retenu : S4, charge +-20 % (5 -> 4 ohms a 50 ms, retour a 70 ms ;
-  5 -> 6 ohms a 100 ms, retour a 120 ms).
-  Classement (IAE de 30 ms a la fin) : 1. PSO-PID 16.5 mV.s ; 2. PINN-PID
-  17.6 ; 3. ELM-PID 19.6 ; 4. Fuzzy-PID 22.4 ; 5. Ziegler-Nichols 23.6.
-  Le meme dans les cinq variantes du circuit (L ou C a +-0.1 %).
+RESULTAT (versions finales, 8 octobre 2026 ; banc Python)
+  Cout J : PSO-PID 0.714 ; ELM-PID 0.746 ; PINN-PID 0.757 ; Fuzzy-PID
+  0.877 ; Ziegler-Nichols 1.000.
+  La regle, reappliquee sans changement, ne designe plus aucun scenario :
+  aucun essai ne separe les cinq methodes d'au moins 5 % entre voisins
+  (ELM-PID et PINN-PID sont a moins de 5 % presque partout). Scenarios du
+  corps fixes par Jean-Riche : S1, S2, S3, S8a (choix de l'auteur, a
+  ecrire comme tel). Classements et egalites : criteres_comparaison.txt,
+  derniere section.
 
 FICHIERS
-  criteres_comparaison.txt              regle (ecrite avant), resultats, lecture
+  criteres_comparaison.txt              regle (ecrite avant), resultats, lecture ; derniere
+                                        section : versions finales
   comparaison_methodes.py               tableau par essai, criteres, choix, classement
   comparaison_methodes_sortie_console.txt
   comparaison_resultats.json
   classement_par_essai.png              annexe : IAE / ZN et rang, essai par essai
-  simulations_scenario.py               S4 rejoue avec les cinq methodes (dans leurs
-                                        dossiers), robustesse, figure
-  simulations_scenario_sortie_console.txt, robustesse_scenario.json
-  comparaison_S4.png                    figure du memoire (Vout, iL, rapport cyclique)
-  scenario_retenu.npz                   signaux a pleine resolution (Tc)
-  banc_*_resultats.json                 copies des resultats de chaque methode
+  simulations_scenario.py               un essai rejoue avec les cinq methodes (dans leurs
+                                        dossiers), robustesse (L ou C a +-0.1 %), figure
+  simulations_scenario_sortie_console.txt (S4), simulations_scenario_S8a_sortie_console.txt
+  robustesse_S4.json, robustesse_S8a.json
+  comparaison_S4.png, comparaison_S8a.png   figures (Vout, iL, rapport cyclique)
+  scenario_S4.npz, scenario_S8a.npz     signaux a pleine resolution (Tc)
+  elm_incremental_contre_B.py (.json, .png, _sortie_console.txt)
+                                        les deux versions de l'ELM-PID (chapitre 4)
+  diagnostic_lois/                      diagnostics de la loi incrementale de Lu (lisent
+                                        ELM_PID_INCREMENTAL)
+  banc_*_resultats.json                 copies des resultats finaux de chaque methode
 
 COMMENT LANCER
   python comparaison_methodes.py        (quelques secondes ; ce dossier seul)
-  python simulations_scenario.py        (trois a cinq minutes ; il faut a cote les
-                                         dossiers PSO_PID, FUZZY_PID, ELM_PID, PINN_PID)
+  python simulations_scenario.py S4     (trois a cinq minutes ; il faut a cote les
+  python simulations_scenario.py S8a     dossiers PSO_PID, FUZZY_PID, ELM_PID, PINN_PID)
+  python elm_incremental_contre_B.py    (il faut a cote ELM_PID et ELM_PID_INCREMENTAL)
 
 DANS SIMULINK
-  S4 est simule par Simuler_<methode>.m de chaque dossier (onze essais).
-  Deja fait et conforme au banc : Fuzzy-PID, ELM-PID, PINN-PID. A faire :
-  PSO-PID (Construction_PSO_PID, verifier_pso_pid.py, Simuler_PSO_PID).
+  Chaque essai est simule par Simuler_<methode>.m de chaque dossier (onze
+  essais). Conformes au banc : Ziegler-Nichols (base commune) et
+  Fuzzy-PID. A faire : PSO-PID, ELM-PID option B et PINN-PID final (les
+  chiffres ci-dessus sont ceux du banc Python).
 
 
 MISE A JOUR DU 8 OCTOBRE 2026
@@ -52,3 +63,14 @@ MISE A JOUR DU 8 OCTOBRE 2026
 - elm_incremental_contre_B.py : les deux versions de l'ELM-PID sur S4, S2
   et S1 (chapitre 4) ; sorties elm_incremental_contre_B.png, .json et
   _sortie_console.txt.
+
+VERSIONS FINALES (8 octobre 2026)
+- PINN-PID : banc_pinn_pid_resultats.json remplace par celui de PINN_PID
+  (version finale, J = 0.757) ; simulations_scenario.py charge sa classe
+  PINNPID. Les chiffres anterieurs du PINN-PID (0.684) sont ceux de sa
+  version du 5 octobre, gardee seulement dans l'historique git.
+- comparaison_methodes.py relance : aucun scenario designe (le script le
+  dit au lieu de s'arreter ; regle inchangee). simulations_scenario.py
+  relance sur S4 et S8a.
+- diagnostic_lois/ : portent sur la loi de Lu ; ils ne lisent pas le
+  PINN-PID et ne sont pas touches (note en tete).

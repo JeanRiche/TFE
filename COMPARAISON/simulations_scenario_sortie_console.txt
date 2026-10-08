@@ -12,23 +12,24 @@ Controle du systeme flou : quatre points calcules a la main retrouves.
 Gains au repos (ZO, ZO) : Kp 0.991 P, Ki 0.661 I, Kd 1.983 D.
 Dossier de travail : /home/user/TFE/PINN_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
-Boite : Kp de 0.093910 a 0.223357, Ki de 3.4215e-04 a 1.3686e-03, Kd de 1.6110 a 3.8316 ; depart a Ziegler-Nichols.
+Ensemble admissible de l'ELM-PID (C3) : 33^3 points, 35.2% admissibles ; table et fonctions identiques a ELM_PID.
+Boite (multiplicateurs de ZN) : P de 1.000 a 2.378, I de 0.250 a 1.000, D de 1.000 a 2.378 ; depart a Ziegler-Nichols (1, 1, 1).
 PINN : 3 couches cachees de 32 neurones (candidat A, plage nominale).
 Vecteurs de test du PINN : ecart maximal 6.4e-16.
-Gradient de l'horizon contre differences finies : ecart relatif maximal 6.7e-08.
+Gradient de l'horizon contre differences finies : ecart relatif maximal 4.4e-07 (hors saturation), 9.0e-08 (pente 0 ; pas en butee / pas sous clamping sur 110 : 9 / 9, 28 / 28) ; avec C2 (centre (1, 1, 1)) 4.3e-07.
 Scenario S4 : nominal, puis L ou C a +-0.1 % (IAE de 30 ms a la fin, mV.s)
   Ziegler-Nichols  nominal  23.61  L - 0.1 %  23.58  L + 0.1 %  23.65  C - 0.1 %  23.61  C + 0.1 %  23.63   (fichier 23.61, ecart 0.0e+00)
   PSO-PID          nominal  16.54  L - 0.1 %  16.52  L + 0.1 %  16.57  C - 0.1 %  16.55  C + 0.1 %  16.54   (fichier 16.54, ecart 0.0e+00)
   Fuzzy-PID        nominal  22.38  L - 0.1 %  22.35  L + 0.1 %  22.40  C - 0.1 %  22.38  C + 0.1 %  22.37   (fichier 22.38, ecart 0.0e+00)
   ELM-PID          nominal  18.87  L - 0.1 %  18.92  L + 0.1 %  18.85  C - 0.1 %  18.89  C + 0.1 %  18.88   (fichier 18.87, ecart 0.0e+00)
-  PINN-PID         nominal  17.64  L - 0.1 %  17.62  L + 0.1 %  17.66  C - 0.1 %  17.65  C + 0.1 %  17.64   (fichier 17.64, ecart 0.0e+00)
+  PINN-PID         nominal  18.30  L - 0.1 %  18.27  L + 0.1 %  18.33  C - 0.1 %  18.28  C + 0.1 %  18.16   (fichier 18.30, ecart 0.0e+00)
 
 Classement dans chaque variante du circuit :
-  nominal    PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.5 %)
-  L - 0.1 %  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.5 %)
-  L + 0.1 %  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.6 %)
-  C - 0.1 %  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.5 %)
-  C + 0.1 %  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 5.6 %)
+  nominal    PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 3.1 %)
+  L - 0.1 %  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 3.5 %)
+  L + 0.1 %  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 2.8 %)
+  C - 0.1 %  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 3.4 %)
+  C + 0.1 %  PSO-PID > PINN-PID > ELM-PID > Fuzzy-PID > Ziegler-Nichols   (ecart minimal entre voisins 4.0 %)
   Classement identique dans les cinq variantes.
 
 scenario_S4.npz, robustesse_S4.json et comparaison_S4.png ecrits.

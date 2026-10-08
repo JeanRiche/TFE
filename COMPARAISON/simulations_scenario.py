@@ -60,7 +60,7 @@ FABRIQUES = {"Ziegler-Nichols": lambda ns: ns["PIDClassique"](),
              "PSO-PID": lambda ns: ns["PIDParallele"](G_PSO["P"], G_PSO["I"], G_PSO["D"]),
              "Fuzzy-PID": lambda ns: ns["FuzzyPID"](),
              "ELM-PID": lambda ns: ns["ELMPID"](),
-             "PINN-PID": lambda ns: ns["PINNPID"]("pinn")}
+             "PINN-PID": lambda ns: ns["PINNPID"]()}
 with open(os.path.join(DOSSIER, "comparaison_resultats.json"), encoding="utf-8") as f:
     ATTENDU = json.load(f)["essais"][CODE]["IAE_mVs"]
 

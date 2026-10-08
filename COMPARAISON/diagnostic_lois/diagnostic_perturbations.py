@@ -1,5 +1,8 @@
 # Diagnostic du 8 octobre 2026 (COMPARAISON/diagnostic_lois) : pourquoi ELM-PID et PINN-PID
 # rejettent moins bien les perturbations ; lois de Lu et PID parallele a gains figes.
+# Note (8 octobre 2026, versions finales) : ce diagnostic porte sur la loi incrementale de Lu,
+# celle de ELM_PID_INCREMENTAL (garde) et de la version du PINN-PID du 5 octobre, qui n'est plus que
+# dans l'historique git. Il ne lit aucun fichier du PINN-PID et tourne toujours tel quel.
 # Lancer depuis ce dossier : python diagnostic_perturbations.py (le dossier ELM_PID_INCREMENTAL doit etre a cote).
 import os, json, numpy as np
 _ICI = os.path.dirname(os.path.abspath(__file__)); __file__ = os.path.join(_ICI, "..", "..", "ELM_PID_INCREMENTAL", "banc_elm_pid.py"); os.chdir(os.path.dirname(__file__))

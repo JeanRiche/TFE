@@ -193,3 +193,73 @@ Comparaison des deux versions de l'ELM-PID pour le chapitre 4
   l'ensemble des essais (0.680 contre 0.747), par S2, et par la
   comparaison a loi egale avec les autres methodes. S4 seul ne suffit pas
   a le justifier ; le memoire doit le dire.
+
+
+VERSIONS FINALES (8 octobre 2026)
+=============================================================================
+Methodes figees par Jean-Riche le 8 octobre : Ziegler-Nichols, PSO-PID,
+Fuzzy-PID, ELM-PID option B (dossier ELM_PID) et PINN-PID final (dossier
+PINN_PID : bloc PID commun, cout et optimisation d'Ito et Wasa en
+iteration temps reel, zone morte commune avec l'ELM-PID). Les chiffres du
+PINN-PID cites plus haut (0.684 et IAE par essai) sont ceux de sa version
+du 5 octobre, qui n'est plus que dans l'historique git ; les sections
+precedentes restent telles qu'elles ont ete ecrites. La regle n'a pas
+change. banc_pinn_pid_resultats.json remplace par celui de PINN_PID ;
+comparaison_methodes.py et simulations_scenario.py (S4, S8a) relances.
+
+Cout J (13 termes, recalcule) : PSO-PID 0.714 ; ELM-PID 0.746 ; PINN-PID
+0.757 ; Fuzzy-PID 0.877 ; Ziegler-Nichols 1.000. Ecarts : PSO-PID et
+ELM-PID 4.5 %, ELM-PID et PINN-PID 1.5 % (moins de 5 % : egalites au sens
+de C1).
+
+Ce que donne la regle
+  Aucun essai candidat ne passe C1 (ecart minimal entre voisins) : S2
+  0.3 %, S3 0.0 %, S4 3.1 %, S5 0.1 %, S6 1.0 %, S7b 0.9 %, S8a 0.4 %,
+  S8b 2.4 %, S9 1.3 %. La paire la plus serree est presque toujours
+  ELM-PID et PINN-PID, qui ont maintenant le meme bloc PID et la meme
+  zone morte (S3 0.03 %, S8a 0.4 %, S8b 2.4 %, S4 3.1 %). La regle prevoit
+  le cas "aucun essai ne passe C1 et C2" (prendre le plus grand C3 parmi
+  ceux qui passent C1), pas le cas ou aucun ne passe C1 : appliquee telle
+  quelle, ELLE NE DESIGNE AUCUN SCENARIO. comparaison_methodes.py a ete
+  modifie pour le dire au lieu de s'arreter sur une erreur ; la regle et
+  les criteres n'ont pas change.
+  Consequence pour le memoire : les scenarios du corps (S1, S2, S3, S8a)
+  sont ceux fixes par Jean-Riche le 8 octobre. C'est un choix de l'auteur,
+  pas le resultat de la regle : il faut l'ecrire comme tel, et garder le
+  tableau complet par essai (classement_par_essai.png) en annexe.
+
+Classements (du meilleur au moins bon ; "=" : moins de 5 % d'ecart, a lire
+comme une egalite ; tous les evenements reviennent pour les cinq methodes
+sur ces quatre essais)
+  S1, IAE de demarrage (0 a 30 ms, mV.s) :
+    PSO-PID 87.62 < PINN-PID 92.06 = ELM-PID 93.72 = Ziegler-Nichols 93.77
+    < Fuzzy-PID 110.91
+    (PSO-PID devant PINN-PID de 5.1 % : au-dessus du seuil, de justesse.)
+  S2, IAE de 30 ms a la fin (F1 a la consigne, hors de J, mV.s) :
+    PSO-PID 2.04 < ELM-PID 2.41 = Fuzzy-PID 2.43 = PINN-PID 2.44
+    < Ziegler-Nichols 2.84
+  S3, IAE de 30 ms a la fin (F2, saut de charge, mV.s) :
+    PSO-PID 5.46 < PINN-PID 6.40 = ELM-PID 6.41 < Fuzzy-PID 7.94
+    < Ziegler-Nichols 8.67
+  S8a, IAE de 30 ms a la fin (25 ohms, echelons de charge, mV.s) :
+    PSO-PID 2.46 < PINN-PID 2.95 = ELM-PID 2.96 < Fuzzy-PID 4.12
+    < Ziegler-Nichols 12.07
+    Robustesse (simulations_scenario.py S8a) : meme ordre dans les cinq
+    variantes du circuit (L ou C a +-0.1 %), mais l'ecart PINN-PID /
+    ELM-PID n'y est que de 0.1 a 1.2 % : leur ordre n'a pas de sens.
+  Pour memoire, S4 (simulations_scenario.py S4) : PSO-PID 16.54 <
+  PINN-PID 18.30 = ELM-PID 18.87 (3.1 %) < Fuzzy-PID 22.38 <
+  Ziegler-Nichols 23.61 (5.5 %) ; meme ordre dans les cinq variantes,
+  ecart minimal entre voisins 2.8 a 4.0 %.
+
+Lecture (constats)
+  1. Le PSO-PID est premier sur J et sur S1, S2, S3, S8a et S4. La reserve
+     du point 4 plus haut reste valable (son cout de reglage contient des
+     echelons de charge).
+  2. Les deux methodes adaptatives ne se separent sur aucun des quatre
+     essais du corps ni sur J. Le memoire ne doit pas les classer l'une
+     devant l'autre sur ces chiffres.
+  3. Sur S2, ELM-PID, Fuzzy-PID et PINN-PID sont a egalite ; sur S3 et S8a,
+     les deux adaptatives sont devant le Fuzzy-PID et Ziegler-Nichols.
+  4. Ces chiffres sont ceux du banc Python ; la validation Simulink de
+     l'ELM-PID option B et du PINN-PID reste a faire.
