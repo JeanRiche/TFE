@@ -256,9 +256,93 @@ dans l'horizon, la longueur de fenetre.
     - le choix entre la version 1 et la version B revient a Jean-Riche.
 
 
-7. RESULTATS
-------------
-  (a remplir apres le calcul)
+7. RESULTATS (8 octobre 2026 ; banc_pinn_pid_sortie_console.txt)
+-----------------------------------------------------------------
+  Calcul fait apres le commit des previsions (8d6e6e5), sans rien changer
+  a la loi ni aux reglages. Le script a tourne du premier coup : aucune
+  correction. Controles refaits par le banc : gradient 4.4e-7 et 9.0e-8 ;
+  sans adaptation, ecart 0.0 sur d a Ziegler-Nichols (S1, S8b).
+                            J      apres 30 ms   demarrage   non revenus
+    Ziegler-Nichols       1.000      1.000         1.000      S8b, S9
+    meilleur PID fige     0.738      0.710         0.831      -
+    PINN-PID B            0.893      0.878         0.942      -
+    PINN-PID version 1    0.684      0.694         0.651      -
+    ELM-PID B             0.746      0.680         0.967      -
+  Rapports a Ziegler-Nichols apres 30 ms : S1 1.00, S3 0.78, S4 0.81,
+  S5 1.72, S6 1.53, S7a 0.91, S7b 0.87, S8a 0.53, S8b 0.08, S9 0.55 ;
+  demarrage : S1 0.98, S8a 0.93, S8b 0.91.
+  IAE apres 30 ms (mV.s), Ziegler-Nichols / PINN-PID B : S2 2.84 / 2.30 ;
+  S3 8.67 / 6.77 ; S4 23.61 / 19.15 ; S5 3.87 / 6.65 ; S6 1.65 / 2.51 ;
+  S8a 12.07 / 6.41 ; S8b 77.19 / 6.32 ; S9 531.8 / 293.5. S1 demarrage
+  93.77 / 92.06 mV.s (depassement 13.2 %).
+  Gains : sur S1, ils montent pendant la montee (jusqu'a x(1.35, 1.00,
+  1.16)) puis atteignent le coin (1, 0.25, 1) a 11 ms ; ils y sont a la
+  fin des onze essais. Ils en sortent pendant les evenements (S5, S8a,
+  S8b, S9 : P jusqu'a 1.95, I jusqu'a 1.0, D jusqu'a 1.85) et y reviennent.
+  Marges du modele moyen au coin : 49.1 degres (4 a 6 ohms), 19.5 degres
+  (25 et 98 ohms).
+  Ablations : plafond (modele physique) 0.897 ; declenchement a 0.1 V
+  (version 1) 0.757 (0.702 / 0.942) ; PID fige aux gains finaux de S8b,
+  c'est-a-dire au coin (1, 0.25, 1), des le depart : 0.890 (0.896 /
+  0.869). Sensibilite (L ou C a +-0.1 %) : J de 0.888 a 0.895, tous les
+  evenements reviennent.
+
+  Previsions :
+    P1  FAUSSE : J = 0.893 (prevu 0.69 a 0.80). Le sens (moins bon que la
+        version 1) est juste ; l'ampleur, non.
+    P2  FAUSSE : apres 30 ms 0.878 (prevu 0.60 a 0.78). S5 (1.72) et S6
+        (1.53) coutent bien plus que ne le laissait voir E2 (1.13), et le
+        gain a charge legere est plus faible que sur E3 (S8a 0.53 contre
+        0.31).
+    P3  juste : demarrage 0.942.
+    P4  juste : S1 demarrage 92.06 mV.s.
+    P5  FAUSSE : S2 2.30 mV.s, meilleur que prevu (2.5 a 3.5).
+    P6  juste : S3 6.77 mV.s.
+    P7  FAUSSE : S8a 6.41 mV.s (prevu 2.5 a 6.0).
+    P8  juste : tous les evenements reviennent, S8b et S9 compris.
+    P9  FAUSSE : sur S3, ecart maximal 0.197 (les gains changent pendant
+        F2) ; sur S2, 0.0499, sous le seuil de 0.05 : une seule fenetre a
+        x(1.05, 0.30, 1.05), puis retour au coin.
+    P10 FAUSSE : S7b reste au coin (ecart 0.049, ecart efficace 18.5 mV
+        contre 21.3 pour Ziegler-Nichols) ; S7a non : la quantification de
+        12 bits fait sortir les gains du coin dans 320 fenetres sur 341
+        apres 30 ms, jusqu'a x(1.30, 0.69, 1.00) (ecart 0.44 a S1). Cette
+        derive n'abime pas S7a (IAE 3.80 contre 4.16 pour
+        Ziegler-Nichols).
+    Bilan : 4 justes (P3, P4, P6, P8), 6 fausses.
+
+  Classement (IAE en mV.s, du meilleur au moins bon) :
+    S1 demarrage : PSO 87.62 < PINN-PID B 92.06 < ELM-B 93.72 < ZN 93.77
+                   < Fuzzy 110.91 (PINN-PID B 2e sur 5)
+    S2 : PSO 2.04 < PINN-PID B 2.30 < ELM-B 2.41 < Fuzzy 2.43 < ZN 2.84
+                   (2e sur 5)
+    S3 : PSO 5.46 < ELM-B 6.41 < PINN-PID B 6.77 < Fuzzy 7.94 < ZN 8.67
+                   (3e sur 5)
+    S8a : PSO 2.46 < ELM-B 2.96 < Fuzzy 4.12 < PINN-PID B 6.41 < ZN 12.07
+                   (4e sur 5)
+
+  Lecture (constats, pas de reglage) :
+    1. Suivre l'article de plus pres fait perdre beaucoup : J passe de
+       0.684 (version 1) a 0.893. Deux causes, mesurees : la loi (le
+       demarrage perd l'avantage de la loi incrementale : 0.942 contre
+       0.651) et la suppression du seuil (avec le seuil de 0.1 V, la meme
+       version B donne 0.757 ; sans lui, 0.893).
+    2. Sans seuil, l'optimisation en regime ne voit presque plus d'erreur :
+       |F|^2 domine et ramene les gains au coin (1, 0.25, 1), comme le
+       prevoit l'article (section IV-A, eq. 17 a 20). Dans le bloc commun,
+       I y descend jusqu'a la borne basse de la boite, fixee par la limite
+       de la grille et non par un critere. Un I quatre fois plus faible
+       que Ziegler-Nichols rattrape lentement les variations de Vin (S5)
+       et la rampe de consigne (S6).
+    3. L'adaptation n'ajoute presque rien a ce coin : le PID fige au coin
+       des le depart fait 0.890, le PINN-PID B 0.893. Le predicteur ne
+       compte pas non plus (plafond 0.897). Dans cette version, la methode
+       se reduit en pratique a un PID fige choisi par |F|^2 et la boite.
+    4. Ce qui reste positif : tous les evenements reviennent (Ziegler-
+       Nichols perd S8b et S9) et la marge au coin est double de celle de
+       Ziegler-Nichols aux coins nominaux.
+    5. Le choix entre la version 1 et la version B revient a Jean-Riche.
+       Rien n'a ete regle sur ces resultats.
 
 
 8. REFERENCES
