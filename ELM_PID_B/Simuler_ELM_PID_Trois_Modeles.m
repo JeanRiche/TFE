@@ -2,32 +2,35 @@
 %
 % OBJECTIF
 % --------
-% Simuler les trois modeles de l'ELM-PID construits sur les modeles de base
-% de Jean-Riche (Construction_ELM_PID_Trois_Modeles.m), mesurer les memes
-% grandeurs que Simuler_ELM_PID.m, comparer chaque modele a l'essai du banc
-% qui lui correspond, tracer une figure par modele et enregistrer les
-% resultats :
+% Simuler les trois modeles de l'ELM-PID (option B) construits sur les
+% modeles de base de Jean-Riche (Construction_ELM_PID_Trois_Modeles.m),
+% mesurer les memes grandeurs que Simuler_ELM_PID.m, comparer chaque modele
+% a l'essai du banc qui lui correspond, tracer une figure par modele et
+% enregistrer les resultats :
 %   ELM_PID_Control.slx                     nominal          banc : S1
 %   ELM_PID_Control_control_disturbance.slx F1 a la consigne banc : S2
 %   ELM_PID_Control_load_disturbance.slx    F2 (4.333 ohms)  banc : S3
 %
 % VERSION
 % -------
-% 2 (7 octobre 2026) : bloc version 3 (M1 a M3) ; les gains changent sur
-% les trois essais. 1 (5 octobre 2026), ELM-PID retenu.
+% 3 (8 octobre 2026), option B. Copie de Simuler_Fuzzy_PID_Trois_Modeles.m
+% (meme montage) ; changent seulement les modeles, le bloc des gains
+% (sortie de "ELM-PID Adaptatif" : [P I D]) et le fichier de predictions.
+% La version 2 (loi incrementale) est dans ELM_PID_INCREMENTAL.
 %
 % CE QUI EST ENREGISTRE PENDANT LA SIMULATION
 % -------------------------------------------
 % Des blocs To Workspace temporaires, ajoutes en memoire et echantillonnes
 % a Tc = 1/(22000*10) s : Vout (bloc de mesure "Vout"), rapport cyclique
 % (signal qui entre dans le PWM), courant de la bobine (bloc "iL") et gains
-% de l'ELM-PID (sortie 2 du bloc). Les To Workspace propres au modele (y et
-% x du modele nominal, au pas du powergui) sont mis en commentaire pendant
-% la simulation. Chaque modele est ferme SANS etre enregistre, meme si la
-% simulation echoue : les fichiers .slx ne changent pas.
+% [P I D] (sortie de "ELM-PID Adaptatif"). Les To Workspace propres au
+% modele (y et x du modele nominal, au pas du powergui) sont mis en
+% commentaire pendant la simulation. Chaque modele est ferme SANS etre
+% enregistre, meme si la simulation echoue : les fichiers .slx ne changent
+% pas.
 %
 % LES GRANDEURS (memes definitions que banc_commun.py et Simuler_ELM_PID.m)
-% -------------------------------------------------------------------------
+% -----------------------------------------------------------------------
 %   Demarrage (0 a 50 ms) : temps de montee 10-90 V, depassement, temps
 %   d'etablissement dans +-1 V. De 30 ms a la fin : IAE, ecart maximal,
 %   ecart efficace (e = consigne - Vout ; la consigne vaut 100 + F1(t) dans
@@ -37,12 +40,13 @@
 %
 % CE QU'ON ATTEND
 % ---------------
-% Les memes resultats que le banc et que Buck_Commun_ELM_PID.slx sur S1,
-% S2 et S3, a quelques mV pres, avec les memes changements de gains (a
-% 3.5 et 4 ms sur les trois ; puis a 52 et 52.5 ms sur F1, a 52, 52.5, 53
-% et 72 ms sur F2). Une decision d'adaptation depend d'un seuil de 0.1 V :
-% si l'une bascule, les gains suivent ensuite un autre chemin (voir
-% Simuler_ELM_PID.m). Deux petites differences sont possibles :
+% Les memes resultats que le banc sur S1, S2 et S3. Gains : un changement
+% a 4 ms dans les trois modeles, x(1.469, 1.058, 1.152) de Ziegler-Nichols ;
+% sur F2 (S3), un second a 72 ms, x(1.759, 1.308, 1.159) ; aucun pendant F1
+% (S2). Ce second changement de S3 vient d'une fenetre ou ebar = 0.101 V,
+% a 1 mV du seuil de 0.1 V : il peut basculer sous Simulink (modele F2 a
+% 5.001 ohms hors de la fenetre), et ce n'est pas un defaut du bloc s'il
+% bascule. Deux autres petites differences sont possibles :
 %   - modele F2 : 5.001 ohms au lieu de 5 ohms hors de la fenetre ; le banc
 %     prevoit +0.1 % d'IAE et une quinzaine de mV au plus d'ecart sur Vout
 %     prise toutes les ms, meme avec un modele parfait ;
@@ -57,9 +61,7 @@
 %   - une figure par modele : Vout et consigne, rapport cyclique, courant
 %     iL, gains (multiples de Ziegler-Nichols) ;
 %   - resultats_ELM_PID_Trois_Modeles.mat : meme format que les autres
-%     fichiers de resultats (codes S1, S2, S3), donc lisible par
-%     Afficher_Scenarios.m pour superposer ces modeles et
-%     Buck_Commun_ELM_PID.slx.
+%     fichiers de resultats (codes S1, S2, S3).
 %
 % ORDRE D'EXECUTION
 % -----------------
@@ -68,8 +70,8 @@
 %
 % Prerequis dans le dossier courant MATLAB : les trois modeles construits,
 % elm_pid_adaptatif.m, elm_pid_modele.mat, elm_pid_reglages.mat,
-% ensemble_gains_elm.mat, predictions_banc_elm_pid.json. Duree : deux a trois minutes. Compatible
-% R2024a.
+% ensemble_gains_elm.mat, predictions_banc_elm_pid.json. Duree : deux a
+% cinq minutes. Compatible R2024a.
 % ---------------------------------------------------------------------
 
 clear; clc;
@@ -78,16 +80,17 @@ clear; clc;
 ESSAIS = {'ELM_PID_Control',                     'S1', 'Nominal (ton modele)',          [],           false; ...
           'ELM_PID_Control_control_disturbance', 'S2', 'F1 a la consigne (ton modele)', [0.05, 0.07], true; ...
           'ELM_PID_Control_load_disturbance',    'S3', 'F2 (ton modele)',               [0.05, 0.07], false};
-NOM_SYS = 'ELM-PID Adaptatif';                    % bloc de l'ELM-PID
+NOM_SYS = 'ELM-PID Adaptatif';                    % bloc des gains [P I D]
+NOM_PID = 'PID Controller';                       % bloc dont la sortie est la commande
 TE = 1/(22000*10);                                % periode des enregistrements (s)
 TE_TXT = '1/(22000*10)';                          % la meme, en texte exact
 DUREE = 0.2;                                      % duree des trois modeles (s)
-K_ZN = [0.093910, 1.3686e-3, 1.6110];             % gains de depart (Ziegler-Nichols, forme incrementale)
+K_ZN = [0.093910, 301.089, 7.3227e-6];            % Ziegler-Nichols (champs P, I, D du bloc, forme Parallel)
 FICHIER_RESULTATS = 'resultats_ELM_PID_Trois_Modeles.mat';
 
 % --- Prerequis ---
-for f = [strcat(ESSAIS(:, 1)', '.slx'), {'elm_pid_adaptatif.m', 'elm_pid_modele.mat', 'elm_pid_reglages.mat', 'ensemble_gains_elm.mat', ...
-         'predictions_banc_elm_pid.json'}]
+for f = [strcat(ESSAIS(:, 1)', '.slx'), {'elm_pid_adaptatif.m', 'elm_pid_modele.mat', 'elm_pid_reglages.mat', ...
+         'ensemble_gains_elm.mat', 'predictions_banc_elm_pid.json'}]
     if ~isfile(fullfile(pwd, f{1}))
         error('Fichier introuvable dans le dossier courant : %s', f{1});
     end
@@ -116,10 +119,10 @@ for i = 1:size(ESSAIS, 1)
     end
     src_pwm = source_entree_pwm(mdl);
     ajouter_enregistrement(mdl, [mdl '/Log Vout sc'], 'sc_log_v', TE_TXT, [mdl '/Vout'], 1);
-    ajouter_enregistrement(mdl, [mdl '/Log mu sc'], 'sc_log_mu', TE_TXT, sys, 1);
+    ajouter_enregistrement(mdl, [mdl '/Log mu sc'], 'sc_log_mu', TE_TXT, [mdl '/' NOM_PID], 1);
     ajouter_enregistrement(mdl, [mdl '/Log d sc'], 'sc_log_d', TE_TXT, src_pwm.bloc, src_pwm.port);
     ajouter_enregistrement(mdl, [mdl '/Log iL sc'], 'sc_log_iL', TE_TXT, [mdl '/iL'], 1);
-    ajouter_enregistrement(mdl, [mdl '/Log K sc'], 'sc_log_K', TE_TXT, sys, 2);
+    ajouter_enregistrement(mdl, [mdl '/Log K sc'], 'sc_log_K', TE_TXT, sys, 1);
     neutraliser_enregistrements_modele(mdl);
     t_debut = tic;
     try
@@ -163,7 +166,7 @@ for i = 1:size(ESSAIS, 1)
                                 'mu', mu, 'd', d, 'iL', iL, 'K', K, 'grandeurs', g, 'duree_calcul_s', duree_calcul, ...
                                 'us_par_pas', duree_calcul / N * 1e6); %#ok<SAGROW>
     fprintf('  Simulink : %s\n', resume(g));
-    fprintf('  temps de calcul : %.1f s ; gains finaux [%.5f %.4e %.4f] (depart [%.5f %.4e %.4f])\n', ...
+    fprintf('  temps de calcul : %.1f s ; gains finaux [%.5f %.4f %.4e] (Ziegler-Nichols [%.5f %.4f %.4e])\n', ...
             duree_calcul, K(end, 1), K(end, 2), K(end, 3), K_ZN(1), K_ZN(2), K_ZN(3));
     for j = 1:numel(g.evenements)
         ev = g.evenements(j);
@@ -203,7 +206,7 @@ for i = 1:size(ESSAIS, 1)
     % Figure
     fig = figure('Name', mdl, 'Color', 'w', 'Position', [60 40 1100 820]);
     tl = tiledlayout(fig, 4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
-    title(tl, sprintf('%s : %s (ELM-PID)', mdl, nom), 'Interpreter', 'none');
+    title(tl, sprintf('%s : %s (ELM-PID, option B)', mdl, nom), 'Interpreter', 'none');
     t_ms = t * 1e3;
     ax = gobjects(1, 4);
     for p = 1:4
@@ -222,9 +225,9 @@ for i = 1:size(ESSAIS, 1)
     ylabel(ax(2), 'rapport cyclique');
     plot(ax(3), t_ms, iL, 'LineWidth', 0.6);
     ylabel(ax(3), 'iL (A)');
-    plot(ax(4), t_ms, K(:, 1) / K_ZN(1), '-', 'LineWidth', 1.0, 'DisplayName', 'Kp');
-    plot(ax(4), t_ms, K(:, 2) / K_ZN(2), '--', 'LineWidth', 1.0, 'DisplayName', 'Ki');
-    plot(ax(4), t_ms, K(:, 3) / K_ZN(3), ':', 'LineWidth', 1.0, 'DisplayName', 'Kd');
+    plot(ax(4), t_ms, K(:, 1) / K_ZN(1), '-', 'LineWidth', 1.0, 'DisplayName', 'P');
+    plot(ax(4), t_ms, K(:, 2) / K_ZN(2), '--', 'LineWidth', 1.0, 'DisplayName', 'I');
+    plot(ax(4), t_ms, K(:, 3) / K_ZN(3), ':', 'LineWidth', 1.0, 'DisplayName', 'D');
     legend(ax(4), 'Location', 'best');
     ylabel(ax(4), 'gains / ZN');
     xlabel(ax(4), 'temps (ms)');
@@ -249,7 +252,7 @@ end
 
 function o = grandeurs(v, consigne, d, iL, evenements, Te)
     % Memes definitions que la fonction grandeurs de banc_commun.py (copie
-    % de Simuler_ELM_PID.m). Les numeros de pas commencent a 0 (comme en
+    % de Simuler_ELM_PID.m, la meme que Simuler_Fuzzy_PID.m). Les numeros de pas commencent a 0 (comme en
     % Python) ; l'indice MATLAB du pas n est n + 1.
     N = numel(v);
     n = (0:N-1)';

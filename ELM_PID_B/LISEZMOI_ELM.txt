@@ -1,56 +1,56 @@
-ELM-PID : PID AUTO-ADAPTATIF A MODELE INTERNE ELM (7 octobre 2026)
-==================================================================
+ELM-PID : PID AUTO-ADAPTATIF A MODELE INTERNE ELM, OPTION B (8 octobre 2026)
+============================================================================
 
 DOSSIER COMPLET ET AUTONOME : il contient la base commune v2.1 (modele
 Buck_Commun.slx, tes trois modeles de base, essais, banc Python), les
 donnees d'apprentissage Simulink, le modele ELM et tout l'ELM-PID.
 Dezippe-le dans un dossier vide, fais de ce dossier le dossier courant
 MATLAB, et lance les etapes ci-dessous. Ne garde pas les dossiers PINN,
-FUZZY ou PSO sur le chemin MATLAB en meme temps (memes noms de fichiers de
-base). Tout ancien dossier ELM ne sert plus : le bloc elm_pid_adaptatif.m
-et elm_pid_reglages.mat ont change (version 3).
+FUZZY, PSO ou ELM_PID_INCREMENTAL sur le chemin MATLAB en meme temps
+(memes noms de fichiers). Le bloc elm_pid_adaptatif.m, elm_pid_reglages.mat
+et ensemble_gains_elm.mat ont change (versions 4, 4 et 2) : le bloc refuse
+les fichiers de la version incrementale.
 
 A LIRE D'ABORD : criteres_elm_pid.txt
-  Methode de reference (Lu et al. 2021), diagnostic (pourquoi les gains ne
-  bougeaient pas), modifications M1 a M3 avec leurs references, controle du
-  modele et de son jacobien, previsions ecrites avant le calcul, resultats,
-  lecture pour le memoire et bibliographie.
+  Methode de reference (Lu et al. 2021), diagnostics, modifications M1 a
+  M4 avec leurs references, previsions ecrites avant le calcul (commit
+  1d16b45), resultats et lecture pour le memoire.
 
 LA METHODE EN BREF
-- Loi PID incrementale de Lu, gains ajustes toutes les 0.5 ms par un
-  gradient normalise ; le jacobien vient d'un ELM du convertisseur appris
-  sur des enregistrements Simulink et mis a jour en ligne (OS-ELM).
-- M1 : la porte ne se ferme plus que sur saturation ; zone morte
-  d'estimation pour l'OS-ELM (Peterson et Narendra 1982 ; Egardt 1979 ;
-  Ioannou et Sun 1996).
+- Le PID est le bloc "PID Controller" de la base commune (le meme que
+  Ziegler-Nichols, PSO-PID et Fuzzy-PID), passe en gains externes.
+- L'adaptateur ELM regle ses gains toutes les 0.5 ms par un gradient
+  normalise ; le jacobien vient d'un ELM du convertisseur appris sur des
+  enregistrements Simulink et mis a jour en ligne (OS-ELM).
+- M1 : la porte ne se ferme que sur saturation ; zone morte d'estimation.
 - M2 : projection des gains sur l'ensemble admissible lui-meme (marge
-  nominale >= celle du depart, coupure <= fs/10), pas sur une boite
-  (Goodwin et Sin 1984 ; Ioannou et Sun 1996).
+  nominale >= celle du depart, coupure <= fs/10).
 - M3 : projection au point admissible le plus proche, avec restauration
-  vers la frontiere (Rosen 1961) : le depart est sur la frontiere d'un
-  ensemble non convexe, et sans M3 tout pas qui en part etait annule.
+  vers la frontiere (Rosen 1961).
+- M4 (option B) : la loi est le bloc PID commun, et non plus la loi
+  incrementale de Lu. Sans adaptation, l'ELM-PID est exactement le PID de
+  Ziegler-Nichols.
 
 ORDRE D'EXECUTION
 -----------------
 Deja fait (ne pas relancer sans raison) :
-  python excitation_donnees_elm.py ; MATLAB Construction_Modele_Donnees_ELM,
-  python verifier_modele_donnees_elm.py, MATLAB Generer_Donnees_ELM
-  (donnees d'apprentissage, deja fournies : donnees_elm_*.mat) ;
+  donnees d'apprentissage (donnees_elm_*.mat, deja fournies) ;
   python entrainement_elm.py (modele, elm_pid_modele.mat) ;
-  python ensemble_gains_elm.py (ensemble admissible, ensemble_gains_elm.mat) ;
+  python ensemble_gains_elm.py (ensemble admissible, trois minutes) ;
   python mise_au_point_elm_pid.py (controles avant les previsions) ;
-  python banc_elm_pid.py (jugement, une a deux minutes).
+  python banc_elm_pid.py (jugement, une minute et demie).
 A lancer :
 1. MATLAB : Tester_ELM_PID_Rejeu
-   Donne au bloc MATLAB les memes entrees que le banc, pas par pas, sur S1,
-   S3, S7b, S8b et S9. Fin attendue : chaque essai "identique" (ecart au
-   plus 1e-9 sur u et les gains, aucune decision de fenetre differente).
+   Donne a l'adaptateur MATLAB les memes entrees que le banc (e, mesure,
+   u), pas par pas, sur S1, S3, S7b, S8b et S9. Fin attendue : chaque essai
+   "identique" (gains a 1e-9 pres, aucune decision de fenetre differente).
    C'EST LA VALIDATION DU BLOC : si un essai est "DIFFERENT", arrete-toi et
    envoie la sortie.
 2. MATLAB : Construction_ELM_PID
-   Copie Buck_Commun.slx en Buck_Commun_ELM_PID.slx et remplace le PID par
-   le bloc de l'ELM-PID. Auto-tests : T1 (20 ms de S1 : Vout a 0.05 V du
-   banc, gains a 20 ms a 1 % de ceux du banc), T2 (20 ms de S8b).
+   Copie Buck_Commun.slx en Buck_Commun_ELM_PID.slx, passe le PID en gains
+   externes et branche l'adaptateur (meme montage que le Fuzzy-PID, avec
+   la mesure et la commande en plus). Auto-tests : T0 (sans adaptation =
+   PID classique, 0.1 V), T1 (20 ms de S1 : 0.05 V, gains a 1 %), T2 (S8b).
 3. python verifier_modele_elm_pid.py
    Fin attendue : "RESULTAT : Buck_Commun_ELM_PID.slx est conforme."
 4. MATLAB : Simuler_ELM_PID
@@ -66,35 +66,34 @@ A lancer :
 
 Envoie-moi la sortie console des etapes 1 a 7. Si une etape s'arrete sur
 une erreur, envoie-la telle quelle sans passer a la suivante.
-Aucun script MATLAB n'a pu etre execute ici (pas de MATLAB) ; les
-verificateurs Python ont ete passes sur les modeles que tu avais construits
-le 5 octobre (meme structure, seul le code du bloc a change).
+Aucun script MATLAB n'a pu etre execute ici (pas de MATLAB). Ce qui a ete
+controle sans MATLAB : le rejeu emule en Python a partir du fichier de
+reference redonne les gains du banc a l'identique ; les deux verificateurs
+ont ete passes sur des modeles fabriques (conformes, puis avec deux
+entrees de l'adaptateur inversees : rejete).
 
 CE QUE SIMULINK DOIT DONNER (banc)
 ----------------------------------
-- Les gains changent sur les trois cas de base : a 3.5 et 4 ms sur S1, S2,
-  S3 ; puis a 52 et 52.5 ms sur F1 (S2) ; a 52, 52.5, 53 et 72 ms sur F2
-  (S3). Gains finaux (x Ziegler-Nichols) : nominal (0.97, 1.03, 1.07),
-  F1 (1.41, 1.18, 0.96), F2 (1.54, 1.26, 0.99).
-- Tous les evenements reviennent dans la bande ; S8b et S9 aussi.
-- Cout J : ELM-PID 0.728 ; R0 (meme loi, gains figes) 0.917 ;
+- Cout J : ELM-PID 0.746 (0.680 apres 30 ms, 0.967 au demarrage) ;
   Ziegler-Nichols 1.000 ; meilleur PID fige sur grille 0.738.
-- Chaque decision d'adaptation depend d'un seuil de 0.1 V : si un ecart de
-  quelques mV en fait basculer une, les gains suivent ensuite un autre
-  chemin. La validation du bloc est l'etape 1 ; ensuite on attend les memes
-  retours, les memes ordres de grandeur, et l'egalite point par point
-  jusqu'a la premiere decision qui bascule.
+- Tous les evenements reviennent dans la bande, S8b et S9 compris.
+- Gains : un changement a 4 ms sur S1, S2, S3, x(1.469, 1.058, 1.152) de
+  Ziegler-Nichols ; sur S3, un second a 72 ms (ebar 0.101 V, a 1 mV du
+  seuil : il peut basculer sous Simulink) ; aucun pendant F1.
+- Chaque decision d'adaptation depend d'un seuil de 0.1 V : on attend les
+  memes retours, les memes ordres de grandeur, et l'egalite point par
+  point jusqu'a la premiere decision qui bascule.
 
 CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
 ---------------------------------------------
-- L'ELM-PID adapte ses gains sur tous les essais (77 fenetres en tout) et
-  donne J = 0.728, contre 0.917 pour la meme loi a gains figes.
-- En regime etabli, les gains restent constants par construction (zone
-  morte de 0.1 V) : pas d'information, pas d'adaptation, pas de derive sur
-  le bruit.
-- Le jacobien est estime en ligne a chaque fenetre par le reseau (9.6 a
-  13.9 V par unite), mais il ne suit pas le vrai, et une constante donne le
-  meme J : le gain vient de la boucle d'adaptation, pas du reseau.
+- A loi egale avec les autres methodes, l'ELM-PID fait mieux que la loi
+  incrementale sur toutes les perturbations (0.680 contre 0.747 apres
+  30 ms) mais perd son avantage au demarrage (0.967 contre 0.664) ; J
+  passe de 0.728 a 0.746.
+- L'adaptation agit a la fin du demarrage et a charge legere, pas pendant
+  F1 et F2 : la perturbation est rattrapee en 1.5 ms, avant que la porte
+  ne se rouvre (criteres_elm_pid.txt, section 8).
+- Le jacobien du reseau ne change pas le resultat (constante : 0.745).
 
 FICHIERS
 --------
@@ -113,7 +112,8 @@ ELM-PID
 criteres_elm_pid.txt                     methode, references, previsions, resultats
 entrainement_elm.py, entrainement_elm_resultats.json, entrainement_elm_sortie_console.txt,
 entrainement_elm.png, elm_pid_modele.mat                    modele ELM et son controle
-ensemble_gains_elm.py, ensemble_gains_elm.json, ensemble_gains_elm.mat   ensemble admissible
+ensemble_gains_elm.py, ensemble_gains_elm.json, ensemble_gains_elm.mat,
+ensemble_gains_elm_sortie_console.txt                       ensemble admissible
 mise_au_point_elm_pid.py, mise_au_point_elm_pid_sortie_console.txt       controles avant previsions
 banc_elm_pid.py, banc_elm_pid_sortie_console.txt, banc_elm_pid_resultats.json,
 banc_elm_pid.png                                            jugement sur les onze essais

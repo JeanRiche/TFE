@@ -1,40 +1,46 @@
 classdef elm_pid_adaptatif < matlab.System
-    %% ELM_PID_ADAPTATIF -- bloc MATLAB System de l'ELM-PID (base commune v2.1)
+    %% ELM_PID_ADAPTATIF -- adaptateur ELM des gains du PID (base commune v2.1)
     %
     % VERSION
     % -------
-    % 3 (7 octobre 2026) : porte limitee a la saturation et zone morte
-    % d'estimation pour l'OS-ELM (M1), projection des gains sur l'ensemble
-    % admissible avec glissement le long de sa frontiere (M2) et
-    % restauration vers la frontiere (M3, Rosen 1961). Methode et
-    % references : criteres_elm_pid.txt.
+    % 4 (8 octobre 2026), option B (M4 de criteres_elm_pid.txt) : le bloc
+    % ne calcule plus la commande. Il sort les gains [P I D] du bloc "PID
+    % Controller" de la base commune, passe en gains externes (meme montage
+    % que le Fuzzy-PID). Garde de la version 3 : porte limitee a la
+    % saturation et zone morte d'estimation (M1), projection sur l'ensemble
+    % admissible (M2) avec restauration (M3). La version 3 (loi
+    % incrementale de Lu dans le bloc) est dans ELM_PID_INCREMENTAL.
     %
     % CE QUE FAIT CE BLOC
     % -------------------
-    % Regulateur PID incremental (loi de Lu et al., terme derive sur l'erreur
-    % filtree) dont les gains Kp, Ki, Kd sont ajustes toutes les 0.5 ms par
-    % un gradient normalise. Le sens et l'amplitude de chaque ajustement
-    % viennent du jacobien d'un modele ELM du convertisseur, mis a jour en
-    % ligne (OS-ELM). C'est la copie exacte de la classe ELMPID de
+    % Toutes les 0.5 ms, il ajuste les gains du PID par un gradient
+    % normalise. Le sens et l'amplitude de chaque ajustement viennent du
+    % jacobien d'un modele ELM du convertisseur, mis a jour en ligne
+    % (OS-ELM). C'est la copie exacte de la classe AdaptateurELM de
     % banc_elm_pid.py : memes reglages, memes noms, meme ordre des
-    % operations. Tester_ELM_PID_Rejeu.m verifie que les deux donnent la meme
-    % commande et les memes gains pas par pas.
+    % operations. Tester_ELM_PID_Rejeu.m verifie que les deux donnent les
+    % memes gains pas par pas.
     %
-    % ENTREES ET SORTIES (une fois par periode Tc, imposee par deux
+    % ENTREES ET SORTIE (une fois par periode Tc, imposee par trois
     % Zero-Order Hold a 1/(22000*10) s places devant le bloc)
     %   entree 1 : e      = consigne - mesure (sortie de Sum1)
     %   entree 2 : mesure = tension mesuree (jamais 100 - e)
-    %   sortie 1 : u      = rapport cyclique, deja borne a [0.01 ; 0.99]
-    %   sortie 2 : K      = gains [Kp Ki Kd] utilises pour ce pas (1 x 3)
+    %   entree 3 : u      = sortie du bloc PID (rapport cyclique borne)
+    %   sortie 1 : K      = gains [P I D] pour ce pas (1 x 3), vers le PID
+    % La sortie ne depend que de l'etat du bloc (aucune traversee directe :
+    % outputImpl / updateImpl). Au pas k, le bloc sort les gains, le PID
+    % calcule u(k) avec eux, puis le bloc lit e(k), mesure(k), u(k). Il n'y
+    % a donc pas de boucle algebrique entre le PID et ce bloc.
     %
-    % L'ALGORITHME, A CHAQUE PERIODE Tc
-    % ---------------------------------
-    % 1. g(k) = Tc N (e(k) - ef(k)) ; ef(k+1) = ef(k) + Tc N (e(k) - ef(k)) ;
-    %    u(k) = sat( u(k-1) + Kp (e(k) - e(k-1)) + Ki e(k) + Kd (g(k) - g(k-1)) ),
-    %    depart u = 0.5, premier pas sans a-coup.
-    % 2. Fenetre de 110 periodes (0.5 ms) : moyennes ybar, dbar, ebar,
-    %    sensibilite moyenne s de u aux gains ; une saturation de la loi rend
-    %    la fenetre suspecte.
+    % L'ALGORITHME, A CHAQUE PERIODE Tc (mise a jour)
+    % ------------------------------------------------
+    % 1. Sensibilite de u(k) a un changement des gains au debut de la
+    %    fenetre (derivee exacte de la loi du bloc PID) :
+    %      du/dP = e(k) ; du/dI = Tc x (somme des e de la fenetre avant k) ;
+    %      du/dD = N (e(k) - phiD), puis phiD = phiD + Tc N (e(k) - phiD).
+    % 2. Fenetre de 110 periodes (0.5 ms) : moyennes ybar, dbar, ebar, et
+    %    des trois sensibilites ; u en butee (<= D_MIN ou >= D_MAX) rend la
+    %    fenetre suspecte.
     % 3. Fin de fenetre : l'ELM predit ybar(n) depuis [ybar(n-1) ybar(n-2)
     %    dbar(n) dbar(n-1) dbar(n-2)] et donne J = d ybar(n) / d dbar(n).
     % 4. Porte (M1) : ni la fenetre ni les deux precedentes suspectes.
@@ -43,15 +49,19 @@ classdef elm_pid_adaptatif < matlab.System
     %       phi = J (s .* K_DEPART) ;
     %       dx = ETA ebar phi / (EPS_PHI + phi phi') + ALPHA (x - x_prec) ;
     %       projection de x + dx sur l'ensemble admissible (M2 et M3,
-    %       ensemble_gains_elm.mat) : point admissible le plus proche ;
-    %       K = K_DEPART .* x.
+    %       ensemble_gains_elm.mat) ; K = K_DEPART .* x.
     %
     % FICHIERS LUS (dans le dossier courant, un seul exemplaire)
     %   elm_pid_modele.mat      : modele ELM (entrainement_elm.py)
-    %   elm_pid_reglages.mat    : reglages (banc_elm_pid.py)
+    %   elm_pid_reglages.mat    : reglages (banc_elm_pid.py, version 4)
     %   ensemble_gains_elm.mat  : table de l'ensemble admissible
-    %                             (ensemble_gains_elm.py)
+    %                             (ensemble_gains_elm.py, version 2)
     % Aucun nombre de l'algorithme n'est ecrit dans ce fichier.
+    %
+    % GainsFixes = true : le bloc sort les gains de Ziegler-Nichols a chaque
+    % pas (pas d'adaptation) ; le modele doit alors redonner le PID
+    % classique. Sert seulement aux auto-tests T0 des scripts de
+    % construction.
     %
     % Utilise dans Simulink en execution interpretee (Construction_ELM_PID.m).
     % Compatible MATLAB R2024a.
@@ -61,6 +71,7 @@ classdef elm_pid_adaptatif < matlab.System
         FichierReglages = 'elm_pid_reglages.mat';
         FichierEnsemble = 'ensemble_gains_elm.mat';
         AfficherBilan (1,1) logical = true;
+        GainsFixes (1,1) logical = false;            % true : gains de Ziegler-Nichols (auto-tests T0)
     end
 
     properties (Access = private)
@@ -69,9 +80,9 @@ classdef elm_pid_adaptatif < matlab.System
         K0; ETA; ZM; ZME; ALPHA; EPS; LAMBDA; APPRENDRE; JC; GLISSEMENT
         XMIN; XMAX; NBIS; HGRAD; RESTAURATION; NPROJ
         GT; L2MIN; PASL2; NT
-        NF; TCN; DMIN; DMAX; U0
-        K; x; x_prec; u; e1; ef; g1; premier
-        cpt; sy; sd; se; hors; S; sS
+        NF; TC; NFILTRE; TCN; DMIN; DMAX
+        K; x; x_prec
+        cpt; sy; sd; se; hors; SE; phiD; sS
         yb1; yb2; db1; db2; sus1; sus2; nfen
         der_porte; der_adapte; nb_portes; nb_adapt
     end
@@ -119,21 +130,26 @@ classdef elm_pid_adaptatif < matlab.System
             obj.XMAX = double(r.MULT_MAX);
             obj.NBIS = double(r.N_BISSECTIONS);
             obj.HGRAD = double(r.H_GRADIENT);
-            if ~isfield(r, 'RESTAURATION') || ~isfield(r, 'N_PROJECTION')
-                error('elm_pid_adaptatif : %s ne vient pas de la version 3 de banc_elm_pid.py (RESTAURATION absent).', ...
-                      obj.FichierReglages);
+            if ~isfield(r, 'VERSION') || double(r.VERSION) ~= 4
+                error(['elm_pid_adaptatif : %s ne vient pas de la version 4 de banc_elm_pid.py (option B). ' ...
+                       'Ne pas melanger les fichiers de ELM_PID_INCREMENTAL et de ELM_PID.'], obj.FichierReglages);
             end
             obj.RESTAURATION = double(r.RESTAURATION) ~= 0;
             obj.NPROJ = double(r.N_PROJECTION);
             obj.NF = double(r.NF);
-            obj.TCN = double(r.TC) * double(r.N_FILTRE);
+            obj.TC = double(r.TC);
+            obj.NFILTRE = double(r.N_FILTRE);
+            obj.TCN = obj.TC * obj.NFILTRE;
             obj.DMIN = double(r.D_MIN);
             obj.DMAX = double(r.D_MAX);
-            obj.U0 = double(r.U_DEPART);
             obj.GT = double(t.G_TABLE);
             obj.L2MIN = double(t.LOG2_MIN);
             obj.PASL2 = double(t.PAS_LOG2);
             obj.NT = size(obj.GT, 1);
+            if ~isfield(t, 'VERSION') || double(t.VERSION) ~= 2
+                error('elm_pid_adaptatif : %s ne vient pas de la version 2 de ensemble_gains_elm.py (option B).', ...
+                      obj.FichierEnsemble);
+            end
             if max(abs(double(t.K_DEPART(:)') - obj.K0) ./ obj.K0) > 1e-12
                 error('elm_pid_adaptatif : %s et %s n''ont pas les memes gains de depart.', ...
                       obj.FichierEnsemble, obj.FichierReglages);
@@ -150,37 +166,30 @@ classdef elm_pid_adaptatif < matlab.System
             obj.x = [1 1 1];                          % multiplicateurs de Ziegler-Nichols
             obj.x_prec = obj.x;
             obj.K = obj.K0 .* obj.x;
-            obj.u = obj.U0;
-            obj.e1 = 0; obj.ef = 0; obj.g1 = 0;
-            obj.premier = true;
             obj.cpt = 0; obj.sy = 0; obj.sd = 0; obj.se = 0; obj.hors = false;
-            obj.S = [0 0 0]; obj.sS = [0 0 0];
+            obj.SE = 0; obj.phiD = 0; obj.sS = [0 0 0];
             obj.yb1 = 0; obj.yb2 = 0; obj.db1 = 0; obj.db2 = 0;
             obj.sus1 = true; obj.sus2 = true;
             obj.nfen = 0;
             obj.der_porte = false; obj.der_adapte = false; obj.nb_portes = 0; obj.nb_adapt = 0;
         end
 
-        function [u, Kout] = stepImpl(obj, e, mesure)
-            Kout = obj.K;
-            if obj.premier
-                obj.e1 = e; obj.ef = e; obj.g1 = 0;
-                obj.premier = false;
-            end
-            g = obj.TCN * (e - obj.ef);
-            x1 = e - obj.e1;
-            x2 = e;
-            x3 = g - obj.g1;
-            brut = obj.u + obj.K(1) * x1 + obj.K(2) * x2 + obj.K(3) * x3;
-            u = min(max(brut, obj.DMIN), obj.DMAX);
-            obj.ef = obj.ef + obj.TCN * (e - obj.ef);
-            obj.e1 = e; obj.g1 = g; obj.u = u;
-            obj.S = obj.S + [x1, x2, x3];
-            obj.sS = obj.sS + obj.S;
+        function K = outputImpl(obj, ~, ~, ~)
+            % Gains du pas, d'apres l'etat seulement (pas de traversee directe).
+            K = obj.K;
+        end
+
+        function updateImpl(obj, e, mesure, u)
+            % Sensibilites (memes operations, meme ordre que mise_a_jour du banc)
+            obj.sS(1) = obj.sS(1) + e;
+            obj.sS(2) = obj.sS(2) + obj.TC * obj.SE;
+            obj.sS(3) = obj.sS(3) + obj.NFILTRE * (e - obj.phiD);
+            obj.SE = obj.SE + e;
+            obj.phiD = obj.phiD + obj.TCN * (e - obj.phiD);
             obj.sy = obj.sy + mesure;
             obj.sd = obj.sd + u;
             obj.se = obj.se + e;
-            if brut < obj.DMIN || brut > obj.DMAX
+            if u <= obj.DMIN || u >= obj.DMAX           % sortie du PID en butee : fenetre suspecte
                 obj.hors = true;
             end
             obj.cpt = obj.cpt + 1;
@@ -189,43 +198,45 @@ classdef elm_pid_adaptatif < matlab.System
             end
         end
 
+        function [f1, f2, f3] = isInputDirectFeedthroughImpl(~, ~, ~, ~)
+            f1 = false;
+            f2 = false;
+            f3 = false;
+        end
+
         function releaseImpl(obj)
             if obj.AfficherBilan && ~isempty(obj.nfen) && obj.nfen > 0
-                fprintf(['  ELM-PID : %d fenetres, porte ouverte sur %d, gains changes sur %d ; ' ...
-                         'gains finaux Kp=%.5f Ki=%.4e Kd=%.4f (x ZN %.3f %.3f %.3f)\n'], obj.nfen, obj.nb_portes, ...
+                fprintf(['  ELM-PID : %d fenetres, porte ouverte sur %d, pas calcules sur %d ; ' ...
+                         'gains finaux P=%.5f I=%.4f D=%.4e (x ZN %.3f %.3f %.3f)\n'], obj.nfen, obj.nb_portes, ...
                         obj.nb_adapt, obj.K(1), obj.K(2), obj.K(3), obj.x(1), obj.x(2), obj.x(3));
             end
         end
 
         function n = getNumInputsImpl(~)
-            n = 2;
+            n = 3;
         end
         function n = getNumOutputsImpl(~)
-            n = 2;
+            n = 1;
         end
-        function [n1, n2] = getInputNamesImpl(~)
+        function [n1, n2, n3] = getInputNamesImpl(~)
             n1 = 'e';
             n2 = 'mesure';
+            n3 = 'u';
         end
-        function [n1, n2] = getOutputNamesImpl(~)
-            n1 = 'u';
-            n2 = 'K';
+        function n1 = getOutputNamesImpl(~)
+            n1 = 'K';
         end
-        function [s1, s2] = getOutputSizeImpl(~)
-            s1 = [1 1];
-            s2 = [1 3];
+        function s1 = getOutputSizeImpl(~)
+            s1 = [1 3];
         end
-        function [d1, d2] = getOutputDataTypeImpl(~)
+        function d1 = getOutputDataTypeImpl(~)
             d1 = 'double';
-            d2 = 'double';
         end
-        function [c1, c2] = isOutputComplexImpl(~)
+        function c1 = isOutputComplexImpl(~)
             c1 = false;
-            c2 = false;
         end
-        function [f1, f2] = isOutputFixedSizeImpl(~)
+        function f1 = isOutputFixedSizeImpl(~)
             f1 = true;
-            f2 = true;
         end
     end
 
@@ -257,7 +268,7 @@ classdef elm_pid_adaptatif < matlab.System
                         obj.P = (obj.P - gain * Ph') / obj.LAMBDA;
                     end
                     ancien = obj.x;
-                    if abs(eb) > obj.ZM && J > 0       % b. gains
+                    if ~obj.GainsFixes && abs(eb) > obj.ZM && J > 0   % b. gains
                         phi = J * (s .* obj.K0);
                         dx = obj.ETA * eb * phi / (obj.EPS + phi * phi') + obj.ALPHA * (obj.x - obj.x_prec);
                         obj.x = projeter(obj, obj.x, dx);
@@ -276,7 +287,7 @@ classdef elm_pid_adaptatif < matlab.System
             obj.sus2 = obj.sus1; obj.sus1 = sus;
             obj.nfen = obj.nfen + 1;
             obj.cpt = 0; obj.sy = 0; obj.sd = 0; obj.se = 0; obj.hors = false;
-            obj.S = [0 0 0]; obj.sS = [0 0 0];
+            obj.SE = 0; obj.phiD = 0; obj.sS = [0 0 0];
         end
 
         function g = g_interp(obj, x)
@@ -421,7 +432,7 @@ classdef elm_pid_adaptatif < matlab.System
 
         function [y, J, h] = evaluer_modele(W, B, BETA, XM, XE, TM, TE_, x)
             % Prediction ybar(n), jacobien d ybar(n) / d dbar(n) et vecteur h
-            % (memes formules que ELMPID.modele dans banc_elm_pid.py).
+            % (memes formules que AdaptateurELM.modele dans banc_elm_pid.py).
             n = size(W, 2);
             xn = (x - XM) ./ XE;
             g = 1 ./ (1 + exp(-(xn * W + B)));

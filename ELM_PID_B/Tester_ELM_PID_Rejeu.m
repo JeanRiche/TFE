@@ -2,6 +2,9 @@
 %
 % VERSION
 % -------
+% 4 (8 octobre 2026), option B : le bloc est l'adaptateur des gains du PID
+% (entrees e, mesure, u ; sortie K). La commande u du banc est donnee au
+% bloc ; on compare les gains et les decisions de fenetre.
 % 3 (7 octobre 2026) : bloc version 3 (M1 a M3) ; jacobien de test en
 % une colonne (entrainement_elm.py) ; S3 ajoute au rejeu.
 % 2 (4 octobre 2026), ELM-PID sur la base commune v2.
@@ -9,21 +12,24 @@
 % OBJECTIF
 % --------
 % Verifier, avant toute simulation Simulink, que le bloc MATLAB
-% elm_pid_adaptatif.m calcule exactement ce que calcule la classe ELMPID de
-% banc_elm_pid.py. Le banc a enregistre, pas par pas, l'erreur e et la
-% mesure recues par l'ELM-PID sur cinq essais (S1, S3, S7b, S8b, S9), ainsi
-% que la commande u et les gains K qu'il a produits. Ce script donne les
-% memes e et mesure au bloc MATLAB, en dehors de Simulink, et compare.
+% elm_pid_adaptatif.m calcule exactement ce que calcule la classe
+% AdaptateurELM de banc_elm_pid.py. Le banc a enregistre, pas par pas,
+% l'erreur e, la mesure et la commande u (sortie du bloc PID) vues par
+% l'adaptateur sur cinq essais (S1, S3, S7b, S8b, S9), ainsi que les gains
+% K qu'il a sortis. Ce script donne les memes e, mesure et u au bloc
+% MATLAB, en dehors de Simulink, et compare les gains. Le bloc PID
+% lui-meme est le bloc de la base commune : il est controle par l'auto-test
+% T0 de Construction_ELM_PID.m (sans adaptation, PID classique).
 %
 % CE QUI EST COMPARE
 % ------------------
 %   - les vecteurs de test du modele (elm_pid_modele.mat) : prediction et
 %     jacobien de evaluer_modele, contre les valeurs ecrites par
 %     entrainement_elm.py ;
-%   - pour chaque essai et chaque pas : u et les trois gains ;
+%   - pour chaque essai et chaque pas : les trois gains ;
 %   - pour chaque fenetre de 0.5 ms : porte ouverte ou non, gains changes
 %     ou non.
-% Tolerances : 1e-9 sur u, 1e-9 en relatif sur les gains, aucune decision
+% Tolerances : 1e-9 en relatif sur les gains, aucune decision
 % de fenetre differente. Les ecarts attendus viennent seulement de l'ordre
 % des operations dans les produits matriciels (quelques 1e-15).
 %
@@ -75,16 +81,16 @@ for c = 1:numel(codes)
     r = ref.(codes{c});
     e = double(r.e(:));
     mes = double(r.mesure(:));
+    ub = double(r.u(:));
     N = numel(e);
     bloc = elm_pid_adaptatif('AfficherBilan', false);
-    u = zeros(N, 1);
     K = zeros(N, 3);
     porte = false(0, 1);
     adapte = false(0, 1);
     nfen = 0;
     t0 = tic;
     for k = 1:N
-        [u(k), K(k, :)] = bloc(e(k), mes(k));
+        K(k, :) = bloc(e(k), mes(k), ub(k));     % gains du pas, puis mise a jour
         info = lire_fenetre(bloc);
         if info.nfen > nfen                       % une fenetre vient de se terminer
             nfen = info.nfen;
@@ -94,17 +100,16 @@ for c = 1:numel(codes)
     end
     duree = toc(t0);
     release(bloc);
-    ecart_u = max(abs(u - double(r.u(:))));
     ecart_K = max(max(abs(K - double(r.K)) ./ abs(double(r.K))));
     nw = min(numel(porte), numel(r.porte));
     diff_porte = sum(porte(1:nw) ~= logical(r.porte(1:nw)));
     diff_adapte = sum(adapte(1:nw) ~= logical(r.adapte(1:nw)));
-    ok = ecart_u <= 1e-9 && ecart_K <= 1e-9 && diff_porte == 0 && diff_adapte == 0 && numel(porte) == numel(r.porte);
+    ok = ecart_K <= 1e-9 && diff_porte == 0 && diff_adapte == 0 && numel(porte) == numel(r.porte);
     tout_ok = tout_ok && ok;
-    fprintf(['%-4s : %6d pas, %4d fenetres ; ecart max sur u %.1e, sur les gains %.1e (relatif) ; ' ...
+    fprintf(['%-4s : %6d pas, %4d fenetres ; ecart max sur les gains %.1e (relatif) ; ' ...
              'portes differentes %d, adaptations differentes %d ; %4.1f s  -> %s\n'], codes{c}, N, numel(porte), ...
-            ecart_u, ecart_K, diff_porte, diff_adapte, duree, ternaire(ok, 'identique', 'DIFFERENT'));
-    fprintf('       gains finaux : Kp %.6f, Ki %.6e, Kd %.6f (banc : %.6f, %.6e, %.6f)\n', K(end, 1), K(end, 2), ...
+            ecart_K, diff_porte, diff_adapte, duree, ternaire(ok, 'identique', 'DIFFERENT'));
+    fprintf('       gains finaux : P %.6f, I %.4f, D %.6e (banc : %.6f, %.4f, %.6e)\n', K(end, 1), K(end, 2), ...
             K(end, 3), r.K(end, 1), r.K(end, 2), r.K(end, 3));
 end
 if tout_ok
