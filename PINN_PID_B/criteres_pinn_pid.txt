@@ -1,228 +1,279 @@
-PINN-PID : PID AUTO-ADAPTATIF A PREDICTEUR PINN
-Methode, ecarts declares, previsions, resultats et verification
+PINN-PID B : LE BLOC PID COMMUN, GAINS OPTIMISES EN LIGNE A LA MANIERE D'ITO ET WASA
+Methode, modifications, ecarts declares, controles, previsions et resultats
 =============================================================================
 
-Ce document decrit le regulateur (etape 4). Le PINN lui-meme (etape 2) et
-l'estimation de l'etat (etape 3) sont decrits dans criteres_etape2_pinn.txt
-et criteres_etape3_estimation.txt.
+Ecrit le 8 octobre 2026, apres les controles et les essais de mise au point
+E1 a E4, AVANT tout calcul sur les onze essais. La section 7 (resultats)
+est remplie apres le calcul, sans rien changer aux sections 1 a 6.
+La version 1 (5 octobre, loi incrementale de Lu, declenchement a 0.1 V)
+est dans le dossier PINN_PID, avec son propre criteres_pinn_pid.txt.
 
-La version retenue est celle du 5 octobre 2026, validee dans Simulink
-(section 7). Le 7 octobre, a la demande de Jean-Riche, on a verifie si les
-defauts trouves sur l'ELM-PID la touchaient, et on a essaye une variante
-(gains projetes sur l'ensemble admissible au lieu d'une boite) : elle ne
-change rien de mesurable, et la version du 5 octobre est gardee (section 6).
+Ce dossier est une copie de PINN_PID. Le PINN (etape 2), l'observateur
+(etape 3) et leurs fichiers sont inchanges. Le bloc MATLAB
+(pinn_pid_adaptatif.m), ses reglages (pinn_pid_reglages.mat), le rejeu et
+les scripts Simulink sont encore ceux de la version 1 : ils ne
+correspondent PAS a la version B et seront repris si elle est retenue.
 
 
-1. CADRE (base commune v2.1)
-----------------------------
+1. CADRE (base commune v2.1, inchange)
+--------------------------------------
   Circuit L = 10 mH, C = 47 uF, R = 5 ohms, Vin = 200 V, fs = 22 kHz ;
   regulateur a Tc = 1/220 000 s ; onze essais S1 a S9 ; cout J = moyenne
-  de 13 rapports d'IAE a Ziegler-Nichols (10 apres 30 ms, 3 de demarrage) ;
-  tous les evenements doivent revenir dans +-1 V ; banc Python valide
-  contre Simulink ; previsions ecrites avant le calcul.
+  de 13 rapports d'IAE a Ziegler-Nichols (10 apres 30 ms, 3 de demarrage :
+  S1, S8a, S8b) ; tous les evenements doivent revenir dans +-1 V.
+  Article suivi : J. Ito, Y. Wasa, "Data-Driven Adaptive PID Control Based
+  on Physics-Informed Neural Networks", arXiv:2510.04591, 2025 (pages
+  citees d'apres la numerotation du preprint).
 
 
-2. LA METHODE ET SA MISE EN OEUVRE
-----------------------------------
-Reference : J. Ito, Y. Wasa, "Data-Driven Adaptive PID Control Based on
-Physics-Informed Neural Networks", arXiv:2510.04591, 2025. Un PINN predit
-le procede ; les gains PID sont optimises en ligne par Adam sur un cout de
-commande predictive, le gradient passant a travers le PINN.
-
-Mise en oeuvre (banc_pinn_pid.py et pinn_pid_adaptatif.m, copies l'un de
-l'autre ; reglages fixes avant les essais) :
-  Loi : loi PID incrementale de Lu et al. (2021), derivee sur l'erreur
-    filtree (pole N, Forward Euler), saturation [0.01 ; 0.99], seule
-    saturation du rapport cyclique ; depart u = 0.5 aux gains de
-    Ziegler-Nichols en forme incrementale.
-  Predicteur : le PINN de l'etape 2 (3 couches de 32 neurones tanh, perte
-    donnees + physique, contrainte dure de la condition initiale), sur un
-    pas Tc, entrees [tau, Vout, iL, fraction de conduction, Vin, G].
-  Observateur (consequence de l'etape 3 : la charge n'est pas estimable a
-    partir de Vout) : filtre de Kalman etendu a chaque Tc sur [Vout, iL,
-    Vin_eff], charge nominale G = 1/5 S ; Vin_eff, tension d'entree
-    "effective", donne au modele nominal le bon regime etabli. Bruit de
-    mesure 14.1 mV ; bruit d'etat 1 mV, 10 mA, 0.03 V par pas.
-  Optimisation : a la fin de chaque fenetre de 0.5 ms (110 periodes Tc), si
-    l'erreur efficace de la fenetre depasse 0.1 V : 5 iterations d'Adam
-    (alpha = 0.01, beta1 = 0.9, beta2 = 0.999, eps = 1e-7, valeurs d'Ito et
-    Wasa ; moments remis a zero a chaque fenetre) sur
-      J = moyenne sur 110 pas de [ e^2 / (1 V)^2 + 0.01 (du / 0.01)^2 ]
-          + 0.02 |theta - theta_debut|^2,
-    horizon simule avec la loi de Lu dans la boucle, depuis l'etat estime,
-    consigne courante.
-  Gradient : retropropagation dans le temps ecrite a la main (loi,
-    modulation, PINN) ; saturation exacte vers l'avant, pente 0.01 vers
-    l'arriere hors des bornes. Controle : differences finies, ecart
-    relatif 6.7e-8.
-  Gains admissibles : gains normalises theta dans [0 ; 1] sur la plus grande
-    boite (axes paralleles) dont tous les points sont admissibles et qui
-    contient le depart (boite_gains_elm.json). Admissible : marge de phase
-    nominale au moins celle du depart (25.2 degres) et coupure au plus
-    fs/10, aux neuf coins nominaux (R = 4 a 6 ohms, Vin = 160 a 240 V),
-    modele moyen discretise. Projection sur la boite apres chaque iteration
-    d'Adam. Bornes : Kp de 1 a 2.378 x ZN, Ki de 0.25 a 1 x ZN, Kd de 1 a
-    2.378 x ZN.
-
-
-3. ECARTS A ITO ET WASA (declares)
-----------------------------------
-  E1. Loi incrementale de Lu au lieu de leur PID : meme loi pour l'ELM-PID et
-      R0 (decision du 5 octobre), ce qui isole l'effet de l'adaptation.
-  E2. Observateur au lieu de l'etat mesure : le regulateur ne mesure que
-      Vout, comme les autres methodes.
-  E3. Charge nominale dans le predicteur : la charge n'est pas estimable a
-      partir de Vout (etape 3).
-  E4. du^2 au lieu de u^2 dans le cout : u vaut environ 0.5 en regime ; u^2
-      pousserait la commande vers 0.
-  E5. Terme de proximite au lieu de |F|^2 : |F|^2 ramene les gains vers
-      zero en regime (constate sur l'ancienne base).
-  E6. Declenchement a 0.1 V d'erreur efficace : Adam fait un pas de taille
-      alpha quel que soit le gradient ; sans seuil, les gains marchent au
-      hasard en regime (ablation : J = 0.745 sans seuil, contre 0.684).
-  E7. Boite des gains admissibles (section 2) : couche de securite ajoutee
-      ici, avec le critere de marge commun a l'ELM-PID.
-  Non verifie ici : le texte d'Ito et Wasa n'a pas pu etre relu le
-  7 octobre (acces bloque) ; la facon dont ils bornent les gains et dont
-  ils declenchent l'optimisation reste a confronter a E6 et E7.
-
-
-4. PREVISIONS ET RESULTATS DU 5 OCTOBRE (resume de l'etape 4)
--------------------------------------------------------------
-  Transparence : un essai exploratoire sur S1 et S8b (predicteur =
-  modele physique nominal, "plafond") a ete fait avant d'ecrire les
-  previsions ; rien n'a ete change apres lui. La prevision ecrite avant cet
-  essai ("l'adaptation agira peu a 98 ohms, voire dans le mauvais sens")
-  etait fausse sur S8b.
-  Previsions pour les onze essais (plafond), ecrites avant l'essai complet,
-  et resultat :
-    J entre 0.74 et 0.85 : FAUX, 0.688, meilleur que prevu ;
-    S8a, S8b, S9, tous les evenements reviennent : juste ;
-    S1 a S7b, peu d'adaptations hors demarrage et evenements ; S7a et S7b
-      sans adaptation en regime : juste ;
-    S2, ecart maximal a 10 % pres de R0 : juste (-4 %) ;
-    risque note : Kp colle au bord haut apres un transitoire (S8b : x2.378)
-      et n'en redescend pas ; pas d'effet defavorable sur le bruit.
-  Le PINN (candidat A, etape 2) donne ensuite le meme resultat que le
-  modele physique, au bruit pres.
-
-
-5. RESULTATS (banc_pinn_pid_sortie_console.txt, banc_pinn_pid_resultats.json)
------------------------------------------------------------------------------
-                            J      apres 30 ms   demarrage   non revenus
-    Ziegler-Nichols       1.000      1.000         1.000      S8b, S9
-    meilleur PID fige     0.738      0.710         0.831      -
-      (sur grille, choisi sur les onze essais)
-    R0 (meme loi, gains   0.917      0.986         0.687      S8b, S9
-      figes a ZN)
-    plafond (modele       0.688      0.699         0.651      -
-      physique nominal)
-    PINN-PID              0.684      0.694         0.651      -
-  Fenetres adaptees : S1 7, S2 13, S3 13, S4 21, S5 15, S6 7, S7a 7, S7b 6,
-  S8a 24, S8b 29, S9 55 (sur 400, 840 pour S9) ; les gains changent dans
-  les trois cas de base.
-  Ablations : sans seuil 0.745 ; sans Vin_eff 0.684 ; modele physique faux
-  0.692 (L et C x2) et 0.694 (x0.5) ; R0 aux gains finaux du PINN-PID sur
-  S8b, x(2.38, 1.00, 1.27), gains figes : 0.724.
-  Sensibilite (circuit avec L ou C a +-0.1 %) : J de 0.678 a 0.687, tous
-  les evenements reviennent.
-  Marges du modele moyen aux gains finaux : 36.6 a 45.8 degres a 4 et
-  5 ohms, 12.5 a 21.6 degres a 25 et 98 ohms (Ziegler-Nichols : -2.7).
-
-
-6. VERIFICATION DU 7 OCTOBRE : LA BOITE LIMITE-T-ELLE LE PINN-PID ?
+2. CE QUI CHANGE PAR RAPPORT A LA VERSION 1 (decisions du 8 octobre)
 --------------------------------------------------------------------
-  Question. Sur l'ELM-PID, trois verrous empechaient les gains de bouger.
-  Lesquels touchent le PINN-PID ?
-    - Porte sur l'erreur de prediction du modele : absente ici. Le PINN-PID
-      se declenche sur l'erreur de la fenetre, et ses gains changent dans
-      les trois cas de base.
-    - Boite au coin : presente. Le depart ayant exactement la marge-seuil,
-      il est un coin de la boite : Ki ne peut que baisser, Kp et Kd que
-      monter. Sur les onze essais, Ki ne depasse jamais 1 x ZN.
-    - Frontiere courbe de l'ensemble admissible : ne concerne que la
-      variante.
-  Variante essayee (variante_ensemble_admissible_pinn.py) : projection sur
-  l'ensemble admissible lui-meme (meme critere, table ensemble_gains_pinn.mat
-  de ensemble_gains_pinn.py), avec retour sur la frontiere au point
-  admissible le plus proche (J. B. Rosen, SIAM J. Applied Mathematics 9(4),
-  1961), tout le reste identique. Previsions ecrites avant le calcul (R1 a
-  R7, toutes justes ; historique du depot).
-                                              J      Ki max    R0 aux gains
-                                                     (x ZN)    finaux S8b
-    PINN-PID (boite, retenu)               0.684     1.00      0.724
-    variante : ensemble et restauration    0.692     1.64      0.652
-    variante : ensemble sans restauration  0.689     1.67      0.649
-  Lecture.
-    1. La version du 5 octobre n'est pas fausse : la boite ne contient que
-       des gains admissibles ; le gradient, l'identite avec R0 sans
-       adaptation et la concordance avec Simulink sont verifies.
-    2. La boite ne limite pas le resultat : liberer Ki change J de 0.008,
-       moins que l'effet de L ou C a +-0.1 % (0.678 a 0.687).
-    3. La variante n'est donc pas necessaire, ajoute une table de 33^3
-       points et environ 250 lignes au bloc MATLAB, et demanderait une
-       nouvelle validation Simulink. La version du 5 octobre est gardee.
-       (La regle ecrite avant le calcul de la variante disait de la garder
-       si J restait a 0.02 pres ; on s'en ecarte pour la simplicite et la
-       validation deja faite, pas pour J : 0.008 est du bruit.)
-    4. Dans la version retenue, l'adaptation apporte quelque chose : les
-       gains trouves sur S8b, figes, font moins bien (0.724) que le
-       PINN-PID adaptatif (0.684). Dans la variante, c'est l'inverse
-       (0.652 contre 0.692) : raison de plus pour ne pas la retenir comme
-       illustration de la methode.
-  Reponse a la question "pourquoi Ki ne peut-il que baisser ?" : c'est la
-  forme de la plus grande boite admissible autour d'un depart situe sur la
-  marge-seuil ; la variante montre que lever cette restriction ne change
-  pas le resultat.
+B1 (ecart E1 leve). La loi : le bloc PID parallele commun
+  Article : PID positionnel parallele u = Kp e + Ki int(e) + Kd de/dt
+  (eq. 11, p. 4), sous forme discrete u_k = F_k E_k (probleme P5, p. 4).
+  Ici : le bloc "PID Controller" de la base commune, le meme que pour
+  Ziegler-Nichols, le PSO-PID, le Fuzzy-PID et l'ELM-PID B (Parallel,
+  derivee filtree N = 64 122.9 rad/s, Forward Euler, sortie [0.01 ; 0.99],
+  clamping, integrateur a 0.5 et filtre a 0.01 au depart), gains P, I, D
+  pris sur des entrees externes. Gains K = K_ZN .* x, K_ZN = [P, I, D] de
+  Ziegler-Nichols, x = multiplicateurs. Sans adaptation, x = (1, 1, 1) :
+  c'est le PID de Ziegler-Nichols, a 0 pres sur d.
+  Dans l'horizon du predicteur et dans le gradient, la loi simulee est
+  celle du bloc (integrateur, filtre de derivee, saturation, clamping) ;
+  ses etats initiaux sont les etats reels du bloc a l'instant de
+  l'optimisation (xI, xF), l'etat du procede est celui de l'observateur.
+  Saturation dans le gradient : valeur exacte vers l'avant, pente 0.01 vers
+  l'arriere hors des bornes (comme la version 1) ; clamping : interrupteur
+  fige pendant la derivation (derivee exacte par morceaux).
+
+B2 (ecarts E4 et E5 leves). Le cout de l'article
+  Article : J = 1/2 (e' Q e + u' R u) (eq. 13a, p. 5) + mu |F|^2
+  (eq. 13b ; mu = 1, p. 5) ; cas masse-ressort (le plus proche du notre :
+  une sortie, une commande) : Q = diag(1000, 1), R = 0.01 (p. 10).
+  Ici, rapports de ce cas normalises par Q (poids de la position) :
+    J = moyenne sur l'horizon de 1/2 (e^2 + W_U u^2) + W_F |x|^2,
+    W_U = R/Q = 1e-5, W_F = mu/Q = 1e-3,
+  e en volts, u rapport cyclique, F en multiplicateurs x des gains de
+  Ziegler-Nichols (choix d'echelle declare : en unites physiques, I vaut
+  environ 301 et |F|^2 ecraserait le reste). Les termes u^2 (au lieu de
+  du^2) et |F|^2 (au lieu de la proximite au depart) de l'article
+  remplacent ceux de la version 1.
+
+B3 (ecart E7 reduit). Boite et projection
+  Article : gains dans un ensemble admissible F, projection apres chaque
+  iteration d'Adam (Algorithme 1, ligne 8, p. 6).
+  Ici : boite recalculee pour la loi du bloc (boite_gains_pinn_b.py),
+  projection sur la boite apres chaque iteration d'Adam.
+  Verification du script de boite (faite le 8 octobre) : diff avec
+  boite_gains_elm.py (archive ELM2.zip, version du 4 octobre) ; seule la
+  fonction de transfert du regulateur change :
+    C(z) = P + I Tc/(z - 1) + D N (z - 1)/(z - 1 + Tc N),
+  ce qu'on retrouve a partir des equations du bloc (xI(k+1) = xI(k) +
+  Tc I e(k) ; xF(k+1) = xF(k) + Tc d(k), d = N (D e - xF)). Regle, coins
+  nominaux, grille, recherche du plus grand pave et controles inchanges.
+  Resultat : marge du depart 24.93 degres, coupure 1078 Hz ; boite (en
+  multiplicateurs) P de 1 a 2.378, I de 0.25 a 1, D de 1 a 2.378 ;
+  grille fine : marge minimale 24.93 degres, coupure maximale 2063 Hz.
+  La borne basse de I (0.25) est fixee par la limite de la grille (deux
+  octaves), pas par le critere : elle compte ici (section 5).
+
+B4 (ecart E6 reduit, seuil supprime). L'optimisation : iteration en temps reel
+  Article : a chaque pas Delta T = 0.2 s, optimisation depuis des gains
+  tires au hasard dans F (Algorithme 1, ligne 2, p. 6) jusqu'a
+  convergence (Algorithme 1, ligne 9 ; maximum 1.6e4 iterations d'Adam
+  pour le manipulateur, p. 7, 2.0e4 pour le masse-ressort, p. 10) ; Adam
+  alpha = 1e-2, beta1 = 0.9, beta2 = 0.999, eps = 1e-7, moments a zero au
+  depart (p. 5). Irrealisable en 4.5 us.
+  Reference pour la reduction : M. Diehl, H. G. Bock, J. P. Schloder, "A
+  real-time iteration scheme for nonlinear optimization in optimal
+  feedback control", SIAM Journal on Control and Optimization, 43(5),
+  1714-1736, 2005, doi:10.1137/S0363012902400713 (reference et DOI lus
+  sur la copie de l'article du depot de la KU Leuven par un moteur de
+  recherche ; notice doi.org non consultee, acces bloque). Principe : on
+  garde le probleme d'optimisation, mais on le resout progressivement le
+  long de la trajectoire, peu d'iterations par periode d'echantillonnage,
+  en partant de la solution de la periode precedente.
+  Ici : a la fin de CHAQUE fenetre de 0.5 ms (110 pas Tc), 5 iterations
+  d'Adam (le budget de la version 1), reglages de l'article, depart a
+  chaud (x de la fenetre precedente), moments remis a zero a chaque
+  fenetre (comme l'article a chaque pas Delta T). Le declenchement a 0.1 V
+  d'erreur efficace de la version 1 est supprime (l'article n'en a pas) :
+  la derive en regime est contenue par |F|^2 et la boite, deux elements
+  de l'article. Horizon : celui de la version 1 (110 pas Tc, consigne
+  courante, predicteur PINN), declare.
+
+Inchange : le PINN (candidat A, etape 2), l'observateur (filtre de Kalman
+etendu sur [Vout, iL, Vin_eff], charge nominale), la modulation continue
+dans l'horizon, la longueur de fenetre.
 
 
-7. VALIDATION SIMULINK (5 octobre 2026, resultats relus le 7 octobre)
---------------------------------------------------------------------
-  Buck_Commun_PINN_PID.slx, onze essais (resultats_Buck_Commun_PINN_PID.mat) :
-  IAE a 0.1 % pres du banc (S7a 1.8 %, mesure quantifiee), memes gains
-  finaux (S8b : Simulink (2.378, 1, 1.274), banc (2.378, 1, 1.274)), ecart
-  sur Vout pris toutes les ms de 2 a 6 mV (57 mV sur S4, 105 mV sur S9,
-  157 mV sur S7a).
-  Trois modeles de base (resultats_PINN_PID_Trois_Modeles.mat) : nominal,
-  F1, F2 : IAE 1.49 / 4.70 / 6.24 mV.s (banc 1.49 / 4.70 / 6.25), memes
-  gains finaux a 0.3 % pres.
-  Rien n'est a relancer : les fichiers du bloc, des reglages et des scripts
-  de ce dossier sont ceux qui ont produit ces resultats.
+3. ECARTS RESTANTS A ITO ET WASA (declares)
+-------------------------------------------
+  E2. Etat mesure : NON applique. L'article mesure tout l'etat
+      (Algorithme 1, ligne 11) ; la base commune donne la meme mesure, Vout
+      seule, aux cinq methodes. L'observateur de la version 1 reste.
+  E3. Reformule. Le PINN d'Ito et Wasa n'a pas d'entree de charge. Le
+      notre a une entree G, fixee a la charge nominale dans l'horizon (la
+      charge n'est pas estimable a partir de Vout, etape 3) : ajout neutre
+      par rapport a l'article. Rien a recoder.
+  E6 (reduit). Optimisation a convergence remplacee par l'iteration en
+      temps reel (B4) : 5 iterations par fenetre au lieu de "jusqu'a
+      convergence", depart a chaud au lieu de gains tires au hasard,
+      fenetre de 0.5 ms au lieu de Delta T = 0.2 s, horizon de 110 pas Tc
+      avec la loi dans la boucle (l'article predit un pas Delta T avec u
+      maintenu, Algorithme 1, lignes 4-5).
+  E7 (partiel). Boite au lieu d'un ensemble admissible exact ; la barriere
+      de Routh-Hurwitz (eq. 25, p. 11) n'est pas appliquee.
+  Points de detail, declares :
+    - Facteurs 1/2 et Delta T. Le cout d'etape de l'article est
+      J Delta T + mu Theta (Algorithme 1, ligne 6). On garde les rapports
+      Q : R : mu de l'article (moyenne sur l'horizon, sans Delta T). Avec
+      leur Delta T = 0.2 s et le facteur 1/2, le rapport effectif
+      e^2 / |F|^2 de leur cas masse-ressort est 100 et non 1000 ; avec
+      Delta T = 0.5 ms il serait 0.25. Le choix fait ici (1/2 garde,
+      Delta T absorbe dans la moyenne) donne 500 : decision du 8 octobre,
+      non revue.
+    - Forme integrale. Dans l'article, le gain multiplie l'integrale de
+      l'erreur (u_k = F_k E_k, E_k contient e_int, p. 4) ; dans le bloc
+      commun, l'integrateur integre I e. Avec des gains variables, les
+      deux ne sont pas egaux. Consequence en regime (section 5) : la
+      commande de regime est tenue par l'etat de l'integrateur, pas par I.
+    - Gains de depart : Ziegler-Nichols (memes que les autres methodes),
+      pas des gains tires au hasard.
+
+  Ecarts de la version 1 qui disparaissent : E1 (loi de Lu), E4 (du^2),
+  E5 (proximite), seuil de 0.1 V. E7 reste partiel (boite).
 
 
-8. LECTURE POUR LE MEMOIRE
---------------------------
-  1. Le PINN-PID donne le plus petit J des cinq methodes (0.684). Mais
-     l'essentiel de son avance sur le meilleur PID fige vient du demarrage
-     (0.651 contre 0.831), et R0, la meme loi sans adaptation, a deja ce
-     demarrage (0.687) : c'est la forme incrementale de la loi qui le donne.
-     Apres 30 ms, PINN-PID 0.694, meilleur PID fige 0.710.
-  2. La precision du predicteur compte peu : modele physique exact 0.688,
-     modele physique faux 0.692 a 0.694. Avec une charge nominale imposee
-     (non observable), le predicteur donne surtout le signe du gradient.
-  3. Ce qui fait le resultat est la boucle d'adaptation : le seuil (sans
-     lui, 0.745), Adam, et la boite.
+4. CONTROLES (banc_pinn_pid.py et mise_au_point_pinn_pid_b.py)
+--------------------------------------------------------------
+  - PINN relu : vecteurs de test a 6.4e-16 pres.
+  - Gradient de l'horizon (retropropagation ecrite a la main) contre
+    differences finies centrees (pas relatif 1e-6), point interieur de la
+    boite x = (1.3, 0.7, 1.6) :
+      hors saturation, pente 0.01 (la methode) : ecart relatif 4.4e-7 ;
+      avec saturation et clamping, pente 0 (derivee exacte de la loi
+      saturee) : 9.0e-8, sur deux horizons qui passent 9 et 28 pas sur 110
+      en butee, avec le clamping actif sur ces pas.
+  - Sans adaptation, le PINN-PID B est le PID de Ziegler-Nichols : ecart
+    0.0 sur d sur E1 a E4 ; le banc refait le controle sur S1 et S8b.
 
 
-9. REFERENCES
+5. MISE AU POINT E1 A E4 (avant les previsions ; mise_au_point_pinn_pid_b.py)
+----------------------------------------------------------------------------
+  Essais identiques a ceux de mise_au_point_elm_pid.py (points R, Vin
+  absents des onze essais) : E1 7 ohms, 190 V, charge a 4.5 ohms sur
+  [40 ; 65) ms ; E2 15 ohms, 210 V, Vin 175 V puis 235 V ; E3 60 ohms,
+  220 V, consigne +10 V sur [40 ; 65) ms ; E4 9 ohms, 200 V, bruit et CAN
+  12 bits.
+  IAE (mV.s), demarrage / apres 30 ms :
+                    Ziegler-     PINN-PID B     plafond        declenchement
+                    Nichols                     (modele)       a 0.1 V
+    E1             87.02/35.69   84.88/31.90    84.88/31.90    84.88/31.70
+    E2             92.63/ 3.12   89.32/ 3.52    89.32/ 3.52    89.32/ 1.42
+    E3            166.05/28.58  157.70/ 8.78   157.78/ 8.78   157.70/ 7.59
+    E4             84.05/ 1.43   81.81/ 0.79    81.88/ 0.87    81.85/ 0.85
+    (ELM-PID B, pour memoire : E1 86.93/32.80 ; E2 91.97/1.21 ;
+     E3 161.57/9.97 ; E4 83.86/0.97)
+  Ce qu'on voit :
+    1. Les gains bougent des la premiere fenetre (0.5 ms) et pendant les
+       evenements (E1 apres 30 ms : P jusqu'a 1.74, I jusqu'a 0.82 ; E2 :
+       P jusqu'a 2.13, I jusqu'a 1.00, D jusqu'a 1.84).
+    2. En regime, ils reviennent tous au coin (1, 0.25, 1) de la boite :
+       c'est la valeur finale sur les quatre essais. C'est ce que prevoit
+       l'article lui-meme (section IV-A, eq. 17 a 20, p. 6) : en regime,
+       |F|^2 annule Kp et Kd et ne garde de Ki que le minimum qui tient la
+       commande. Dans le bloc commun, la commande de regime est tenue par
+       l'etat de l'integrateur (section 3, forme integrale) : rien ne
+       retient I, qui descend a la borne basse de la boite, 0.25 x ZN,
+       borne fixee par la limite de la grille (section 2, B3). Le gain de
+       regime du PINN-PID B depend donc d'un choix de grille du 4 octobre.
+       On le dit ; on ne le change pas (ce serait un reglage).
+    3. Le coin (1, 0.25, 1) a plus de marge que Ziegler-Nichols (49.1
+       degres au lieu de 24.9 aux coins nominaux ; 19.5 au lieu de -3.1 a
+       charge legere) : les charges legeres (E3) y gagnent beaucoup.
+       Revers : avec un I quatre fois plus faible, un saut de Vin (E2) est
+       rattrape plus lentement que par Ziegler-Nichols (3.52 contre 3.12).
+    4. Le predicteur compte peu (plafond = PINN a 0.1 mV.s pres) ; le
+       declenchement a 0.1 V de la version 1 garderait des gains plus
+       hauts (pas d'optimisation en regime, donc pas de retour au coin)
+       et ferait mieux sur E2 et E3. On ne le reprend pas : l'article
+       n'en a pas (decision du 8 octobre).
+    5. Le demarrage gagne 2.5 a 5 % sur Ziegler-Nichols.
+  Aucun reglage n'a ete change apres ces essais.
+  Essai a sec du banc complet (apres l'ecriture des bornes des previsions
+  dans previsions_pinn_pid_b.json, avant ce texte) : le script a tourne
+  jusqu'au bout sur de faux essais (copies raccourcies a 0.13 s, R x 1.37
+  + 0.3 ohm, Vin x 1.07, aucun des onze essais), dans un dossier de
+  travail hors du depot, pour verifier qu'il ne plante pas. Les bornes
+  n'ont pas ete touchees ensuite.
+
+
+6. PREVISIONS (ecrites avant le calcul sur les onze essais)
+-----------------------------------------------------------
+  Reperes : version 1 J = 0.684 (0.694 apres 30 ms, 0.651 au demarrage) ;
+  ELM-PID B 0.746 (0.680 / 0.967) ; meilleur PID fige 0.738 (0.710 /
+  0.831). Bornes chiffrees dans previsions_pinn_pid_b.json, jugees par le
+  banc (etape 5).
+  P1. J entre 0.69 et 0.80 : donc moins bon que la version 1 (0.684).
+      Raison : le demarrage n'a plus l'avantage de la loi incrementale.
+  P2. Partie "apres 30 ms" de J entre 0.60 et 0.78. Gagne aux charges
+      legeres (marge du coin), perd un peu sur Vin (S5), comme E1 a E4.
+  P3. Partie "demarrage" de J entre 0.92 et 0.99 (E1 a E4 : 0.95 a 0.97).
+  P4. S1, IAE du demarrage entre 88.0 et 92.5 mV.s (Ziegler-Nichols
+      93.77 ; E1 a E4 : 2.5 a 5 % de gain).
+  P5. S2 (F1, hors de J), IAE apres 30 ms entre 2.5 et 3.5 mV.s
+      (Ziegler-Nichols 2.84) : pres de Ziegler-Nichols, I bas en regime
+      au moment du saut de consigne.
+  P6. S3 (F2), IAE apres 30 ms entre 6.5 et 8.7 mV.s (Ziegler-Nichols
+      8.67 ; E1, saut de charge : -11 %).
+  P7. S8a, IAE apres 30 ms entre 2.5 et 6.0 mV.s (Ziegler-Nichols 12.07 ;
+      E3 a charge legere : -69 %).
+  P8. Tous les evenements des onze essais reviennent dans +-1 V (S2, S8b
+      et S9 compris).
+  P9. Les gains changent pendant F1 et F2 : sur S2 et S3, un
+      multiplicateur s'ecarte d'au moins 0.05 de sa valeur a 50 ms dans
+      une fenetre finie entre 50 et 55 ms.
+  P10. Pas de derive sur S7a et S7b : apres 30 ms, a chaque fin de
+      fenetre, les multiplicateurs restent a 0.15 au plus de ceux de S1
+      (meme point, sans bruit ni quantification) ; et l'ecart efficace de
+      S7b est au plus 1.10 fois celui de Ziegler-Nichols.
+  Classement sur S1 demarrage, S2, S3 et S8a parmi PSO-PID (87.62 / 2.04
+  / 5.46 / 2.46), ELM-PID B (93.72 / 2.41 / 6.41 / 2.96), Fuzzy-PID
+  (110.91 / 2.43 / 7.94 / 4.12) et Ziegler-Nichols (93.77 / 2.84 / 8.67 /
+  12.07) : rapporte, sans prevision.
+  Ablations rapportees, jamais choisies : plafond (modele physique a la
+  place du PINN) ; declenchement a 0.1 V (version 1) ; PID fige aux gains
+  finaux de S8b ; sensibilite L ou C a +-0.1 %.
+  Regles de conclusion :
+    - resultats publies tels quels, prevision par prevision (juste ou
+      FAUSSE, avec le chiffre) ;
+    - aucun reglage sur les onze essais : ni W_U, W_F, alpha, nombre
+      d'iterations, fenetre, horizon ni boite ne seront changes apres le
+      calcul, quel que soit le classement ;
+    - si le script plante, seules les erreurs de programmation qui ne
+      changent ni la loi ni les chiffres sont corrigees, et listees ici ;
+    - le choix entre la version 1 et la version B revient a Jean-Riche.
+
+
+7. RESULTATS
+------------
+  (a remplir apres le calcul)
+
+
+8. REFERENCES
 -------------
   [1] J. Ito, Y. Wasa, "Data-Driven Adaptive PID Control Based on
       Physics-Informed Neural Networks", arXiv:2510.04591, 2025.
-  [2] Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller
-      based on ELM and its implementation for Buck converters",
-      International Journal of Control, Automation and Systems, 19(7),
-      2479-2490, 2021 (loi PID incrementale).
+  [2] M. Diehl, H. G. Bock, J. P. Schloder, "A real-time iteration scheme
+      for nonlinear optimization in optimal feedback control", SIAM
+      Journal on Control and Optimization, 43(5), 1714-1736, 2005,
+      doi:10.1137/S0363012902400713 (DOI verifie indirectement, voir B4).
   [3] D. P. Kingma, J. Ba, "Adam: A method for stochastic optimization",
       International Conference on Learning Representations (ICLR), 2015.
   [4] M. Raissi, P. Perdikaris, G. E. Karniadakis, "Physics-informed neural
       networks: A deep learning framework for solving forward and inverse
       problems involving nonlinear partial differential equations",
       Journal of Computational Physics, 378, 686-707, 2019.
-  [5] J. B. Rosen, "The gradient projection method for nonlinear
-      programming, Part II : Nonlinear constraints", Journal of the Society
-      for Industrial and Applied Mathematics, 9(4), 1961 (variante de la
-      section 6 seulement).
-  [6] G. C. Goodwin, K. S. Sin, Adaptive Filtering, Prediction and Control,
-      Prentice Hall, 1984 ; P. A. Ioannou, J. Sun, Robust Adaptive Control,
-      Prentice Hall, 1996 (projection des parametres sur un ensemble
-      admissible ; variante de la section 6).
+  [5] K. J. Astrom, T. Hagglund, Advanced PID Control, ISA, 2006 (forme
+      parallele, derivee filtree, integration conditionnelle).

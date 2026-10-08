@@ -1,3 +1,15 @@
+PINN-PID B (8 octobre 2026) : CE DOSSIER EST LA VERSION B
+=========================================================
+Copie de PINN_PID dont le regulateur suit de plus pres Ito et Wasa : bloc
+PID parallele commun a gains externes, cout de l'article (u^2 et |F|^2),
+Adam a chaque fenetre (iteration en temps reel), boite recalculee.
+A lire : criteres_pinn_pid.txt (de ce dossier). Fichiers propres a B :
+boite_gains_pinn_b.py/.json, mise_au_point_pinn_pid_b.py,
+previsions_pinn_pid_b.json, banc_pinn_pid.py (version 2) et ses sorties.
+Le bloc MATLAB, ses reglages et les scripts Simulink ci-dessous sont
+encore ceux de la version 1 : ne pas les lancer pour la version B.
+Le texte qui suit est celui de la version 1.
+
 PINN-PID : PID AUTO-ADAPTATIF A PREDICTEUR PINN (7 octobre 2026)
 ================================================================
 
