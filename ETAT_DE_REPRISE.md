@@ -4,7 +4,7 @@
 
 Base commune v2.1 pour tout ce qui suit : circuit L = 10 mH, C = 47 µF, R = 5 Ω, Vin = 200 V, fs = 22 kHz, régulateur à Tc = 1/220 000 s. Il y a onze essais (S1 à S9, S7a/b, S8a/b). Le coût **J** est la moyenne de 13 rapports d'IAE à Ziegler-Nichols : 10 termes d'IAE de 30 ms à la fin (S1, S3–S9) et 3 termes d'IAE de démarrage (S1, S8a, S8b). Banc : `banc_commun.py`.
 
-**En bref (8 oct.).** Les cinq méthodes sont figées : Ziegler-Nichols, PSO-PID (J = 0.714), Fuzzy-PID (0.877), ELM-PID option B (0.746), PINN-PID final (0.757). Les chiffres de référence sont ceux du banc Python. Scénarios du corps : S1, S2, S3, S8a. PSO-PID et ELM-PID validés sous Simulink le 8 oct. (modèle commun ; trois modèles de base non lancés ; rejeu de l'ELM-PID non transmis). Reste à faire : Simulink du PINN-PID (Jean-Riche), le rejeu de l'ELM-PID, les trois modèles de base du PSO-PID et de l'ELM-PID, puis la rédaction.
+**En bref (8 oct.).** Les cinq méthodes sont figées : Ziegler-Nichols, PSO-PID (J = 0.714), Fuzzy-PID (0.877), ELM-PID option B (0.746), PINN-PID final (0.757). Les chiffres de référence sont ceux du banc Python. Scénarios du corps : S1, S2, S3, S8a. PSO-PID, ELM-PID et PINN-PID validés sous Simulink le 8 oct. (modèle commun ; trois modèles de base non lancés ; rejeux de l'ELM-PID et du PINN-PID non transmis). Reste à faire : les rejeux de l'ELM-PID et du PINN-PID, les trois modèles de base du PSO-PID, de l'ELM-PID et du PINN-PID, S10 sous Simulink, puis la rédaction.
 
 Dossiers de premier niveau : `COMPARAISON/`, `ELM_PID/` (retenu), `ELM_PID_INCREMENTAL/` (chapitre 4), `FUZZY_PID/`, `PINN_PID/` (version finale seule), `PSO_PID/`, `REDACTION/`, plus les archives et documents versés par Jean-Riche. Les versions abandonnées (`PINN_PID` du 5 octobre, `PINN_PID_B`, `PINN_PID_C` sous ce nom, `ELM_PID_B2`) ne sont plus que dans l'historique git.
 
@@ -84,12 +84,14 @@ Bloc PID commun à gains externes ; coût (éq. 13) et Adam d'Ito et Wasa en it�
 | `boite_gains_pinn.py`, `.json`, `…_sortie_console.txt` | boîte des gains pour le bloc parallèle | BANC (relancé le 8 oct. : JSON identique) |
 | `regle_choix_correction_pinn.json`, `previsions_pinn_pid.json` | règle et prévisions commitées avant le calcul | gardées octet pour octet |
 | `mise_au_point_pinn_pid.py`, `…_sortie_console.txt`, `choix_correction_pinn.json` | contrôles et choix de la correction sur E1–E4 (C1) | BANC (relancé le 8 oct. : identique) |
-| `banc_pinn_pid.py`, sorties, `predictions_banc_pinn_pid.json`, `pinn_pid_reglages.mat` (VERSION 3), `reference_rejeu_pinn_pid.mat` | jugement sur les onze essais (J = 0.757) | BANC (relancé le 8 oct. après renommage : mêmes chiffres) |
+| `banc_pinn_pid.py`, sorties, `predictions_banc_pinn_pid.json`, `pinn_pid_reglages.mat` (VERSION 3), `reference_rejeu_pinn_pid.mat` | jugement sur les onze essais (J = 0.757) | BANC (relancé le 8 oct. après renommage : mêmes chiffres), puis confirmé SIMULINK |
 | `ensemble_gains_elm.mat`, `.json` | ensemble de l'ELM-PID (candidate C3, ablations) | copie de `ELM_PID` |
-| `pinn_pid_adaptatif.m` v3 | adaptateur : (e, mesure, u) → [P I D] | **NON TESTÉ** sous MATLAB ; rejeu émulé en Python identique (8 oct.) |
-| `Tester_PINN_PID_Rejeu.m`, `Construction_PINN_PID.m`, `Simuler_PINN_PID.m`, les trois scripts « Trois_Modeles » | chaîne Simulink, même montage que l'ELM-PID | **NON TESTÉ** sous MATLAB |
-| `verifier_modele_pinn_pid.py`, `verifier_modeles_pinn_pid_trois.py` | vérificateurs | VÉRIF-FAB |
-| `LISEZMOI_PINN.txt` | mode d'emploi, ordre d'exécution MATLAB | document |
+| `pinn_pid_adaptatif.m` v3 | adaptateur : (e, mesure, u) → [P I D] | SIMULINK (8 oct., dans le modèle commun ; copie du PID égale à u, écart 0.0) ; rejeu pas à pas : sortie non transmise (rejeu émulé en Python identique) |
+| `Construction_PINN_PID.m`, `Simuler_PINN_PID.m` | modèle commun | SIMULINK (8 oct. : T0 2.3 mV, T1 2.3 mV, T2 22.8 mV, gains de T1 et T2 égaux au banc ; IAE à 0.3 % près, S7a −6.1 % par la quantification ; mêmes fenêtres optimisées, dépassements et retours) |
+| `Tester_PINN_PID_Rejeu.m` | rejeu pas à pas | sortie **non transmise** |
+| les trois scripts « Trois_Modeles » | nominal, F1, F2 | **NON TESTÉ** sous MATLAB (non lancés) |
+| `verifier_modele_pinn_pid.py`, `verifier_modeles_pinn_pid_trois.py` | vérificateurs | VÉRIF-FAB, puis SIMULINK pour `verifier_modele_pinn_pid.py` (8 oct. : modèle de Jean-Riche conforme) ; `…_trois.py` : VÉRIF-FAB seulement |
+| `LISEZMOI_PINN.txt` | mode d'emploi, ordre d'exécution MATLAB | document (statut validé sous Simulink, modèle commun ; rejeu, trois modèles de base et S10 à faire) |
 
 ### 2.5 `COMPARAISON/`
 
@@ -208,7 +210,7 @@ Historique (versions abandonnées, dans l'historique git) :
 - Ablations : sans zone morte 0.893 ; C1+C2 0.752 ; C1+C3 0.754 ; plafond (modèle physique) 0.757 ; PID figé aux gains finaux de S1 0.768.
 - Sensibilité L ou C ±0.1 % : 0.748 à 0.763.
 - Prévisions : 7 justes sur 10 (P1, P2, P7 connues d'avance), P6, P9, P10 fausses.
-- Simulink : à faire.
+- SIMULINK (8 oct., modèle commun ; `criteres_pinn_pid.txt` §9) : IAE à 0.3 % près sauf S7a (S9 291.32 contre 291.14 ; S5 3.06 contre 3.05 ; S7a 3.81 contre 4.06, −6.1 %, quantification, plus grand que pour les autres méthodes) ; mêmes nombres de fenêtres optimisées ; gains : écart de 8e-5 (S1, S5, S6) à 0.36 % (S3), 2.2 % sur S4 ; écart sur Vout 0.3 à 1.3 mV efficace hors S7a (37.4), S8b (2.4), S9 (4.4) ; dépassements S1 13.20 %, S8a 52.13 %, S8b 82.35 % ; J estimé sous Simulink 0.753 (0.757 avec S7a pris au banc). Le J du banc (0.757) vaut pour Simulink, S7a excepté. Temps de calcul en exécution interprétée : environ 1 ms par période du régulateur (1.7 à 3.2 ms sur S5, S7a, S6), 82 ms sur S9 (7610 s pour 0.42 s). Rejeu (`Tester_PINN_PID_Rejeu`) : non transmis. Trois modèles de base : non lancés.
 
 **Fuzzy-PID** (`banc_fuzzy_pid.py`)
 - J = 0.877 ; SIMULINK (6 oct.) : IAE à 0.2 % près, J estimé sous Simulink 0.881.
@@ -304,7 +306,7 @@ Points de la proposition de TFE à revoir plus tard avec Jean-Riche :
 ## 6. Ce qui reste à faire
 
 1. **ELM-PID option B sous Simulink** (Jean-Riche) : modèle commun validé (8 oct.) ; restent la sortie de `Tester_ELM_PID_Rejeu` (non transmise) et les trois scripts « Trois_Modeles » (`ELM_PID/LISEZMOI_ELM.txt`, étapes 1 et 5 à 7).
-2. **PINN-PID final sous Simulink** (Jean-Riche) : même chaîne dans `PINN_PID/` (`LISEZMOI_PINN.txt`, étapes 1 à 7).
+2. **PINN-PID final sous Simulink** (Jean-Riche) : modèle commun validé (8 oct.) ; restent la sortie de `Tester_PINN_PID_Rejeu` (non transmise) et les trois scripts « Trois_Modeles » (`PINN_PID/LISEZMOI_PINN.txt`, étapes 1 et 5 à 7) ; S10 au point 5.
 3. **Rédaction** des chapitres avec Jean-Riche (corps : J, S1, S2, S3, S8a ; annexe : classement essai par essai ; chapitre 4 : ELM incrémental contre option B).
 4. **PSO-PID, trois modèles de base sous Simulink** (Jean-Riche) : `Construction_PSO_PID_Trois_Modeles`, `verifier_modeles_pso_pid_trois.py`, `Simuler_PSO_PID_Trois_Modeles` (`PSO_PID/LISEZMOI_PSO.txt`, étapes 6 à 8). Le modèle commun est validé (8 oct.).
 5. **S10 sous Simulink** (Jean-Riche), dans chaque dossier : `ESSAIS_A_SIMULER = {'S10'}` en tête de `Simuler_*.m`, résultats dans `resultats_<MODELE>_S10.mat`. Banc : S10 ajouté après coup dans les quatre bancs (étape 3b ou 5b), hors de J ; J et S1–S9 inchangés chiffre par chiffre, S10 identique bit à bit à `COMPARAISON/S10/resultats_S10.json`. Attendu : IAE de 100 ms à la fin à 1 % près (PSO, Fuzzy), à 3 % près (ELM, PINN).

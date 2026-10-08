@@ -13,7 +13,8 @@ PINN comme predicteur. S'y ajoute une zone morte de 0.1 V sur l'erreur
 efficace de la fenetre. Cette zone morte a ete choisie apres un premier
 calcul sans elle (J = 0.893 sur les onze essais), parmi trois corrections
 candidates testees sur les seuls essais de mise au point E1 a E4 ;
-l'historique complet est dans le depot git.
+l'historique complet est dans le depot git. Valide sous Simulink le
+8 octobre 2026 sur le modele commun (section 9).
 
 Ordre de redaction (8 octobre 2026) : regle de choix de la correction
 (regle_choix_correction_pinn.json) ecrite avant tout calcul des
@@ -356,8 +357,8 @@ criteres_etape2_pinn.txt et criteres_etape3_estimation.txt.
     4. Le predicteur ne compte pas : plafond 0.7573 contre 0.7571.
 
 
-8. VALIDATION SIMULINK (A FAIRE PAR JEAN-RICHE)
------------------------------------------------
+8. SIMULINK : MONTAGE ET CONTROLES SANS MATLAB (ecrit avant les sorties)
+------------------------------------------------------------------------
   Montage : le meme que l'ELM-PID. Le bloc "PID Controller" de la base
   commune est garde et passe en gains externes ; l'adaptateur
   pinn_pid_adaptatif.m (MATLAB System, reglages VERSION 3, entrees e,
@@ -399,8 +400,70 @@ criteres_etape2_pinn.txt et criteres_etape3_estimation.txt.
   bloc PID et sa copie dans l'adaptateur, temps de calcul.
 
 
-9. REFERENCES
--------------
+9. VALIDATION SIMULINK (8 octobre 2026, sorties envoyees par Jean-Riche)
+------------------------------------------------------------------------
+  Construction_PINN_PID : entrees du bloc "PID Controller" u = 1, P = 2,
+    I = 3, D = 4, N = 5. Auto-tests :
+      T0 (S1, 20 ms, adaptateur fige, contre le PID classique) : 2.3 mV,
+         gains x[1 1 1] ;
+      T1 (S1, 20 ms, PINN-PID) : 2.3 mV, gains a 19 ms
+         x[1.299 0.900 1.059], egaux au banc ; la fenetre de 4 ms
+         (0.1017 V) a donc declenche comme au banc ;
+      T2 (S8b) : 22.8 mV, gains x[1.698 1.000 1.525], egaux au banc.
+    Ecart entre la copie du PID refaite par l'adaptateur et l'entree u du
+    vrai bloc : 0.0 partout.
+  verifier_modele_pinn_pid.py : modele conforme.
+  Simuler_PINN_PID, onze essais, Simulink face au banc :
+    IAE apres 30 ms (mV.s), Simulink / banc :
+      S1    1.49 /   1.49       S6    1.63 /   1.63
+      S2    2.44 /   2.44       S7a   3.81 /   4.06  (-6.1 %)
+      S3    6.40 /   6.40       S7b   2.68 /   2.68
+      S4   18.32 /  18.30       S8a   2.95 /   2.95
+      S5    3.06 /   3.05       S8b   2.96 /   2.96
+                                S9  291.32 / 291.14  (+0.1 %)
+    Memes nombres de fenetres optimisees que le banc sur les onze essais.
+    Gains, ecart relatif maximal Simulink - banc : 8e-5 sur S1, S5 et S6,
+    0.3 % sur S2, 0.36 % sur S3, 2.2 % sur S4, 0.15 % sur S8b, 0.04 % sur
+    S9.
+    Ecart sur Vout : 0.3 a 1.3 mV efficace, sauf S8b (2.4 mV), S9 (4.4 mV)
+    et S7a (37.4 mV).
+    S7a : mesure quantifiee (CAN 12 bits). Un ecart d'arrondi suffit a
+    changer une decision du CAN et les trajectoires se separent point par
+    point ; seuls IAE et ecart efficace se comparent. Ecart attendu, deja
+    vu pour les autres methodes, mais plus grand ici (-6.1 %, contre
+    +0.8 % pour le PSO-PID, +2.5 % pour l'ELM-PID et +4.8 % pour le
+    Fuzzy-PID). Il joue en faveur du PINN-PID sous Simulink ; on ne le
+    retient pas, puisqu'il vient de la quantification et non de la
+    methode.
+    Depassements identiques : S1 13.20 %, S8a 52.13 %, S8b 82.35 %. Memes
+    retours dans la bande et memes temps de retour.
+  Conclusion : le banc Python reproduit Simulink pour le PINN-PID, modele
+  commun. Le J du banc (0.757) vaut pour Simulink, S7a excepte. Estimation
+  de J sous Simulink a partir des IAE ci-dessus, IAE du demarrage
+  supposees egales a celles du banc (non transmises ; les depassements
+  identiques vont dans ce sens) : 0.753, dont tout l'ecart vient de S7a
+  (0.757 avec S7a pris au banc).
+  Temps de calcul (Simulink, adaptateur en execution interpretee, temps
+  moyen par periode Tc du regulateur) : environ 1.0 a 1.1 ms sur S1 a S4,
+  S7b, S8a et S8b ; 1.7 ms sur S5, 2.0 ms sur S7a, 3.2 ms sur S6. S9 :
+  7610 s pour 0.42 s simulees, soit 82 ms par periode (49 fenetres
+  optimisees sur 840). La cause de l'ecart entre S9 et les autres essais
+  n'a pas ete analysee. Ces chiffres sont une donnee sur le cout du
+  PINN-PID en execution interpretee, pas une mesure de faisabilite en
+  temps reel (code non compile, materiel qui n'est pas une cible
+  embarquee).
+  Non transmis : la sortie du test de rejeu (Tester_PINN_PID_Rejeu), qui
+  reste la validation du bloc pas par pas. L'accord ci-dessus (gains de
+  T1 et T2 egaux au banc, memes fenetres optimisees, copie du PID egale a
+  u) la rend tres probable, sans la remplacer.
+  Non lances : les trois modeles de base
+  (Construction_PINN_PID_Trois_Modeles, verifier_modeles_pinn_pid_trois.py,
+  Simuler_PINN_PID_Trois_Modeles) et S10 sous Simulink
+  (ESSAIS_A_SIMULER = {'S10'} dans Simuler_PINN_PID).
+
+
+10. REFERENCES
+--------------
   [1] J. Ito, Y. Wasa, "Data-Driven Adaptive PID Control Based on
       Physics-Informed Neural Networks", arXiv:2510.04591, 2025.
   [2] M. Diehl, H. G. Bock, J. P. Schloder, "A real-time iteration scheme

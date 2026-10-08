@@ -5,7 +5,7 @@ d'Ito et Wasa (arXiv:2510.04591) : iteration en temps reel, 5 iterations
 d'Adam par fenetre de 0.5 ms, depart a chaud. L'optimisation n'a lieu que
 si l'erreur efficace de la fenetre depasse 0.1 V (meme seuil de zone
 morte que l'ELM-PID).
-Resultat sur le banc : J = 0.757. Pas encore teste sous MATLAB/Simulink.
+Resultat sur le banc : J = 0.757.
 Historique : les versions anterieures du PINN-PID ne sont gardees que dans
 l'historique git du depot.
 
@@ -18,11 +18,23 @@ FUZZY ou PSO sur le chemin MATLAB en meme temps (memes noms de fichiers).
 Le bloc pinn_pid_adaptatif.m n'accepte que des reglages de VERSION 3
 (pinn_pid_reglages.mat de ce dossier).
 
+STATUT (8 octobre 2026) : VALIDE SOUS SIMULINK sur le modele commun
+(etapes 2 a 4, sorties de Jean-Riche) : auto-tests T0, T1, T2 passes
+(gains de T1 et T2 egaux au banc, copie du PID egale a u), modele
+conforme, IAE a 0.3 % pres sauf S7a (-6.1 %, mesure quantifiee, ecart
+attendu), memes nombres de fenetres optimisees, memes depassements et
+memes retours. Le J du banc (0.757) vaut pour Simulink. Temps de calcul en
+execution interpretee : environ 1 ms par periode du regulateur sur la
+plupart des essais, 82 ms sur S9. Detail : criteres_pinn_pid.txt,
+section 9. Pas encore transmis : la sortie du test de rejeu (etape 1).
+Restent a lancer : les trois modeles de base (etapes 5 a 7) et S10 (voir
+plus bas).
+
 A LIRE D'ABORD : criteres_pinn_pid.txt
   Ce qui est repris de l'article, ecarts declares et leurs raisons,
   controles, choix de la correction sur E1 a E4, previsions, resultats,
-  et la section 8 (Simulink : montage, controles faits sans MATLAB, ce
-  qu'on attend).
+  la section 8 (Simulink : montage, controles faits sans MATLAB, ce
+  qu'on attendait) et la section 9 (validation Simulink du 8 octobre).
 Et : criteres_etape2_pinn.txt (choix et apprentissage du PINN),
 criteres_etape3_estimation.txt (ce qu'on peut estimer a partir de Vout).
 
@@ -76,14 +88,16 @@ A lancer dans MATLAB (dossier courant = ce dossier) :
    Nominal, F1, F2 compares a S1, S2, S3 du banc ; une figure par modele,
    avec les gains.
 
-Envoie-moi la sortie console des etapes 1 a 7. Si une etape s'arrete sur
-une erreur, envoie-la telle quelle sans passer a la suivante.
-Aucun script MATLAB n'a pu etre execute ici (pas de MATLAB). Ce qui a ete
-controle sans MATLAB : le rejeu emule en Python (transcription ligne a
-ligne du bloc) a partir du fichier de reference redonne les gains, les
-decisions et l'observateur du banc a l'identique ; les deux verificateurs
-ont ete passes sur des modeles fabriques (conformes, puis avec deux
-entrees de l'adaptateur inversees : rejete).
+Fait le 8 octobre 2026 : etapes 2, 3 et 4 (validees, voir le statut en
+tete). A faire : envoie-moi la sortie console de l'etape 1 (rejeu), puis
+celle des etapes 5 a 7. Si une etape s'arrete sur une erreur, envoie-la
+telle quelle sans passer a la suivante.
+Avant la validation Simulink, ce qui avait ete controle sans MATLAB : le
+rejeu emule en Python (transcription ligne a ligne du bloc) a partir du
+fichier de reference redonne les gains, les decisions et l'observateur du
+banc a l'identique ; les deux verificateurs ont ete passes sur des
+modeles fabriques (conformes, puis avec deux entrees de l'adaptateur
+inversees : rejete).
 
 CE QUE SIMULINK DOIT DONNER (banc)
 ----------------------------------
@@ -145,8 +159,10 @@ Simuler S10 seul sous MATLAB (sans relancer les onze essais deja valides) :
   Ce qu'on attend : IAE de 100 ms a la fin a 3 % pres du banc, memes
   retours dans la bande, memes ordres de grandeur des gains (les decisions
   d'adaptation dependent de la zone morte de 0.1 V ; le modele commun du
-  PINN-PID n'a pas encore ete valide sous Simulink : lancer d'abord les
-  etapes du modele commun).
+  PINN-PID est valide sous Simulink depuis le 8 octobre).
+  Duree : non estimee. Pour reperes, sous Simulink, environ 1 ms par
+  periode du regulateur sur la plupart des onze essais, mais 7610 s pour
+  les 0.42 s de S9 (criteres_pinn_pid.txt, section 9).
   Envoie-moi la sortie console.
 
 FICHIERS
