@@ -1,0 +1,108 @@
+METRIQUES QUANTITATIVES DES CINQ METHODES (S1, S2, S3, S8a, S10)
+Dossier COMPARAISON/metriques, 8 octobre 2026
+=============================================================================
+
+A quoi sert ce dossier
+  Donner, a cote du classement deja fixe, toutes les grandeurs chiffrees
+  dont le memoire a besoin pour les cinq methodes (Ziegler-Nichols,
+  PSO-PID, Fuzzy-PID, ELM-PID, PINN-PID) sur les cinq scenarios du memoire
+  (S1, S2, S3, S8a, S10) : demarrage, IAE / ISE / ITAE, ecarts, erreur en
+  regime permanent, evenements, activite de la commande, temps
+  d'execution. Ces grandeurs sont descriptives : elles ne changent aucun
+  ordre. Le classement reste celui des IAE deja fixees (S1 : 0 a 30 ms ;
+  S2, S3, S8a : 30 ms a la fin ; S10 : 100 ms a la fin, quatre methodes
+  classees et Ziegler-Nichols en reference).
+
+Les fichiers
+  definitions_metriques.txt
+      Les definitions exactes (fenetres, unites, controles) et quatre
+      attendus A1 a A4, ecrits et commites AVANT le calcul. A lire en
+      premier : c'est la reference pour le memoire.
+  metriques_banc.py
+      Banc Python. Simule les cinq methodes sur les cinq scenarios, chaque
+      methode prise dans son dossier (chargement par espaces de noms, comme
+      simulations_scenario.py), calcule toutes les metriques, chronometre
+      chaque appel du regulateur, controle les IAE et ecrit les tableaux.
+      Lancement : python metriques_banc.py > metriques_banc_sortie_console.txt
+      (un seul processus, une demi-minute environ sur la machine de calcul).
+  metriques_banc_sortie_console.txt, metriques_banc.csv, metriques_banc.md
+      Sortie du banc (8 octobre 2026). Le .md contient les tableaux prets a
+      copier ; le .csv une ligne par metrique (scenario ; methode ; groupe ;
+      fenetre ; metrique ; valeur ; unite), separateur ';', point decimal.
+  traduction_metriques_simulink.py
+      Traduction Python ligne a ligne des fonctions de calcul et de mise en
+      tableaux de Metriques_Simulink.m (indices MATLAB gardes). Importee
+      par metriques_banc.py, qui l'applique aux signaux du banc : c'est le
+      controle du script MATLAB sans MATLAB.
+  Metriques_Simulink.m
+      Meme calcul sur les resultats Simulink des dossiers de methode, plus
+      le temps de calcul Simulink par periode du regulateur. Ecrit
+      metriques_simulink.csv et metriques_simulink.md dans ce dossier et,
+      si metriques_banc.csv est present, compare l'IAE de classement
+      Simulink a celle du banc (S10 : 1 % PSO-PID et Fuzzy-PID, 3 % ELM-PID
+      et PINN-PID). Un fichier de resultats absent est signale, le script
+      continue.
+
+Ordre d'execution
+  1. (deja fait) python metriques_banc.py
+  2. Sous MATLAB, dans chaque dossier de methode : les resultats Simulink
+     (Simuler_<M>.m ; S10 avec ESSAIS_A_SIMULER = {'S10'}) ; pour
+     Ziegler-Nichols, Simuler_ZN.m dans PSO_PID (voir
+     COMPARAISON/S10/MODE_EMPLOI_S10.txt).
+  3. Sous MATLAB, dossier courant COMPARAISON/metriques : Metriques_Simulink.
+
+Ou placer les fichiers
+  Regulateurs/
+    PSO_PID/    resultats_Buck_Commun_PSO_PID.mat, ..._S10.mat,
+                resultats_Buck_Commun.mat (et/ou _S10.mat) de Ziegler-Nichols
+    FUZZY_PID/  resultats_Buck_Commun_Fuzzy_PID.mat, ..._S10.mat
+    ELM_PID/    resultats_Buck_Commun_ELM_PID.mat, ..._S10.mat
+    PINN_PID/   resultats_Buck_Commun_PINN_PID.mat, ..._S10.mat
+    COMPARAISON/metriques/  Metriques_Simulink.m, metriques_banc.csv
+  Metriques_Simulink.m lit ../../<DOSSIER>/ a partir de son propre dossier
+  et prend les instants des evenements dans scenario_<code>.mat du dossier
+  de la methode. Les resultats de Ziegler-Nichols sont cherches dans les
+  quatre dossiers (le premier trouve est pris).
+
+Controles faits le 8 octobre 2026 (metriques_banc_sortie_console.txt)
+  - IAE de classement identiques aux fichiers de resultats
+    (COMPARAISON/banc_*_resultats.json, COMPARAISON/S10/resultats_S10.json) :
+    ecart nul pour les 25 couples methode x scenario.
+  - Demarrage, evenements et (S2, S3, S8a) commande identiques a la
+    fonction grandeurs du banc : ecart nul.
+  - Traduction de Metriques_Simulink.m appliquee aux signaux du banc :
+    925 valeurs, ecart maximal nul (tolerance 1e-9).
+  - Metriques_Simulink.m execute sous GNU Octave 8.4 (pas de MATLAB sur la
+    machine de calcul ; fonctions locales placees en tete pour Octave, rien
+    d'autre de change) sur des fichiers resultats_*.mat fabriques avec les
+    signaux du banc, au format de Simuler_<M>.m (structure resultats, un
+    fichier principal et un fichier _S10 par methode, Ziegler-Nichols dans
+    un seul dossier) : metriques_simulink.csv identique a
+    metriques_banc.csv (ecart nul sur les 925 valeurs), tableaux identiques
+    ligne a ligne, IAE "conforme" partout. Un fichier _S10 absent est bien
+    signale, et le fichier _S10 passe bien avant un S10 du fichier
+    principal.
+  Ce qui n'a PAS pu etre controle sans MATLAB : la lecture des vrais
+  fichiers de Simulink (format -v7.3, qu'Octave ne lit pas), les
+  differences de comportement entre MATLAB R2024a et Octave, et les appels
+  Simulink de Ouvrir_Modele_S10.m (son deroulement a ete execute sous
+  Octave avec des fonctions Simulink factices : prerequis, copie, InitFcn,
+  StopTime, Scope, sauvegarde ; le modele source n'est pas modifie).
+
+A savoir pour la lecture
+  - Temps d'execution du banc : ordre de grandeur RELATIF entre methodes
+    (Python interprete, une machine de calcul quelconque), pas un temps
+    sur materiel embarque. Le maximum par appel contient les aleas du
+    systeme (ramasse-miettes, ordonnanceur) ; c'est la moyenne qui compte.
+  - Temps Simulink par periode : domine par l'execution interpretee des
+    blocs MATLAB System et par le circuit au pas du powergui ; ce n'est pas
+    le cout du regulateur.
+  - S2 : la fenetre "5 ms avant 70 ms" tombe pendant la consigne variable
+    F1 (50 a 70 ms). Ce n'est pas un regime permanent : son ondulation
+    (environ 185 mV) est celle d'une poursuite de consigne. Les fenetres
+    "avant 50 ms" et "10 dernieres ms" sont, elles, en regime permanent.
+  - S10 : la fenetre "5 ms avant 100 ms" est la fin du reajustement au
+    nouveau point (160 V, 25 ohms) ; Ziegler-Nichols n'y est pas encore
+    stabilise.
+  - S1 : la fenetre de classement est le demarrage (0 a 30 ms) ; l'ecart
+    efficace et l'ISE y sont domines par la montee de 0 a 100 V.

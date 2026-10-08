@@ -1,0 +1,202 @@
+MODE D'EMPLOI : S10 SOUS SIMULINK ET METRIQUES DES CINQ METHODES
+Pour Windows, MATLAB R2024a ; 8 octobre 2026
+=============================================================================
+
+Arborescence supposee (noms de dossiers a garder tels quels) :
+
+  Regulateurs\
+    PSO_PID\   FUZZY_PID\   ELM_PID\   PINN_PID\   COMPARAISON\
+
+Rappel : S10 a ete ajoute APRES les onze essais et n'entre pas dans le
+cout J. A 50 ms, Vin passe de 200 a 160 V et la charge de 5 a 25 ohms, pour
+de bon ; de 100 a 175 ms, trois echelons de charge de 15 ms (20, 30,
+20 ohms). Grandeur de classement : IAE de 100 ms a la fin. Les modeles
+deja valides (Buck_Commun.slx, Buck_Commun_<M>.slx) ne sont pas
+reconstruits et ne sont jamais modifies par ce qui suit.
+
+
+1. FICHIERS A AJOUTER OU REMPLACER
+---------------------------------
+a) Fichiers S10 du depot (commit "S10 dans les dossiers PSO_PID,
+   FUZZY_PID, ELM_PID, PINN_PID"), si tu ne les as pas encore. Dans CHACUN
+   des quatre dossiers, remplacer ou ajouter :
+     scenario_S10.mat                    (nouveau)
+     scenarios_communs.json              (remplace : liste essais_complementaires)
+     Simuler_<M>.m                       (remplace : reglage ESSAIS_A_SIMULER)
+     predictions_banc_<m>.json           (remplace : S10 ajoute)
+     predictions_banc_pid_classique.json (remplace : S10 ajoute)
+   avec <M> / <m> = PSO_PID / pso_pid, Fuzzy_PID / fuzzy_pid,
+   ELM_PID / elm_pid, PINN_PID / pinn_pid. Les fichiers Python (banc_*.py,
+   banc_commun.py) et les LISEZMOI peuvent etre remplaces aussi, MATLAB
+   n'en a pas besoin. charger_scenario.m ne change pas.
+b) Archive scripts_S10_metriques.zip : la decompresser DANS Regulateurs\
+   (elle a deja la bonne arborescence). Elle ajoute :
+     PSO_PID\Ouvrir_Modele_S10.m      FUZZY_PID\Ouvrir_Modele_S10.m
+     ELM_PID\Ouvrir_Modele_S10.m      PINN_PID\Ouvrir_Modele_S10.m
+     PSO_PID\Simuler_ZN.m             (Ziegler-Nichols, voir point 4)
+     COMPARAISON\metriques\...        (Metriques_Simulink.m, metriques_banc.csv, ...)
+     COMPARAISON\S10\MODE_EMPLOI_S10.txt (ce fichier)
+   Aucun fichier existant n'est ecrase par l'archive.
+c) Un seul exemplaire de chaque fichier sur le chemin MATLAB : ne pas
+   ajouter les quatre dossiers au chemin (Set Path). On travaille toujours
+   en se placant DANS le dossier (Current Folder), comme jusqu'ici.
+
+
+2. LES CHIFFRES OFFICIELS DE S10 : Simuler_<M>.m
+------------------------------------------------
+Dans chaque dossier de methode :
+  1. Current Folder = Regulateurs\<DOSSIER> (ex. Regulateurs\PSO_PID).
+  2. Ouvrir Simuler_<M>.m. En tete, dans "Essais a simuler", mettre :
+         ESSAIS_A_SIMULER = {'S10'};
+     et enregistrer. C'est le seul changement.
+  3. Lancer le script (Run). Seul S10 est simule ; les resultats vont dans
+     resultats_Buck_Commun_<M>_S10.mat. Le fichier des onze essais deja
+     valides, resultats_Buck_Commun_<M>.mat, n'est pas touche.
+  4. Copier toute la sortie de la Command Window dans un fichier texte
+     sortie_S10_<M>.txt.
+  5. Remettre ESSAIS_A_SIMULER = {}; si tu veux un jour tout resimuler.
+Durees indicatives : PSO-PID une minute environ ; Fuzzy-PID et ELM-PID une
+a deux minutes ; PINN-PID deux a quatre minutes (blocs MATLAB System en
+execution interpretee).
+
+Ce qu'il faut regarder dans la sortie. Le script affiche, pour Simulink et
+pour le banc, l'IAE de 30 ms a la fin et l'IAE de chaque evenement.
+L'IAE de 100 ms a la fin (celle du classement) est la SOMME des IAE des six
+evenements de 100, 115, 130, 145, 160 et 175 ms ; Metriques_Simulink.m la
+calcule directement (point 5). Valeurs du banc et tolerances, ecrites
+avant (LISEZMOI de chaque dossier) :
+
+  Methode          IAE 100 ms-fin   tolerance   IAE 30 ms-fin   evenement de 50 ms
+                   (banc, mV.s)                 (banc, mV.s)    (banc, mV.s)
+  PSO-PID               3.98           1 %          129.01          124.86
+  Fuzzy-PID             9.18           1 %          132.09          122.74
+  ELM-PID               8.63           3 %          138.70          129.89
+  PINN-PID              6.63           3 %          134.86          128.05
+  Ziegler-Nichols      70.48        (aucune)        220.39          149.73
+
+Attendu aussi : memes retours dans +-1 V que le banc (pour les quatre
+methodes, les six echelons reviennent ; le PSO-PID reste dans la bande aux
+deux echelons de 30 ohms ; Ziegler-Nichols ne revient pas a 100, 115, 130
+et 160 ms). L'IAE de 30 ms a la fin est dominee par la surtension
+d'environ 110 V a 50 ms (Vout monte vers 210 V) : c'est normal, voir le
+point 7. Pour l'ELM-PID et le PINN-PID, un ecart de quelques % n'est pas
+une erreur de construction (sur le banc, L ou C a +-0.1 % font deja passer
+l'IAE de l'ELM-PID de 8.63 a 7.88 mV.s) ; au-dela de 3 %, ou si un
+evenement ne revient pas, envoie-moi la sortie avant d'aller plus loin.
+
+
+3. LE MODELE A OUVRIR ET A LANCER : Ouvrir_Modele_S10.m
+-------------------------------------------------------
+Pour voir S10 dans Simulink (Scope) sans passer par Simuler_<M>.m :
+  1. Current Folder = Regulateurs\<DOSSIER>.
+  2. Lancer Ouvrir_Modele_S10 (la methode est deduite du nom du dossier).
+     Le script verifie que Buck_Commun_<M>.slx, scenario_S10.mat et
+     charger_scenario.m sont la, cree une copie fraiche <M>_S10.slx
+     (PSO_PID_S10.slx, Fuzzy_PID_S10.slx, ELM_PID_S10.slx,
+     PINN_PID_S10.slx), et dans la copie seulement :
+       - InitFcn = charger_scenario('S10') : S10 est TOUJOURS charge a
+         chaque Run, quoi qu'il y ait dans le workspace ;
+       - StopTime = duree de S10 plus un demi-pas de 1/220000 s, comme
+         Simuler_<M>.m (le dernier instant, 200 ms, est simule) ;
+       - un Scope "Scope S10 Vout consigne" (entree 1 Vout, entree 2
+         consigne, un point par periode du regulateur).
+     Il enregistre la copie et l'ouvre.
+  3. Cliquer sur Run. Le Scope s'ouvre au debut de la simulation ; le
+     Scope d'origine (Vin, Vout, iL) est toujours la.
+Ce modele sert a regarder et a faire des captures pour le memoire. Les
+chiffres officiels restent ceux du point 2. Il est plus lent que
+Simuler_<M>.m (les blocs To Workspace d'origine enregistrent au pas du
+powergui). Relancer Ouvrir_Modele_S10 refait toujours une copie fraiche ;
+la copie peut etre fermee sans enregistrer apres un Run.
+Si le script s'arrete sur "Buck_Commun_<M>.slx introuvable" : le modele de
+la methode n'a pas ete construit dans ce dossier ; lancer Construction_<M>.m
+(comme pour la validation), puis recommencer.
+
+
+4. ZIEGLER-NICHOLS
+------------------
+a) Chiffres : Simuler_ZN.m, dans PSO_PID. C'est une copie mecanique de
+   Simuler_PSO_PID.m ou seuls le modele (Buck_Commun) et le fichier de
+   resultats attendus (predictions_banc_pid_classique.json) changent.
+     - Current Folder = Regulateurs\PSO_PID, lancer Simuler_ZN.
+     - Par defaut ESSAIS_A_SIMULER = {} : les onze essais puis S10, six a
+       dix minutes ; resultats dans resultats_Buck_Commun.mat. Il en faut
+       S1, S2, S3, S8a et S10 pour les metriques.
+     - Si tu as deja, de la validation de la base commune, un
+       resultats_Buck_Commun.mat de la version 2.1 (onze essais), tu peux
+       le mettre dans PSO_PID et ne simuler que S10 :
+       ESSAIS_A_SIMULER = {'S10'} -> resultats_Buck_Commun_S10.mat.
+     - Copier la sortie console dans sortie_ZN.txt.
+   Attendu : IAE de 100 ms a la fin proche de 70.48 mV.s ; quatre fenetres
+   sur six pas revenues. Aucune tolerance n'a ete ecrite pour
+   Ziegler-Nichols sur S10 : son oscillation peu amortie vers 1.4 kHz fait
+   que la phase peut differer du banc ; on compare les IAE et les retours,
+   pas les courbes point par point.
+b) Modele a ouvrir : dans n'importe lequel des quatre dossiers, ouvrir
+   Ouvrir_Modele_S10.m, mettre ZIEGLER_NICHOLS = true; en tete, lancer.
+   Le script cree ZN_S10.slx a partir de Buck_Commun.slx et l'ouvre.
+
+
+5. LES METRIQUES : Metriques_Simulink.m
+--------------------------------------
+Une fois les points 2 et 4a faits pour les cinq methodes :
+  1. Current Folder = Regulateurs\COMPARAISON\metriques.
+  2. Lancer Metriques_Simulink. Il lit les resultats Simulink des quatre
+     dossiers (fichiers principaux pour S1, S2, S3, S8a ; fichiers _S10
+     pour S10), calcule les metriques de definitions_metriques.txt avec
+     les memes definitions que le banc, et ecrit dans ce dossier :
+       metriques_simulink.csv  (une ligne par metrique, separateur ';')
+       metriques_simulink.md   (les tableaux)
+     Un fichier absent est signale ("absent : ..." puis la liste des
+     couples methode / scenario non calcules) ; le script va jusqu'au bout
+     avec le reste.
+  3. En fin de sortie : "IAE de classement : Simulink / banc (ecart)",
+     avec "conforme" ou "HORS TOLERANCE" pour S10 (1 % PSO-PID et
+     Fuzzy-PID, 3 % ELM-PID et PINN-PID). Le banc est lu dans
+     metriques_banc.csv (fourni dans le meme dossier).
+  4. Copier toute la sortie console dans sortie_metriques.txt.
+Le script ne modifie aucun fichier de resultats. Il prend quelques
+secondes.
+
+
+6. CE QU'IL FAUT M'ENVOYER
+--------------------------
+  - sortie_S10_PSO_PID.txt, sortie_S10_Fuzzy_PID.txt, sortie_S10_ELM_PID.txt,
+    sortie_S10_PINN_PID.txt (point 2) et sortie_ZN.txt (point 4) ;
+  - sortie_metriques.txt, metriques_simulink.csv et metriques_simulink.md
+    (point 5) ;
+  - si un message d'erreur apparait : le message complet, copie tel quel,
+    et le nom du script ;
+  - facultatif : une capture du Scope "Scope S10 Vout consigne" pour une ou
+    deux methodes (point 3), et les fichiers resultats_*_S10.mat si leur
+    taille permet de les envoyer.
+Ne pas modifier les chiffres a la main dans les fichiers envoyes.
+
+
+7. REMARQUE : CONDUCTANCE NEGATIVE DE LA CHARGE ELECTRONIQUE APRES 50 MS
+-----------------------------------------------------------------------
+Dans le modele commun, la charge vaut R0 (resistance physique, 5 ohms dans
+S10) en parallele avec une "Charge Electronique" : une source de courant
+commandee i = gx x Vout. Pour obtenir 25 ohms (et 20 ou 30 ohms pendant
+les echelons) avec R0 = 5 ohms, S10 utilise gx = 1/R - 1/5, qui est
+NEGATIF apres 50 ms (-0.16 S a 25 ohms, -0.15 S a 20 ohms, -0.167 S a
+30 ohms). La source FOURNIT alors du courant au lieu d'en absorber : a
+100 V, R0 tire 20 A et la charge electronique en rend 16 A, soit 4 A nets,
+exactement une charge de 25 ohms.
+  - Ce n'est pas une erreur : c'est la definition de S10 ecrite avant le
+    calcul (criteres_S10.txt) et utilisee pour tous les chiffres du banc.
+    Elle s'ecarte de la regle de scenarios_communs.py (gx >= 0 dans les
+    onze essais) ; l'ecart est declare dans fichiers_S10.py et dans les
+    LISEZMOI.
+  - Dans Simulink, le courant de la charge electronique devient negatif a
+    50 ms et le reste : c'est attendu. La source n'a pas de saturation, la
+    simulation n'en est pas genee.
+  - Physiquement, une charge electronique de laboratoire ne sait pas
+    fournir de courant : un essai reel de S10 demanderait de changer R0
+    elle-meme (25 ohms). Le comportement electrique vu par le convertisseur
+    est le meme ; a dire tel quel dans le memoire si S10 y figure.
+  - La surtension d'environ 110 V a 50 ms (Vout monte vers 210 V) vient du
+    meme changement : le courant de la bobine (environ 20 A) se vide dans
+    le condensateur quand le courant de charge tombe a 4 A, rapport
+    cyclique en butee basse. Elle est la meme pour les cinq methodes et
+    elle est hors de la fenetre de classement (100 ms a la fin).
