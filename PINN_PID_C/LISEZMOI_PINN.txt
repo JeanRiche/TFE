@@ -1,14 +1,30 @@
-PINN-PID B (8 octobre 2026) : CE DOSSIER EST LA VERSION B
-=========================================================
-Copie de PINN_PID dont le regulateur suit de plus pres Ito et Wasa : bloc
-PID parallele commun a gains externes, cout de l'article (u^2 et |F|^2),
-Adam a chaque fenetre (iteration en temps reel), boite recalculee.
-A lire : criteres_pinn_pid.txt (de ce dossier). Fichiers propres a B :
-boite_gains_pinn_b.py/.json, mise_au_point_pinn_pid_b.py,
-previsions_pinn_pid_b.json, banc_pinn_pid.py (version 2) et ses sorties.
-Le bloc MATLAB, ses reglages et les scripts Simulink ci-dessous sont
-encore ceux de la version 1 : ne pas les lancer pour la version B.
-Le texte qui suit est celui de la version 1.
+PINN-PID C (8 octobre 2026) : VERSION RETENUE POUR LE MEMOIRE
+=============================================================
+Bloc PID parallele commun aux autres methodes. Cout et optimisation
+d'Ito et Wasa : iteration en temps reel, 5 iterations d'Adam par fenetre
+de 0.5 ms, depart a chaud. S'y ajoute la correction C1, retenue apres
+diagnostic : l'optimisation n'a lieu que si l'erreur efficace de la
+fenetre depasse 0.1 V (meme zone morte que l'ELM-PID).
+Resultat sur le banc : J = 0.757.
+
+A lire d'abord : criteres_pinn_pid.txt.
+
+Fichiers propres a la version C :
+  banc_pinn_pid.py, banc_pinn_pid_sortie_console.txt,
+  banc_pinn_pid_resultats.json, banc_pinn_pid.png,
+  predictions_banc_pinn_pid.json (sorties du banc),
+  mise_au_point_pinn_pid_c.py, mise_au_point_pinn_pid_c_sortie_console.txt,
+  choix_combinaison_pinn_c.json, regle_choix_pinn_c.json,
+  previsions_pinn_pid_c.json.
+Le banc lit aussi boite_gains_pinn_b.json (boite des gains reprise telle
+quelle de la version B, calculee par boite_gains_pinn_b.py).
+
+ATTENTION : le bloc MATLAB pinn_pid_adaptatif.m, ses reglages et tous les
+scripts Simulink de ce dossier sont encore ceux de la version 1 (loi
+incrementale). NE PAS les lancer pour la version C : les chiffres de
+reference de la version C sont ceux du banc Python.
+
+Le texte qui suit est celui de la version 1, garde pour memoire.
 
 PINN-PID : PID AUTO-ADAPTATIF A PREDICTEUR PINN (7 octobre 2026)
 ================================================================
