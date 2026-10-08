@@ -1,0 +1,120 @@
+Dossier de travail : /tmp/claude-0/-home-user-TFE/0e32c39a-a94f-5172-a36f-d098a6a20b04/scratchpad/pinn_repro2
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Boite : Kp de 0.093910 a 0.223357, Ki de 3.4215e-04 a 1.3686e-03, Kd de 1.6110 a 3.8316 ; depart a Ziegler-Nichols.
+PINN : 3 couches cachees de 32 neurones (candidat A, plage nominale).
+Vecteurs de test du PINN : ecart maximal 6.4e-16.
+Gradient de l'horizon contre differences finies : ecart relatif maximal 6.7e-08.
+
+==============================================================================
+ ETAPE 2 : les references
+==============================================================================
+  Meilleur PID fige : J = 0.738 (recherche_pid_fige.py : 0.738) ; R0 : J = 0.917.
+
+==============================================================================
+ ETAPE 3 : PINN-PID et plafond (modele physique a la place du PINN)
+==============================================================================
+
+  PINN-PID : J = 0.684 ; tous les evenements reviennent
+    S1   depassement   2.4 %, IAE    1.49 mV.s, efficace    10.0 mV, |dd| 0.0033 ; fenetres adaptees   7/400, gains finaux x(1.27, 0.93, 1.00)
+    S2   depassement   2.4 %, IAE    4.70 mV.s, efficace   230.0 mV, |dd| 0.0033 ; fenetres adaptees  13/400, gains finaux x(1.22, 1.00, 1.00)
+    S3   depassement   2.4 %, IAE    6.25 mV.s, efficace   314.7 mV, |dd| 0.0034 ; fenetres adaptees  13/400, gains finaux x(1.54, 1.00, 1.00)
+    S4   depassement   2.4 %, IAE   17.64 mV.s, efficace   807.3 mV, |dd| 0.0039 ; fenetres adaptees  21/400, gains finaux x(1.66, 1.00, 1.16)
+    S5   depassement   2.4 %, IAE    3.05 mV.s, efficace    72.0 mV, |dd| 0.0044 ; fenetres adaptees  15/400, gains finaux x(1.82, 0.93, 1.55)
+    S6   depassement   2.4 %, IAE    1.63 mV.s, efficace    11.6 mV, |dd| 0.0033 ; fenetres adaptees   7/400, gains finaux x(1.27, 0.93, 1.00)
+    S7a  depassement   2.3 %, IAE    3.79 mV.s, efficace    26.2 mV, |dd| 0.0069 ; fenetres adaptees   7/400, gains finaux x(1.34, 0.91, 1.00)
+    S7b  depassement   2.3 %, IAE    2.60 mV.s, efficace    19.0 mV, |dd| 0.0048 ; fenetres adaptees   6/400, gains finaux x(1.27, 0.93, 1.00)
+    S8a  depassement  21.0 %, IAE    3.14 mV.s, efficace    71.8 mV, |dd| 0.0054 ; fenetres adaptees  24/400, gains finaux x(2.12, 1.00, 1.81)
+    S8b  depassement  42.3 %, IAE    3.18 mV.s, efficace    65.3 mV, |dd| 0.0045 ; fenetres adaptees  29/400, gains finaux x(2.38, 1.00, 1.27)
+    S9   depassement   2.4 %, IAE  317.18 mV.s, efficace  6698.3 mV, |dd| 0.0036 ; fenetres adaptees  55/840, gains finaux x(2.22, 1.00, 1.48)
+  (26 s)
+
+  Plafond (modele physique nominal a la place du PINN) : J = 0.688 ; tous les evenements reviennent
+    S1   depassement   2.4 %, IAE    1.49 mV.s, efficace    10.0 mV, |dd| 0.0033 ; fenetres adaptees   7/400, gains finaux x(1.28, 0.93, 1.00)
+    S2   depassement   2.4 %, IAE    4.68 mV.s, efficace   229.6 mV, |dd| 0.0033 ; fenetres adaptees  13/400, gains finaux x(1.22, 1.00, 1.00)
+    S3   depassement   2.4 %, IAE    6.22 mV.s, efficace   314.3 mV, |dd| 0.0034 ; fenetres adaptees  13/400, gains finaux x(1.54, 1.00, 1.00)
+    S4   depassement   2.4 %, IAE   17.64 mV.s, efficace   807.3 mV, |dd| 0.0039 ; fenetres adaptees  21/400, gains finaux x(1.66, 1.00, 1.16)
+    S5   depassement   2.4 %, IAE    3.05 mV.s, efficace    71.9 mV, |dd| 0.0044 ; fenetres adaptees  15/400, gains finaux x(1.83, 0.93, 1.55)
+    S6   depassement   2.4 %, IAE    1.63 mV.s, efficace    11.6 mV, |dd| 0.0033 ; fenetres adaptees   7/400, gains finaux x(1.28, 0.93, 1.00)
+    S7a  depassement   2.3 %, IAE    4.02 mV.s, efficace    28.7 mV, |dd| 0.0070 ; fenetres adaptees   7/400, gains finaux x(1.34, 0.91, 1.00)
+    S7b  depassement   2.3 %, IAE    2.59 mV.s, efficace    18.9 mV, |dd| 0.0048 ; fenetres adaptees   6/400, gains finaux x(1.27, 0.93, 1.00)
+    S8a  depassement  21.0 %, IAE    3.07 mV.s, efficace    69.1 mV, |dd| 0.0052 ; fenetres adaptees  24/400, gains finaux x(2.21, 1.00, 1.68)
+    S8b  depassement  42.3 %, IAE    3.17 mV.s, efficace    65.4 mV, |dd| 0.0045 ; fenetres adaptees  29/400, gains finaux x(2.38, 1.00, 1.28)
+    S9   depassement   2.4 %, IAE  317.26 mV.s, efficace  6698.8 mV, |dd| 0.0036 ; fenetres adaptees  55/840, gains finaux x(2.24, 1.00, 1.48)
+
+  Controle : PINN-PID sans adaptation contre R0, ecart maximal sur d : 0.0e+00.
+
+==============================================================================
+ ETAPE 4 : ce que chaque piece apporte (ablations)
+==============================================================================
+
+  variante                                          J  non revenus      S8a     S8b       S9  S7b eff
+  PINN-PID                                      0.684  -               3.14    3.18   317.18     19.0
+  Plafond (modele physique)                     0.688  -               3.07    3.17   317.26     18.9
+  R0                                            0.917  S8b,S9         11.08   73.89   537.28     21.2
+  Sans seuil (adaptation a chaque fenetre)      0.745  -               4.07    4.53   322.65     20.2
+  Sans Vin_eff (Vin fixee a 200 V)              0.684  -               3.26    3.43   315.62     18.9
+  R0 aux gains finaux du PINN-PID sur S8b       0.724  -               2.81    2.88   333.40     17.9
+  Modele physique faux (L et C x2)              0.692  -               3.17    3.39   318.67     19.7
+  Modele physique faux (L et C x0.5)            0.694  -               3.50    3.51   316.59     18.9
+  (IAE de 30 ms a la fin en mV.s ; ecart efficace en mV ; gains finaux S8b x(2.38, 1.00, 1.27))
+
+==============================================================================
+ ETAPE 4b : sensibilite a de tres petits ecarts du circuit (L ou C a +-0.1 %)
+==============================================================================
+  L - 0.1 %  J = 0.687 ; non revenus : - ; S8b IAE 3.17 mV.s
+  L + 0.1 %  J = 0.685 ; non revenus : - ; S8b IAE 3.18 mV.s
+  C - 0.1 %  J = 0.683 ; non revenus : - ; S8b IAE 3.17 mV.s
+  C + 0.1 %  J = 0.678 ; non revenus : - ; S8b IAE 3.18 mV.s
+
+==============================================================================
+ ETAPE 4c : marges de phase du modele moyen aux gains finaux
+==============================================================================
+  depart (Ziegler-Nichols)   x(1.00, 1.00, 1.00) : marge minimale  29.5 deg (4 et 5 ohms),  -2.7 deg (25 et 98 ohms) ; coupure maximale 1163 Hz
+  final S5                   x(1.82, 0.93, 1.55) : marge minimale  44.2 deg (4 et 5 ohms),  18.1 deg (25 et 98 ohms) ; coupure maximale 1654 Hz
+  final S8a                  x(2.12, 1.00, 1.81) : marge minimale  45.8 deg (4 et 5 ohms),  21.6 deg (25 et 98 ohms) ; coupure maximale 1828 Hz
+  final S8b                  x(2.38, 1.00, 1.27) : marge minimale  36.6 deg (4 et 5 ohms),  12.5 deg (25 et 98 ohms) ; coupure maximale 1821 Hz
+  final S9                   x(2.22, 1.00, 1.48) : marge minimale  40.3 deg (4 et 5 ohms),  15.9 deg (25 et 98 ohms) ; coupure maximale 1798 Hz
+
+==============================================================================
+ ETAPE 5 : PINN-PID face aux references
+==============================================================================
+                                 Ziegler-Nichols meilleur PID fige                R0           Plafond          PINN-PID
+  cout J                                   1.000             0.738             0.917             0.688             0.684
+  evenements non revenus                  S8b,S9                 -            S8b,S9                 -                 -
+  S1 depassement %                          14.0               8.8               2.4               2.4               2.4
+  S1 IAE mV.s                               1.49              1.49              1.49              1.49              1.49
+  S1 ecart efficace mV                      10.0              10.0              10.0              10.0              10.0
+  S1 iL crete dem. A                        24.1              23.2              21.4              21.4              21.4
+  S2 IAE mV.s                               2.84              2.15              5.27              4.68              4.70
+  S2 ecart efficace mV                      79.5              60.5             243.8             229.6             230.0
+  S3 IAE mV.s                               8.67              5.93              8.48              6.22              6.25
+  S3 ecart efficace mV                     359.4             302.2             355.5             314.3             314.7
+  S4 IAE mV.s                              23.61             17.67             22.74             17.64             17.64
+  S4 ecart efficace mV                     845.8             787.7             836.8             807.3             807.3
+  S5 IAE mV.s                               3.87              2.49              3.81              3.05              3.05
+  S5 ecart efficace mV                      91.3              47.6              90.2              71.9              72.0
+  S6 IAE mV.s                               1.65              1.56              1.65              1.63              1.63
+  S6 ecart efficace mV                      11.9              10.5              11.9              11.6              11.6
+  S7a IAE mV.s                              4.16              4.66              4.39              4.02              3.79
+  S7a ecart efficace mV                     29.7              33.6              32.0              28.7              26.2
+  S7b IAE mV.s                              2.93              3.50              2.91              2.59              2.60
+  S7b ecart efficace mV                     21.3              25.7              21.2              18.9              19.0
+  S8a depassement %                         52.2              41.6              21.1              21.0              21.0
+  S8a IAE mV.s                             12.07              2.46             11.08              3.07              3.14
+  S8a ecart efficace mV                    173.6              49.2             164.3              69.1              71.8
+  S8b depassement %                         82.4              70.3              42.5              42.3              42.3
+  S8b IAE mV.s                             77.19              2.46             73.89              3.17              3.18
+  S8b ecart efficace mV                    854.6              49.5             852.7              65.4              65.3
+  S8b iL crete dem. A                       12.0              11.4               9.8               9.8               9.8
+  S9 IAE mV.s                             531.80            278.25            537.28            317.26            317.18
+  S9 ecart efficace mV                    6394.1            6245.4            6750.9            6698.8            6698.3
+  activite |dd| (S1)                      0.0031            0.0084            0.0031            0.0033            0.0033
+
+==============================================================================
+ ETAPE 6 : fichiers pour Simulink et MATLAB
+==============================================================================
+  predictions_banc_pinn_pid.json ecrit.
+  pinn_pid_reglages.mat ecrit (reglages du bloc ; PHI range ligne par ligne : [p11 p12 p21 p22]).
+  reference_rejeu_pinn_pid.mat ecrit (S1, S7b, S8b, S9).
+  banc_pinn_pid_resultats.json ecrit.
+  banc_pinn_pid.png ecrit. Duree totale : 386 s.
