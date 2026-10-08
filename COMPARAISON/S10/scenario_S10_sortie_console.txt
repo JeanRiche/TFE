@@ -1,0 +1,115 @@
+Dossier de travail : /home/user/TFE/ELM_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.2% admissibles ; jacobien constant des ablations 11.0687.
+Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
+Dossier de travail : /home/user/TFE/PSO_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Dossier de travail : /home/user/TFE/FUZZY_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Ku = 0.156517, Tu = 0.62380 ms ; Kp de 0.050085 a 0.093910 (0.533 a 1.000 fois P) ; Kd de 7.8108e-06 a 1.4645e-05 (1.067 a 2.000 fois D).
+Echelles : E_M = 100.0 V, DE_M = 0.37244 V par periode Tc.
+Controle du systeme flou : quatre points calcules a la main retrouves.
+Gains au repos (ZO, ZO) : Kp 0.991 P, Ki 0.661 I, Kd 1.983 D.
+Dossier de travail : /home/user/TFE/PINN_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Ensemble admissible de l'ELM-PID (C3) : 33^3 points, 35.2% admissibles ; table et fonctions identiques a ELM_PID.
+Boite (multiplicateurs de ZN) : P de 1.000 a 2.378, I de 0.250 a 1.000, D de 1.000 a 2.378 ; depart a Ziegler-Nichols (1, 1, 1).
+PINN : 3 couches cachees de 32 neurones (candidat A, plage nominale).
+Vecteurs de test du PINN : ecart maximal 6.4e-16.
+Gradient de l'horizon contre differences finies : ecart relatif maximal 4.4e-07 (hors saturation), 9.0e-08 (pente 0 ; pas en butee / pas sous clamping sur 110 : 9 / 9, 28 / 28) ; avec C2 (centre (1, 1, 1)) 4.3e-07.
+S10 : 44001 instants Tc, k(50 ms) = 11000, k(100 ms) = 22000, dernier k = 44000.
+  t =  10 ms : Vin = 200.0 V, charge =  5.00 ohms
+  t =  60 ms : Vin = 160.0 V, charge = 25.00 ohms
+  t = 105 ms : Vin = 160.0 V, charge = 20.00 ohms
+  t = 120 ms : Vin = 160.0 V, charge = 25.00 ohms
+  t = 135 ms : Vin = 160.0 V, charge = 30.00 ohms
+  t = 150 ms : Vin = 160.0 V, charge = 25.00 ohms
+  t = 165 ms : Vin = 160.0 V, charge = 20.00 ohms
+  t = 190 ms : Vin = 160.0 V, charge = 25.00 ohms
+  Controle : S10 ne coincide avec aucun des onze essais (R0, Vin, gx, dvref compares).
+
+29 simulations en 12 s.
+
+====================================================================================================
+ ETAPE 3 : controles de la variante gains figes
+====================================================================================================
+  ELM-PID : coupure a 200 ms = adaptatif a l'identique (Vout, d, gains) : True ; fige a 50 ms identique avant k = 11000 : True ; gains constants de k = 11000 a la fin : True
+      multiplicateurs de ZN figes a 50 ms : (1.469, 1.058, 1.152) ; adaptatif a 100 ms : (2.476, 1.828, 1.218) ; a la fin : (3.372, 2.067, 1.352)
+  PINN-PID : coupure a 200 ms = adaptatif a l'identique (Vout, d, gains) : True ; fige a 50 ms identique avant k = 11000 : True ; gains constants de k = 11000 a la fin : True
+      multiplicateurs de ZN figes a 50 ms : (1.299, 0.900, 1.059) ; adaptatif a 100 ms : (1.651, 0.747, 1.525) ; a la fin : (1.698, 0.296, 1.258)
+
+====================================================================================================
+ ETAPE 4a : IAE de 100 ms a la fin (mV.s), nominal ; grandeurs publiees a cote
+====================================================================================================
+  methode            IAE 100-fin   / ZN emax 100-fin IAE 50-100 emax a 50 ms  DCM %
+  Ziegler-Nichols          70.48  1.000         3.22     149.73       110.59   0.35
+  PSO-PID                   3.98  0.056         1.87     124.86       110.58   0.35
+  Fuzzy-PID                 9.18  0.130         2.18     122.74       110.59   0.22
+  ELM-PID                   8.63  0.122         1.91     129.89       110.58   0.36
+  PINN-PID                  6.63  0.094         2.05     128.05       110.59   0.35
+  ELM-PID fige             14.60  0.207         2.29     129.97       110.58   0.36
+  PINN-PID fige            17.19  0.244         2.46     130.79       110.59   0.36
+
+====================================================================================================
+ ETAPE 4b : par echelon (IAE mV.s / ecart max V / retour dans +-1 V)
+====================================================================================================
+                               100 ms 25->20           115 ms 20->25           130 ms 25->30           145 ms 30->25           160 ms 25->20           175 ms 20->25
+  Ziegler-Nichols      9.51 / 3.08 /PAS REVENU  14.07 / 3.20 /PAS REVENU  15.49 / 2.62 /PAS REVENU   5.62 / 1.35 /   1.83 ms   9.97 / 3.22 /PAS REVENU  15.82 / 3.19 /   9.39 ms
+  PSO-PID              0.78 / 1.87 /   0.30 ms   0.69 / 1.44 /   0.22 ms   0.50 / 0.98 /dans bande   0.47 / 0.96 /dans bande   0.78 / 1.87 /   0.30 ms   0.75 / 1.44 /   0.22 ms
+  Fuzzy-PID            1.66 / 2.11 /   1.00 ms   1.72 / 2.18 /   1.00 ms   1.18 / 1.46 /   0.85 ms   1.16 / 1.38 /   0.88 ms   1.66 / 2.11 /   1.00 ms   1.79 / 2.18 /   1.00 ms
+  ELM-PID              1.71 / 1.87 /   0.90 ms   2.03 / 1.91 /   1.22 ms   1.22 / 1.21 /   0.53 ms   0.94 / 1.06 /   0.16 ms   1.32 / 1.87 /   0.55 ms   1.42 / 1.62 /   0.55 ms
+  PINN-PID             1.17 / 1.92 /   0.70 ms   1.28 / 1.96 /   0.73 ms   0.90 / 1.36 /   0.27 ms   0.81 / 1.30 /   0.26 ms   1.14 / 1.97 /   0.69 ms   1.33 / 2.05 /   0.71 ms
+  ELM-PID fige         2.40 / 2.07 /   1.18 ms   2.86 / 2.29 /   1.62 ms   2.12 / 1.58 /   1.13 ms   1.91 / 1.54 /   0.76 ms   2.40 / 2.07 /   1.18 ms   2.92 / 2.29 /   1.62 ms
+  PINN-PID fige        2.88 / 2.33 /   1.69 ms   3.36 / 2.46 /   1.75 ms   2.45 / 1.67 /   1.22 ms   2.21 / 1.64 /   1.20 ms   2.87 / 2.34 /   1.69 ms   3.43 / 2.46 /   1.75 ms
+
+====================================================================================================
+ ETAPE 4c : classement des quatre methodes (IAE de 100 ms a la fin ; '=' : moins de 5 %)
+====================================================================================================
+  nominal    PSO-PID < PINN-PID < ELM-PID < Fuzzy-PID
+             (PINN-PID/PSO-PID 66.5 %, ELM-PID/PINN-PID 30.3 %, Fuzzy-PID/ELM-PID 6.3 %)
+  L - 0.1 %  PSO-PID < PINN-PID < ELM-PID < Fuzzy-PID
+             (PINN-PID/PSO-PID 67.1 %, ELM-PID/PINN-PID 29.9 %, Fuzzy-PID/ELM-PID 6.3 %)
+  L + 0.1 %  PSO-PID < PINN-PID < ELM-PID < Fuzzy-PID
+             (PINN-PID/PSO-PID 69.9 %, ELM-PID/PINN-PID 16.7 %, Fuzzy-PID/ELM-PID 16.7 %)
+  C - 0.1 %  PSO-PID < PINN-PID < ELM-PID < Fuzzy-PID
+             (PINN-PID/PSO-PID 68.8 %, ELM-PID/PINN-PID 28.6 %, Fuzzy-PID/ELM-PID 6.3 %)
+  C + 0.1 %  PSO-PID < PINN-PID < ELM-PID < Fuzzy-PID
+             (PINN-PID/PSO-PID 68.4 %, ELM-PID/PINN-PID 28.8 %, Fuzzy-PID/ELM-PID 6.5 %)
+
+  IAE par variante du circuit (mV.s) :
+  Ziegler-Nichols  nominal  70.48  L - 0.1 %  69.78  L + 0.1 %  71.04  C - 0.1 %  69.80  C + 0.1 %  71.13
+  PSO-PID          nominal   3.98  L - 0.1 %   3.97  L + 0.1 %   3.98  C - 0.1 %   3.98  C + 0.1 %   3.98
+  Fuzzy-PID        nominal   9.18  L - 0.1 %   9.17  L + 0.1 %   9.19  C - 0.1 %   9.17  C + 0.1 %   9.19
+  ELM-PID          nominal   8.63  L - 0.1 %   8.62  L + 0.1 %   7.88  C - 0.1 %   8.63  C + 0.1 %   8.63
+  PINN-PID         nominal   6.63  L - 0.1 %   6.64  L + 0.1 %   6.75  C - 0.1 %   6.71  C + 0.1 %   6.70
+  Robustesse : 6 paire(s) separee(s) d'au moins 5 % au nominal ; aucune ne s'inverse : classement robuste.
+
+====================================================================================================
+ ETAPE 4d : contribution de l'adaptation (IAE de 100 ms a la fin, mV.s)
+====================================================================================================
+  ELM-PID : adaptatif 8.63, fige a 50 ms 14.60 ; gain 1 - adaptatif/fige = +40.9 % : l'adaptation aide
+      IAE 50-100 ms : adaptatif 129.89, fige 129.97
+  PINN-PID : adaptatif 6.63, fige a 50 ms 17.19 ; gain 1 - adaptatif/fige = +61.5 % : l'adaptation aide
+      IAE 50-100 ms : adaptatif 128.05, fige 130.79
+
+====================================================================================================
+ ETAPE 5 : previsions de criteres_S10.txt
+====================================================================================================
+  P1   JUSTE  PSO-PID 3.98 (prevu 4.5, juste entre 2.25 et 9)
+  P2   JUSTE  PINN-PID 6.63 (prevu 6.0, juste entre 3 et 12)
+  P3   JUSTE  ELM-PID 8.63 (prevu 6.5, juste entre 3.25 et 13)
+  P4   JUSTE  Fuzzy-PID 9.18 (prevu 8.0, juste entre 4 et 16)
+  P5   FAUSSE ZN 70.48 (12 a 50) ; rapports / ZN : PSO-PID 0.06, Fuzzy-PID 0.13, ELM-PID 0.12, PINN-PID 0.09
+  P6   JUSTE  premier PSO-PID, ecart au deuxieme 66.5 %
+  P7   FAUSSE ELM / PINN = 1.303
+  P8   JUSTE  dernier Fuzzy-PID, ecart au precedent 6.3 %
+  P9   JUSTE  aucune inversion
+  P10  JUSTE  gain ELM +40.9 % (prevu ~25, 12 a 50)
+  P11  FAUSSE gain PINN +61.5 % (prevu ~10, 5 a 20, et < gain ELM)
+  P12  JUSTE  adaptatif meilleur que fige pour les deux
+  P13  FAUSSE tous sortent de +-1 V : False ; echelons de 1 A > 1.2 V : True ; dispersion maximale de l'ecart max entre les quatre : 51.8 %
+  P14  FAUSSE 30 fenetres revenues : False ; ZN le plus long a chaque echelon : True ; PSO < 1 ms : True
+  P15  FAUSSE ecart max a 50 ms Ziegler-Nichols 110.6 V, PSO-PID 110.6 V, Fuzzy-PID 110.6 V, ELM-PID 110.6 V, PINN-PID 110.6 V ; plus grande IAE 50-100 : Ziegler-Nichols
+  Bilan : 9 justes sur 15.
+
+  resultats_S10.json et S10_vout_commande_gains.png ecrits. Duree totale 13 s.

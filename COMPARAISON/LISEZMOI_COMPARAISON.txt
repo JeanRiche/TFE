@@ -74,3 +74,20 @@ VERSIONS FINALES (8 octobre 2026)
   relance sur S4 et S8a.
 - diagnostic_lois/ : portent sur la loi de Lu ; ils ne lisent pas le
   PINN-PID et ne sont pas touches (note en tete).
+
+SCENARIO S10 (8 octobre 2026) : dossier S10/
+- Scenario ajoute APRES les onze essais, defini par Jean-Riche et son
+  encadrant : demarrage nominal (5 ohms, 200 V), puis a 50 ms Vin = 160 V
+  et charge 25 ohms jusqu'a la fin, echelons de charge de 15 ms a 100 ms
+  (20 ohms), 130 ms (30 ohms) et 160 ms (20 ohms). Grandeur de classement :
+  IAE de 100 ms a la fin.
+- S10/criteres_S10.txt : definition, criteres et previsions (commites avant
+  le calcul), puis resultats. S10/scenario_S10.py (python scenario_S10.py ;
+  une quinzaine de secondes, il faut a cote PSO_PID, FUZZY_PID, ELM_PID,
+  PINN_PID) ; sorties scenario_S10_sortie_console.txt, resultats_S10.json,
+  S10_vout_commande_gains.png.
+- Resultat (IAE de 100 ms a la fin, mV.s) : PSO-PID 3.98 < PINN-PID 6.63 <
+  ELM-PID 8.63 < Fuzzy-PID 9.18 (aucune egalite ; robuste a L ou C
+  +-0.1 %) ; Ziegler-Nichols 70.48, quatre echelons sur six non revenus.
+  Gains figes a 50 ms : ELM-PID 14.60 (adaptation +41 %), PINN-PID 17.19
+  (+61 %). Previsions : 9 justes sur 15.

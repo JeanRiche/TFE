@@ -201,3 +201,134 @@ Ce que les previsions engagent
   (adaptation sans effet ou nuisible), S10 montrera que l'adaptation de
   ces deux methodes ne sert pas au cas pour lequel elle est faite, et il
   faudra le publier tel quel.
+
+
+RESULTATS (calcul du 8 octobre 2026, apres le commit des criteres)
+=============================================================================
+
+Execution
+  scenario_S10.py, sortie dans scenario_S10_sortie_console.txt ; fichiers
+  resultats_S10.json et S10_vout_commande_gains.png. 29 simulations
+  (5 methodes x 5 variantes du circuit, 2 variantes figees, 2 controles de
+  coupure). Aucune correction de programmation apres avoir vu les
+  chiffres : le script a tourne une fois, tel qu'il avait ete ecrit.
+  Controles : S10 ne coincide avec aucun des onze essais ; charges et Vin
+  relus aux instants caracteristiques (5, 25, 20, 30 ohms ; 200 puis
+  160 V) ; pour l'ELM-PID et le PINN-PID, la coupure a 200 ms redonne la
+  version adaptative bit a bit (Vout, d, gains), la coupure a 50 ms est
+  identique a la version adaptative avant k = 11000 et garde des gains
+  constants ensuite.
+
+IAE de 100 ms a la fin (mV.s), nominal
+  Ziegler-Nichols  70.48  (reference, 1.000)
+  PSO-PID           3.98  (0.056 de ZN)
+  PINN-PID          6.63  (0.094)
+  ELM-PID           8.63  (0.122)
+  Fuzzy-PID         9.18  (0.130)
+  ELM-PID fige a 50 ms   14.60 ; PINN-PID fige a 50 ms   17.19
+
+Classement des quatre methodes (regle des 5 %)
+  PSO-PID 3.98 < PINN-PID 6.63 < ELM-PID 8.63 < Fuzzy-PID 9.18
+  Ecarts entre voisines : 66.5 %, 30.3 %, 6.3 %. Aucune egalite. La paire
+  ELM-PID / Fuzzy-PID est la plus serree (6.3 %, juste au-dessus du
+  seuil).
+
+Robustesse (L ou C a +-0.1 %)
+  Meme ordre dans les cinq variantes ; aucune des six paires separees
+  d'au moins 5 % ne s'inverse : classement robuste au sens des criteres.
+  Reserve : avec L + 0.1 % l'IAE de l'ELM-PID passe de 8.63 a 7.88
+  (-8.7 %), et l'ecart ELM-PID / Fuzzy-PID monte a 16.7 % ; les autres
+  methodes bougent de moins de 2 %. L'ELM-PID reste sensible a de tres
+  petits ecarts du circuit (un pas d'adaptation de plus ou de moins),
+  comme deja constate a l'etape 4b de son banc.
+
+Contribution de l'adaptation (adaptatif contre gains figes a 50 ms)
+  ELM-PID  : 8.63 contre 14.60, gain +40.9 %. Gains (multiplicateurs de
+             ZN) : figes (1.47, 1.06, 1.15) ; adaptatif (2.48, 1.83, 1.22)
+             a 100 ms, (3.37, 2.07, 1.35) a la fin. L'ELM monte P et I,
+             presque pas D.
+  PINN-PID : 6.63 contre 17.19, gain +61.5 %. Gains : figes (1.30, 0.90,
+             1.06) ; adaptatif (1.65, 0.75, 1.53) a 100 ms, (1.70, 0.30,
+             1.26) a la fin. Le PINN monte P et D au reajustement puis
+             baisse I a chaque echelon (jusqu'a 0.30, pres de la borne
+             0.25 de sa boite).
+  Dans les deux cas l'adaptation aide nettement au nouveau point. Figes a
+  50 ms, les deux methodes adaptatives sont derriere le Fuzzy-PID et, de
+  loin, derriere le PSO-PID. Sur le reajustement (50 a 100 ms)
+  l'adaptation ne change presque rien (ELM 129.9 contre 130.0, PINN 128.1
+  contre 130.8 mV.s) : cette phase est dominee par la surtension en butee.
+
+Par echelon (IAE mV.s / ecart max V / retour dans +-1 V)
+  PSO-PID : 0.47 a 0.78 / 0.96 a 1.87 / 0.22 a 0.30 ms ; les deux
+    echelons de 30 ohms restent dans la bande.
+  PINN-PID : 0.81 a 1.33 / 1.30 a 2.05 / 0.26 a 0.73 ms.
+  ELM-PID : 0.94 a 2.03 / 1.06 a 1.91 / 0.16 a 1.22 ms ; ses echelons
+    s'ameliorent au fil des adaptations (1.71 au premier, 1.32 au
+    cinquieme, meme echelon).
+  Fuzzy-PID : 1.16 a 1.79 / 1.38 a 2.18 / 0.85 a 1.00 ms.
+  Ziegler-Nichols : 5.62 a 15.82 / 1.35 a 3.22 V ; QUATRE fenetres sur
+    six PAS REVENUES dans +-1 V avant l'evenement suivant (100, 115, 130,
+    160 ms) : oscillation peu amortie vers 1.4 kHz, tres lente a
+    s'eteindre (voir la figure).
+  Toutes les fenetres des quatre methodes classees reviennent.
+  Reajustement : ecart maximal au changement de 50 ms 110.6 V pour les
+  cinq methodes (Vout monte vers 210 V : le courant de la bobine, 20 A,
+  se vide dans le condensateur quand la charge tombe a 4 A, rapport
+  cyclique en butee basse) ; IAE de 50 a 100 ms de 122.7 (Fuzzy) a
+  149.7 mV.s (ZN).
+
+Previsions : 9 justes sur 15
+  P1  JUSTE  PSO-PID 3.98 (prevu 4.5).
+  P2  JUSTE  PINN-PID 6.63 (prevu 6.0).
+  P3  JUSTE  ELM-PID 8.63 (prevu 6.5).
+  P4  JUSTE  Fuzzy-PID 9.18 (prevu 8.0).
+  P5  FAUSSE ZN 70.48, hors de 12 a 50 (le rapport des quatre a ZN, sous
+             0.5, est juste : 0.06 a 0.13). Le "mode lent de periode
+             ~10 ms" lu sur S8a etait un repliement : les tensions de S8a
+             relues etaient echantillonnees toutes les ms, et l'oscillation
+             de ZN a charge legere est vers 1.4 kHz. L'echelon de charge
+             l'excite plus que prevu.
+  P6  JUSTE  PSO-PID premier, 66.5 % devant le deuxieme.
+  P7  FAUSSE ELM-PID et PINN-PID ne sont PAS a egalite : PINN-PID devant
+             de 30.3 %. C'etait le risque declare (point b). Sur les
+             onze essais, elles etaient a moins de 5 % sauf sur S5
+             (ELM devant de 24 %) et S7a (ELM devant de 8 %).
+  P8  JUSTE  Fuzzy-PID dernier des quatre, 6.3 % derriere l'ELM-PID
+             (de justesse).
+  P9  JUSTE  classement robuste.
+  P10 JUSTE  gain de l'adaptation ELM-PID +40.9 % (prevu ~25, 12 a 50).
+  P11 FAUSSE gain PINN-PID +61.5 % (prevu ~10, 5 a 20, et plus petit
+             que celui de l'ELM) : le PINN-PID tire PLUS de son adaptation
+             que l'ELM-PID. La prevision sous-estimait le nombre de
+             fenetres actives a chaque echelon et l'effet de la baisse de I.
+  P12 JUSTE  adaptatif meilleur que fige pour les deux.
+  P13 FAUSSE tous les echelons ne sortent pas de +-1 V (PSO-PID reste dans
+             la bande aux deux echelons de 30 ohms) et l'ecart maximal
+             n'est pas fixe par le condensateur a charge legere : il
+             differe jusqu'a 52 % entre les quatre (PSO 1.44 V, Fuzzy
+             2.18 V au retour de 20 a 25 ohms). Juste : les echelons de 1 A
+             depassent 1.2 V.
+  P14 FAUSSE ZN ne revient pas dans quatre fenetres sur six. Justes : ZN
+             a le retour le plus long a chaque echelon, PSO-PID revient
+             en moins de 1 ms.
+  P15 FAUSSE ecart maximal a 50 ms de 110.6 V, hors de 20 a 80 V
+             (estimation lineaire depuis S4, alors que le phenomene est
+             un transfert d'energie de la bobine) ; justes : meme valeur
+             pour les cinq, ZN a la plus grande IAE de 50 a 100 ms.
+
+Lecture
+  1. Au nouveau point, le PSO-PID, PID fixe, reste premier et de loin
+     (3.98 contre 6.63). Son D eleve (2.6 fois ZN) donne l'amortissement
+     dont le circuit manque a charge legere ; l'adaptation ne rattrape pas
+     ce reglage fixe.
+  2. L'adaptation sert bien au cas pour lequel elle est faite : sans elle,
+     l'ELM-PID et le PINN-PID perdraient 41 et 61 % et passeraient
+     derriere le Fuzzy-PID.
+  3. S10 separe nettement l'ELM-PID et le PINN-PID (30 %, robuste), cette
+     fois en faveur du PINN-PID, alors qu'elles sont a egalite sur S3,
+     S4, S8a et sur J (et l'ELM devant sur S5). Au chapitre de la comparaison, ce resultat doit etre
+     presente avec son origine : S10 a ete ajoute apres les onze essais
+     et apres que leurs resultats etaient connus ; il ne vient pas
+     s'ajouter au cout J.
+  4. Ziegler-Nichols est presque instable a 160 V / 25 ohms : c'est la
+     limite d'un reglage par le gain critique au point nominal.
