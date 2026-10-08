@@ -52,9 +52,20 @@
 #   (ecrit par mise_au_point_pinn_pid_c.py), previsions_pinn_pid_c.json.
 #
 # CE QUE PRODUIT CE SCRIPT
-#   predictions_banc_pinn_pid.json, banc_pinn_pid_resultats.json,
-#   banc_pinn_pid.png. Le bloc MATLAB (pinn_pid_adaptatif.m) et ses fichiers
-#   sont encore ceux de la version 1 : ils ne sont ni lus ni ecrits ici.
+#   banc_pinn_pid_resultats.json, banc_pinn_pid.png, et ce que Simulink doit
+#   retrouver (meme format que l'ELM-PID, ELM_PID/banc_elm_pid.py) :
+#     - predictions_banc_pinn_pid.json (format 2 de la base commune, lu par
+#       Simuler_PINN_PID.m et les scripts de construction) ;
+#     - pinn_pid_reglages.mat (reglages lus par pinn_pid_adaptatif.m,
+#       VERSION = 3) ;
+#     - reference_rejeu_pinn_pid.mat (lu par Tester_PINN_PID_Rejeu.m : e,
+#       mesure, u, gains pas par pas et decisions par fenetre sur S1, S3,
+#       S7b, S8b, S9).
+#   La classe AdaptateurPINN est la copie Python du bloc MATLAB
+#   pinn_pid_adaptatif.m : memes entrees (e, mesure, u), meme sortie (gains),
+#   meme ordre des operations. Elle refait elle-meme les etats du bloc PID
+#   (integrateur et filtre) a partir de e et de ses propres gains ; PINNPIDC
+#   verifie a chaque pas que cette copie est identique au bloc.
 #
 # BIBLIOTHEQUES NECESSAIRES (pip install numpy scipy matplotlib)
 #
@@ -63,7 +74,11 @@
 #
 # ORDRE D'EXECUTION (PINN-PID C)
 #   1. mise_au_point_pinn_pid_c.py (controles, E1 a E4, choix mecanique de
-#   la combinaison) ; 2. ce script.
+#   la combinaison) ; 2. ce script ; puis, dans MATLAB :
+#   3. Tester_PINN_PID_Rejeu.m ; 4. Construction_PINN_PID.m ;
+#   5. verifier_modele_pinn_pid.py ; 6. Simuler_PINN_PID.m ;
+#   7. Construction_PINN_PID_Trois_Modeles.m ;
+#   8. verifier_modeles_pinn_pid_trois.py ; 9. Simuler_PINN_PID_Trois_Modeles.m.
 # =============================================================================
 
 
@@ -75,7 +90,7 @@ import time                                   # duree d'execution
 import types                                  # resultats legers renvoyes par les processus
 import multiprocessing as mp                  # essais en parallele (un processus par essai)
 import numpy as np                            # calcul numerique
-from scipy.io import loadmat                  # fichiers .mat
+from scipy.io import loadmat, savemat         # fichiers .mat
 from scipy.linalg import expm                 # table du modele physique
 from scipy.signal import cont2discrete        # marges du modele moyen
 import matplotlib
@@ -98,6 +113,7 @@ T_DEBUT = time.time()                         # pour la duree totale
 ESSAIS = {sc["code"]: sc for sc in SCENARIOS}  # les onze essais, par code
 CODES_IAE = ["S1", "S3", "S4", "S5", "S6", "S7a", "S7b", "S8a", "S8b", "S9"]   # IAE de 30 ms a la fin
 CODES_DEM = ["S1", "S8a", "S8b"]              # IAE du demarrage (5, 25 et 98 ohms)
+CODES_REJEU = ["S1", "S3", "S7b", "S8b", "S9"]   # essais du rejeu pas a pas (Tester_PINN_PID_Rejeu.m)
 K30 = int(round(0.03 / TC))                   # instant 30 ms (numero de pas Tc)
 NF = 110                                      # periodes Tc par fenetre de 0.5 ms
 TCN = TC * PID_N                              # Tc x N du filtre de derivee
@@ -497,10 +513,15 @@ class BlocPID:
 
 
 class AdaptateurPINN:
-    """Observateur et optimisation des gains. Entrees a chaque pas : erreur
-    e, mesure de Vout, commande u et etats (xI, xF) du bloc apres le pas.
-    Sortie : gains K = K_ZN .* x du bloc PID, qui ne dependent que de l'etat
-    (changes en fin de fenetre, utilises a partir du pas suivant).
+    """Observateur et optimisation des gains ; copie Python du bloc MATLAB
+    pinn_pid_adaptatif.m (memes entrees, meme sortie, meme ordre des
+    operations : Tester_PINN_PID_Rejeu.m compare les deux pas par pas).
+    Entrees a chaque pas : erreur e, mesure de Vout, commande u sortie du
+    bloc PID. Sortie : gains K = K_ZN .* x du bloc PID, qui ne dependent que
+    de l'etat (changes en fin de fenetre, utilises a partir du pas suivant).
+    Les etats du bloc PID (integrateur xI, filtre xF), dont l'horizon part,
+    sont refaits ici a partir de e et des gains du pas, par les operations
+    de BlocPID.pas (le bloc ne les donne pas a l'exterieur).
     corrections : sous-ensemble de ("C1", "C2", "C3") ; None = la
     combinaison retenue (choix_combinaison_pinn_c.json). Les autres
     arguments servent aux variantes ; leurs valeurs par defaut sont celles
@@ -528,13 +549,24 @@ class AdaptateurPINN:
         self.NH, self.n_adam = int(r["NH"]), int(r["N_ADAM"])
         self.x = np.ones(3)                   # multiplicateurs de Ziegler-Nichols
         self.K = K_ZN * self.x
+        self.xI, self.xF = PID_CI_INTEGRATEUR, PID_CI_FILTRE   # copie des etats du bloc PID
+        self.u_bloc = float("nan")            # commande recalculee par la copie du bloc
         self.obs = None
         self.k = 0                            # numero de la periode Tc
         self.cpt, self.se2 = 0, 0.0           # fenetre courante
         self.journal = []                     # une ligne par fenetre
 
-    def mise_a_jour(self, e, mesure, u, xI, xF):
+    def mise_a_jour(self, e, mesure, u):
         k = self.k
+        # 0. copie du bloc PID avec les gains de ce pas (memes operations que BlocPID.pas)
+        P_, I_, D_ = self.K
+        derivee = PID_N * (D_ * e - self.xF)
+        b = P_ * e + self.xI + derivee
+        self.u_bloc = min(max(b, D_MIN), D_MAX)
+        entree_I = I_ * e
+        if not ((b != self.u_bloc) and (np.sign(entree_I) == np.sign(b - self.u_bloc))):
+            self.xI += TC * entree_I
+        self.xF += TC * derivee
         if self.obs is None:
             self.obs = Observateur(mesure, self.svin)
         self.obs.mise_a_jour(mesure)          # 1. correction de l'observateur
@@ -550,7 +582,7 @@ class AdaptateurPINN:
             ancien = self.x.copy()
             adapte, Jfin = False, float("nan")
             if self.adapter and (self.seuil is None or eff > self.seuil):
-                Jfin = self.optimiser(r, xI, xF)
+                Jfin = self.optimiser(r)
                 adapte = True
             self.journal.append({"k": k, "eff": float(eff), "adapte": adapte, "J": Jfin,
                                  "admis": bool(g_interp(self.x) <= 0.0) if self.ensemble else None,
@@ -558,7 +590,7 @@ class AdaptateurPINN:
                                  "vin_eff": float(self.obs.x[2]), "iL": float(self.obs.x[1])})
             self.cpt, self.se2 = 0, 0.0
 
-    def optimiser(self, r, xI, xF):
+    def optimiser(self, r):
         """5 iterations d'Adam sur x depuis x courant (depart a chaud),
         horizon depuis l'etat estime et l'etat du bloc, projection apres
         chaque iteration : sur la boite (version B) ou, avec C3, sur
@@ -571,7 +603,7 @@ class AdaptateurPINN:
         J = float("nan")
         for it in range(1, self.n_adam + 1):
             b1t *= R["BETA1"]; b2t *= R["BETA2"]
-            J, g = horizon(th, x0, (xI, xF), r, self.k, vin, self.pas_pred, self.NH, centre=self.centre)
+            J, g = horizon(th, x0, (self.xI, self.xF), r, self.k, vin, self.pas_pred, self.NH, centre=self.centre)
             m = R["BETA1"] * m + (1 - R["BETA1"]) * g
             vv = R["BETA2"] * vv + (1 - R["BETA2"]) * g * g
             pas_adam = -R["ALPHA"] * (m / (1 - b1t)) / (np.sqrt(vv / (1 - b2t)) + R["EPS_ADAM"])
@@ -585,8 +617,8 @@ class AdaptateurPINN:
 
 
 class PINNPIDC:
-    """Montage : adaptateur -> gains -> bloc PID de la base commune -> u, et
-    u (avec les etats du bloc) renvoye a l'adaptateur."""
+    """Montage Simulink : adaptateur -> gains -> bloc PID de la base commune
+    -> u, et u renvoye a l'adaptateur (avec e et la mesure)."""
     utilise_mesure = True
 
     def __init__(self, **options):
@@ -599,7 +631,9 @@ class PINNPIDC:
         K = self.adapt.K                       # sortie de l'adaptateur (son etat seulement)
         self.K_pas.append(K)
         u = self.bloc.pas(e, K)
-        self.adapt.mise_a_jour(e, mesure, u, self.bloc.xI, self.bloc.xF)
+        self.adapt.mise_a_jour(e, mesure, u)
+        if self.adapt.xI != self.bloc.xI or self.adapt.xF != self.bloc.xF or self.adapt.u_bloc != u:
+            raise RuntimeError("La copie du bloc PID dans l'adaptateur differe du bloc PID.")
         return u
 
 
@@ -887,7 +921,7 @@ if __name__ == "__main__":
 
     titre("ETAPE 6 : fichiers")
     pas_1ms = int(round(1e-3 / TC))
-    predictions = {"version": 3, "Te": TC, "corrections": list(COMB),
+    predictions = {"version": 2, "version_banc": 3, "Te": TC, "corrections": list(COMB),   # format 2 de la base commune
                    "regulateur": "PINN-PID C (version B : bloc PID de la base commune a gains externes, gains optimises "
                                  "par Adam, iteration en temps reel ; corrections " + ("+".join(COMB) or "aucune") +
                                  ", choisies sur E1 a E4, criteres_pinn_pid.txt)",
@@ -905,10 +939,47 @@ if __name__ == "__main__":
                                        "d_moyen_par_ms": [float(np.mean(r["sim"]["d"][i:i + pas_1ms]))
                                                           for i in range(0, len(r["sim"]["d"]) - pas_1ms + 1, pas_1ms)],
                                        "K_toutes_les_ms": Kp[::pas_1ms].tolist(),
+                                       "fenetres_adaptees": sum(1 for x in r["reg"].journal if x["adapte"]),
+                                       "fenetres_gains_changes": sum(1 for x in r["reg"].journal if x["change"]),
                                        "K_final": r["reg"].journal[-1]["K"].tolist()}
     with open(os.path.join(DOSSIER_PINN, "predictions_banc_pinn_pid.json"), "w", encoding="utf-8") as f:
         json.dump(predictions, f, indent=1, allow_nan=False)
     print("  predictions_banc_pinn_pid.json ecrit.")
+
+    # Reglages du bloc MATLAB (pinn_pid_adaptatif.m) : ceux de l'adaptateur retenu, tels quels
+    _A = AdaptateurPINN()
+    if _A.ensemble:
+        raise RuntimeError("Combinaison avec C3 : la projection M2-M3 n'est pas dans pinn_pid_adaptatif.m.")
+    savemat(os.path.join(DOSSIER_PINN, "pinn_pid_reglages.mat"),
+            {"VERSION": 3.0, "CORRECTIONS": "+".join(_A.corrections) or "aucune",
+             "K_DEPART": K_ZN.reshape(1, 3), "X_MIN": X_MIN.reshape(1, 3), "X_MAX": X_MAX.reshape(1, 3),
+             "CENTRE": _A.centre.reshape(1, 3), "SEUIL": float("nan") if _A.seuil is None else _A.seuil,
+             "ENSEMBLE": 0.0, "PREDICTEUR_PINN": 1.0,
+             "NH": float(_A.NH), "N_ADAM": float(_A.n_adam), "ALPHA": REGLAGES["ALPHA"],
+             "BETA1": REGLAGES["BETA1"], "BETA2": REGLAGES["BETA2"], "EPS_ADAM": REGLAGES["EPS_ADAM"],
+             "W_U": REGLAGES["W_U"], "W_F": REGLAGES["W_F"], "PENTE_SAT": REGLAGES["PENTE_SAT"],
+             "G_NOM": REGLAGES["G_NOM"], "VIN_DEPART": REGLAGES["VIN_DEPART"], "SIG_Y": REGLAGES["SIG_Y"],
+             "SIG_V": REGLAGES["SIG_V"], "SIG_I": REGLAGES["SIG_I"], "SIG_VIN": _A.svin,
+             "P0_I": REGLAGES["P0_I"], "P0_VIN": REGLAGES["P0_VIN"],
+             "NF": float(NF), "TC": TC, "N_FILTRE": PID_N, "D_MIN": D_MIN, "D_MAX": D_MAX,
+             "CI_INTEGRATEUR": PID_CI_INTEGRATEUR, "CI_FILTRE": PID_CI_FILTRE,
+             "NPER": float(NPER), "NREG": float(NREG), "L_MOD": L_MOD, "VF": VF,
+             "PHI": PHI.reshape(NS + 1, 4), "GAM": GAM})
+    print("  pinn_pid_reglages.mat ecrit (VERSION 3, corrections " + ("+".join(_A.corrections) or "aucune") + ").")
+
+    # Reference du rejeu pas a pas (Tester_PINN_PID_Rejeu.m) : entrees de l'adaptateur, gains, decisions
+    rejeu = {}
+    for code in CODES_REJEU:
+        r = PINN[code]
+        jr = r["reg"].journal
+        rejeu[code] = {"e": (r["sim"]["consigne"] - r["sim"]["mesure"]).reshape(-1, 1),
+                       "mesure": r["sim"]["mesure"].reshape(-1, 1), "u": r["sim"]["d"].reshape(-1, 1),
+                       "K": np.array(r["reg"].K_pas),
+                       "adapte": np.array([x["adapte"] for x in jr], float).reshape(-1, 1),
+                       "vin_eff": np.array([x["vin_eff"] for x in jr]).reshape(-1, 1),
+                       "iL_obs": np.array([x["iL"] for x in jr]).reshape(-1, 1)}
+    savemat(os.path.join(DOSSIER_PINN, "reference_rejeu_pinn_pid.mat"), rejeu, do_compression=True)
+    print(f"  reference_rejeu_pinn_pid.mat ecrit ({', '.join(CODES_REJEU)}).")
 
     def resume_essais(res):
         return {c: {"grandeurs": res[c]["o"], "IAE_dem": res[c]["IAE_dem"], "revenus": res[c]["revenus"]} for c in res}

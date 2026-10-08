@@ -33,11 +33,11 @@ Gradient de l'horizon contre differences finies : ecart relatif maximal 4.4e-07 
 ==============================================================================
  ETAPE 4 : ablations (rapportees, jamais choisies)
 ==============================================================================
-  Plafond (modele physique nominal a la place du PINN) J = 0.7573 (0.702 / 0.942) ; non revenus : - (9 s)
+  Plafond (modele physique nominal a la place du PINN) J = 0.7573 (0.702 / 0.942) ; non revenus : - (10 s)
   Aucune correction (= version B, 0.893 attendu)       J = 0.8931 (0.878 / 0.942) ; non revenus : - (36 s)
-  C1+C2 (a 1 % sur E1-E4, non retenue)                 J = 0.7523 (0.695 / 0.943) ; non revenus : - (11 s)
-  C1+C3 (a 1 % sur E1-E4, non retenue)                 J = 0.7542 (0.695 / 0.952) ; non revenus : - (10 s)
-  PID fige aux gains finaux du PINN-PID C sur S1       J = 0.7681 (0.719 / 0.931) ; non revenus : - (2 s)
+  C1+C2 (a 1 % sur E1-E4, non retenue)                 J = 0.7523 (0.695 / 0.943) ; non revenus : - (10 s)
+  C1+C3 (a 1 % sur E1-E4, non retenue)                 J = 0.7542 (0.695 / 0.952) ; non revenus : - (11 s)
+  PID fige aux gains finaux du PINN-PID C sur S1       J = 0.7681 (0.719 / 0.931) ; non revenus : - (3 s)
   (gains finaux S1 x(1.299, 0.900, 1.059))
 
 ==============================================================================
@@ -96,5 +96,7 @@ Gradient de l'horizon contre differences finies : ecart relatif maximal 4.4e-07 
  ETAPE 6 : fichiers
 ==============================================================================
   predictions_banc_pinn_pid.json ecrit.
+  pinn_pid_reglages.mat ecrit (VERSION 3, corrections C1).
+  reference_rejeu_pinn_pid.mat ecrit (S1, S3, S7b, S8b, S9).
   banc_pinn_pid_resultats.json ecrit.
-  banc_pinn_pid.png ecrit. Duree totale : 134 s.
+  banc_pinn_pid.png ecrit. Duree totale : 140 s.

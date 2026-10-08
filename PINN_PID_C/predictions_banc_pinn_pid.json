@@ -1,5 +1,6 @@
 {
- "version": 3,
+ "version": 2,
+ "version_banc": 3,
  "Te": 4.5454545454545455e-06,
  "corrections": [
   "C1"
@@ -1685,6 +1686,8 @@
      7.753286804428373e-06
     ]
    ],
+   "fenetres_adaptees": 8,
+   "fenetres_gains_changes": 8,
    "K_final": [
     0.1219909807054426,
     271.10893815493694,
@@ -3349,6 +3352,8 @@
      7.3882293831578135e-06
     ]
    ],
+   "fenetres_adaptees": 13,
+   "fenetres_gains_changes": 13,
    "K_final": [
     0.11713598265375634,
     217.95875534427663,
@@ -5013,6 +5018,8 @@
      8.483653575083819e-06
     ]
    ],
+   "fenetres_adaptees": 14,
+   "fenetres_gains_changes": 14,
    "K_final": [
     0.1397367726240929,
     286.0584449044665,
@@ -6699,6 +6706,8 @@
      8.382264258225737e-06
     ]
    ],
+   "fenetres_adaptees": 23,
+   "fenetres_gains_changes": 23,
    "K_final": [
     0.15422793015423877,
     255.2700620663343,
@@ -8385,6 +8394,8 @@
      1.0674998928711255e-05
     ]
    ],
+   "fenetres_adaptees": 16,
+   "fenetres_gains_changes": 16,
    "K_final": [
     0.15949666144420824,
     271.07425764527886,
@@ -10071,6 +10082,8 @@
      7.753286804428373e-06
     ]
    ],
+   "fenetres_adaptees": 8,
+   "fenetres_gains_changes": 8,
    "K_final": [
     0.1219909807054426,
     271.10893815493694,
@@ -11712,6 +11725,8 @@
      7.884208295104085e-06
     ]
    ],
+   "fenetres_adaptees": 8,
+   "fenetres_gains_changes": 8,
    "K_final": [
     0.12194618249915266,
     286.04814212153667,
@@ -13353,6 +13368,8 @@
      8.11652400718396e-06
     ]
    ],
+   "fenetres_adaptees": 7,
+   "fenetres_gains_changes": 7,
    "K_final": [
     0.12669922963709604,
     301.089,
@@ -15039,6 +15056,8 @@
      1.4622201423149161e-05
     ]
    ],
+   "fenetres_adaptees": 23,
+   "fenetres_gains_changes": 23,
    "K_final": [
     0.20177270994674792,
     301.089,
@@ -16725,6 +16744,8 @@
      1.5154313308523368e-05
     ]
    ],
+   "fenetres_adaptees": 25,
+   "fenetres_gains_changes": 25,
    "K_final": [
     0.21100432473906802,
     301.089,
@@ -20215,6 +20236,8 @@
      1.6875393596557063e-05
     ]
    ],
+   "fenetres_adaptees": 49,
+   "fenetres_gains_changes": 49,
    "K_final": [
     0.223356880339811,
     301.06455209587193,

@@ -443,3 +443,72 @@ C3. Ensemble admissible de l'ELM-PID au lieu de la boite  (memes bornes
       ICLR, 2015.
   [2], [3], [6], [7] : memes references et memes verifications que
   l'ELM-PID (ELM_PID/criteres_elm_pid.txt) ; [8], [9] : comme la version B.
+
+
+10. SIMULINK (8 octobre 2026, apres les resultats ; aucun changement de
+    la loi, des reglages ni de la combinaison)
+-------------------------------------------------------------------------
+  Montage. Le meme que l'ELM-PID option B : le bloc "PID Controller" de
+  la base commune est garde et passe en gains externes ; l'adaptateur
+  pinn_pid_adaptatif.m (MATLAB System, version 3, entrees e, mesure, u ;
+  sortie [P I D] ; sans traversee directe) recoit ses trois entrees par
+  trois Zero-Order Hold a Tc. Le bloc PID ne donne pas ses etats a
+  l'exterieur : l'adaptateur les refait (integrateur, filtre) a partir de
+  e et de ses propres gains, par les operations du bloc. Dans le banc, la
+  classe AdaptateurPINN fait de meme et PINNPIDC verifie a chaque pas que
+  cette copie est identique au bloc (ecart nul exige). Le banc relance
+  avec cette classe redonne la meme sortie console (J = 0.757116218, memes
+  IAE, memes gains), et banc_pinn_pid_resultats.json est identique hors
+  duree.
+
+  Fichiers ecrits par banc_pinn_pid.py (etape 6) : pinn_pid_reglages.mat
+  (VERSION 3 ; le bloc refuse tout autre numero, et la projection C3),
+  predictions_banc_pinn_pid.json (format 2 de la base commune) et
+  reference_rejeu_pinn_pid.mat (e, mesure, u et gains pas par pas,
+  decisions et etat de l'observateur par fenetre, sur S1, S3, S7b, S8b,
+  S9). Le bloc de la version 1 et ses scripts Simulink sont remplaces.
+
+  Controles faits sans MATLAB (pas de MATLAB ici) :
+    a. Rejeu emule : le bloc MATLAB transcrit ligne a ligne en Python
+       (indices a base 1 recopies), lance sur reference_rejeu_pinn_pid.mat
+       comme le fera Tester_PINN_PID_Rejeu.m : vecteurs de test du PINN
+       6.4e-16 ; sur les cinq essais, gains, decisions (103 fenetres
+       optimisees) et observateur identiques au banc (ecart 0), copie du
+       PID egale a u. Deux mutations volontaires (un facteur 1.001 dans le
+       gradient de I ; mesure et erreur echangees) sont detectees.
+    b. Relecture du bloc contre la classe Python. Ecarts qui restent, sans
+       effet sur la loi : produits matriciels (observateur F P F', couches
+       du PINN) et fonctions tanh et sqrt calcules par MATLAB, donc
+       arrondis possibles au dernier chiffre (1e-16 relatif) ; cout J de
+       l'horizon (affichage seulement) ; NaN traites autrement par min et
+       max (aucun NaN attendu) ; le bloc ne prend pas la correction C3
+       (refusee a la lecture des reglages) ; il affiche en plus l'ecart
+       entre sa copie du PID et l'entree u.
+    c. Les deux verificateurs (verifier_modele_pinn_pid.py,
+       verifier_modeles_pinn_pid_trois.py) ont ete passes sur des modeles
+       fabriques en modifiant system_root.xml des copies de Buck_Commun.slx
+       et des trois modeles de base (PID externe a 5 entrees, six blocs,
+       liaisons) : "conforme" ; puis avec les entrees 2 et 3 de
+       l'adaptateur inversees : rejete dans les quatre modeles.
+
+  Ce qu'on attend de Simulink, et ce qui peut basculer. Chaque decision
+  d'optimiser depend du seuil de 0.1 V sur l'erreur efficace de la
+  fenetre. Fenetres les plus proches du seuil sur le banc : 4 ms sur S1,
+  S2 et S3 (0.1017 V, declenchee) et sur S9 (0.1013 V), 51.5 ms sur S2 (0.104 V,
+  declenchee), 72 ms sur S3 (0.097 V, non declenchee), 51 ms sur S9
+  (0.098 V, non declenchee). Pour fixer la tolerance de l'auto-test T1
+  sans la deviner, le banc a ete relance sur S1 et S8b avec un seuil de
+  0.102 V (diagnostic, rien n'est retenu de ce calcul) : sur S1, la
+  fenetre de 4 ms ne declenche plus, les gains restent a
+  x(1.349, 0.950, 1.109) au lieu de x(1.299, 0.900, 1.059), et Vout prise
+  toutes les ms sur 20 ms ne change pas de plus de 0.5 mV ; S8b ne change
+  pas. Les auto-tests T1 acceptent donc ce seul autre chemin en le
+  signalant (NOTE) et refusent tout autre ecart de gains. Les trois
+  modeles de base n'ont ni bruit ni quantification de la mesure : ces
+  decisions y basculent plus facilement.
+
+  Non verifiable sans MATLAB : execution du bloc dans Simulink (syntaxe,
+  matlab.System en execution interpretee, ordre d'evaluation sans boucle
+  algebrique), ordre P, I, D, N des entrees externes du PID (auto-test
+  T0), ecart entre le vrai bloc PID de Simulink et sa copie dans
+  l'adaptateur (affiche dans le bilan du bloc), temps de calcul.

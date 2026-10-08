@@ -2,82 +2,80 @@
 %
 % OBJECTIF
 % --------
-% Construire, pour le PINN-PID, un modele Simulink par scenario de
-% base, a partir des trois modeles de Jean-Riche :
+% Construire, pour le PINN-PID C, un modele Simulink par scenario
+% de base, a partir des trois modeles de Jean-Riche :
 %   PID_Classique_Control.slx                     -> PINN_PID_Control.slx
 %   PID_Classique_Control_control_disturbance.slx -> PINN_PID_Control_control_disturbance.slx
 %   PID_Classique_Control_load_disturbance.slx    -> PINN_PID_Control_load_disturbance.slx
-% Dans chaque copie, seul le bloc "PID Controller" est remplace par le
-% bloc du PINN-PID. Tout le reste (circuit, source 200 V, charge, F1
+% Dans chaque copie, le bloc "PID Controller" de Ziegler-Nichols est GARDE :
+% seuls P, I, D et N passent en entrees externes, et l'adaptateur PINN est
+% branche sur l'erreur, la mesure et la commande, exactement comme dans
+% Construction_PINN_PID.m. Tout le reste (circuit, source 200 V, charge, F1
 % calcule par le bloc MATLAB Function, F2 par l'interrupteur ideal, Scope,
-% configuration) reste celui du modele de Jean-Riche : on ouvre le modele
-% construit et on clique sur Run, comme pour le PID classique.
+% configuration) reste celui de ton modele : on ouvre le modele construit
+% et on clique sur Run. La mesure est ici la sortie du bloc "Vout" (ces
+% modeles n'ont ni bruit ni quantification de la mesure).
+% ATTENTION : ces noms sont ceux des modeles de la version 1 (dossier
+% PINN_PID, loi incrementale). Le script les supprime et les reconstruit
+% toujours a partir d'une copie fraiche de tes modeles de base.
 %
 % VERSION
 % -------
-% 1 (5 octobre 2026), PINN-PID (etapes 1 a 4 sur la base commune
-% v2.1). Meme bloc, memes reglages et meme facon de remplacer le PID que
-% Construction_PINN_PID.m, qui construit Buck_Commun_PINN_PID.slx ; seule la
-% source de la mesure change : ici, la sortie du bloc de mesure "Vout"
-% (ces modeles n'ont ni bruit ni quantification de la mesure).
-%
-% POURQUOI CES TROIS MODELES, EN PLUS DE Buck_Commun_PINN_PID.slx
-% ---------------------------------------------------------------
-% Ils sont construits sur les fichiers de Jean-Riche, sans profils lus dans
-% le workspace : chacun se simule seul, d'un clic. Ils servent aussi de
-% controle croise : sur les essais S1 (nominal), S2 (F1) et S3 (F2), ils
-% doivent redonner les resultats du banc et de Buck_Commun_PINN_PID.slx.
-% Deux petites differences sont possibles : dans ton modele F2, la charge
-% vaut 5.001 ohms hors de la fenetre (interrupteur ferme, Ron = 1 mohm en
-% parallele sur -0.667 ohm) au lieu de 5 ohms (effet prevu par le banc :
-% +0.1 % d'IAE, une quinzaine de mV au plus sur Vout) ; dans ton modele F1,
-% F1(t) est calcule a partir de l'horloge. En principe F1 commence et finit
-% exactement a 50 et 70 ms (11 000 x Tc et 15 400 x Tc valent 0.05 et 0.07
-% en double precision) ; si l'horloge accumulait des arrondis, le debut et
-% la fin arriveraient un pas Tc plus tard (effet prevu : +0.6 % d'IAE).
+% 3 (8 octobre 2026), PINN-PID C. Copie de
+% ELM_PID/Construction_ELM_PID_Trois_Modeles.m (meme montage, repris de
+% Construction_Fuzzy_PID_Trois_Modeles.m, valide sous Simulink le
+% 6 octobre) ; changent seulement les noms, la classe et les fichiers.
+% La version 1 (loi incrementale dans le bloc) est dans PINN_PID.
 %
 % CE QUE LE SCRIPT CHANGE DANS CHAQUE COPIE, ET RIEN D'AUTRE
 % -----------------------------------------------------------
-%   1. Le bloc "PID Controller" et ses deux liaisons sont supprimes.
-%   2. Deux Zero-Order Hold a Tc = 1/(22000*10) s (texte exact) :
-%      "Echantillonneur Erreur PINN", alimente par Sum1 (l'erreur, comme
-%      l'etait le PID), et "Echantillonneur Mesure PINN", alimente par la
-%      sortie du bloc de mesure "Vout" (une branche de plus sur la meme
-%      liaison ; Sum1, le Goto et le To Workspace restent alimentes).
-%   3. "PINN-PID Adaptatif" (MATLAB System, classe pinn_pid_adaptatif,
-%      execution interpretee) recoit l'erreur et la mesure ; sa sortie 1
-%      (rapport cyclique, deja borne a [0.01 ; 0.99]) alimente le PWM comme
-%      le faisait le PID ; sa sortie 2 (les gains Kp, Ki, Kd) va dans
-%      "Terminaison Gains PINN" (Terminator). Simuler_PINN_PID_Trois_Modeles.m
-%      enregistre cette sortie et trace les gains.
-% La configuration de simulation n'est pas touchee. Les modeles de
-% Jean-Riche ne sont jamais modifies : chaque modele est construit a partir
-% d'une copie.
+%   1. "PID Controller" : ControllerParametersSource internal -> external
+%      (Simulink bascule seul les aiguillages P, I, D, N du masque) ; les
+%      entrees u, P, I, D, N sont reperees par leur nom ; la liaison
+%      Sum1 -> PID est refaite sur l'entree u ; PID -> PWM est gardee.
+%   2. Trois Zero-Order Hold a 1/(22000*10) s : "Echantillonneur Erreur
+%      PINN" (Sum1), "Echantillonneur Mesure PINN" (sortie du bloc "Vout",
+%      branche) et "Echantillonneur Commande PINN" (sortie du PID, branche).
+%   3. "PINN-PID Adaptatif" (MATLAB System, pinn_pid_adaptatif, execution
+%      interpretee, sans traversee directe) -> "Demux Gains PINN" -> entrees
+%      P, I, D.
+%   4. "Constante N Filtre" (Constant, valeur du champ N du PID) -> entree N.
+% La configuration de simulation n'est pas touchee. Tes modeles de base ne
+% sont jamais modifies.
 %
-% LES AUTO-TESTS (apres la sauvegarde)
-% -------------------------------------
-% Pour chaque modele construit : 20 ms de simulation, Vout toutes les ms
-% comparee au banc (predictions_banc_pinn_pid.json, essais S1, S2 et S3 :
-% avant 50 ms, les trois essais sont le demarrage nominal), ecart maximal
-% tolere 0.05 V ; gains a la fin du test affiches a cote de ceux du banc
-% au meme instant (le PINN-PID adapte ses gains sur quelques fenetres
-% pendant le demarrage nominal). Les auto-tests ne remplacent pas
-% verifier_modeles_pinn_pid_trois.py.
+% LES AUTO-TESTS (apres la sauvegarde ; modeles fermes sans enregistrer)
+% ----------------------------------------------------------------------
+% Pour chaque modele, 20 ms (avant 50 ms, les trois essais sont le
+% demarrage nominal) :
+%   T0  adaptateur force aux gains de Ziegler-Nichols : Vout toutes les ms
+%       comparee au PID classique du banc (S1), 0.1 V au plus ;
+%   T1  PINN-PID : Vout comparee a l'essai du banc (S1, S2, S3), 0.05 V au
+%       plus, et gains a 19 ms egaux a ceux du banc a 1 % pres : le banc
+%       optimise les fenetres de 0.5 a 4 ms et arrive a
+%       x(1.299, 0.900, 1.059) de Ziegler-Nichols. La fenetre de 4 ms n'est
+%       qu'a 1.7 mV au-dessus du seuil (0.1017 V) ; ces modeles n'ont ni
+%       bruit ni quantification de la mesure, elle peut donc ne pas
+%       declencher : les gains restent alors a x(1.349, 0.950, 1.109) et
+%       Vout ne change pas de plus de 0.5 mV (criteres_pinn_pid.txt,
+%       section 10). Ce chemin est signale, pas refuse ; tout autre ecart de
+%       gains arrete le script.
+% Les auto-tests ne remplacent pas verifier_modeles_pinn_pid_trois.py.
 %
 % REGLES APPLIQUEES : #7 et #17 (add_line avec des handles demandes au
-% dernier moment), #16 (on ne supprime que les lignes du bloc PID), #20
-% (copie fraiche, un seul exemplaire de chaque fichier sur le chemin).
+% dernier moment), #16 (on ne supprime que la ligne Sum1 -> PID, refaite
+% aussitot), #20 (copie fraiche, un seul exemplaire de chaque fichier sur
+% le chemin).
 %
 % ORDRE D'EXECUTION
 % -----------------
 %   1. ce script ; 2. verifier_modeles_pinn_pid_trois.py ;
-%   3. Simuler_PINN_PID_Trois_Modeles.m.
+%   3. Simuler_PINN_PID_Trois_Modeles.m (apres Tester_PINN_PID_Rejeu.m et
+%   les etapes de Buck_Commun_PINN_PID.slx).
 %
 % Prerequis dans le dossier courant MATLAB : les trois modeles de base
-% ci-dessus, pinn_pid_adaptatif.m, pinn_pid_modele.mat, pinn_pid_reglages.mat
-% et predictions_banc_pinn_pid.json (PINN-PID).
-% Duree : deux a cinq minutes (trois constructions et trois auto-tests).
-% Compatible R2024a.
+% ci-dessus, pinn_pid_adaptatif.m, pinn_pid_modele.mat, pinn_pid_reglages.mat,
+% predictions_banc_pinn_pid.json, predictions_banc_pid_classique.json.
+% Duree : trois a six minutes. Compatible R2024a.
 % ---------------------------------------------------------------------
 
 clear; clc;
@@ -89,17 +87,18 @@ MODELES = {'PID_Classique_Control',                     'PINN_PID_Control',     
 TC_TXT = '1/(22000*10)';                          % periode du regulateur (texte exact)
 TC     = 1/(22000*10);                            % la meme, en nombre (s)
 CLASSE = 'pinn_pid_adaptatif';                     % classe du bloc MATLAB System
-NOM_SYS  = 'PINN-PID Adaptatif';
-NOM_ZOHE = 'Echantillonneur Erreur PINN';
-NOM_ZOHM = 'Echantillonneur Mesure PINN';
-NOM_TERM = 'Terminaison Gains PINN';
-PWM      = sprintf('PWM Generator\n(DC-DC)');     % regle #1 : vrai saut de ligne
+NOM_SYS   = 'PINN-PID Adaptatif';
+NOM_ZOHE  = 'Echantillonneur Erreur PINN';
+NOM_ZOHM  = 'Echantillonneur Mesure PINN';
+NOM_ZOHU  = 'Echantillonneur Commande PINN';
+NOM_DEMUX = 'Demux Gains PINN';
+NOM_N     = 'Constante N Filtre';
+PWM       = sprintf('PWM Generator\n(DC-DC)');    % regle #1 : vrai saut de ligne
 DUREE_TEST = 0.020;                               % duree des auto-tests (s)
-TOLERANCE_TEST = 0.05;                            % ecart maximal au banc (V)
 
 % --- Prerequis ---
 for f = [strcat(MODELES(:, 1)', '.slx'), {[CLASSE '.m'], 'pinn_pid_modele.mat', 'pinn_pid_reglages.mat', ...
-         'predictions_banc_pinn_pid.json'}]
+         'predictions_banc_pinn_pid.json', 'predictions_banc_pid_classique.json'}]
     if ~isfile(fullfile(pwd, f{1}))
         error('Fichier introuvable dans le dossier courant : %s', f{1});
     end
@@ -141,88 +140,156 @@ for i = 1:size(MODELES, 1)
     %% 2. Controle du circuit de base (meme circuit que la base commune v2)
     controler_base(MDL, SOURCE);
 
-    %% 3. Le PID, sa source, sa destination et la mesure
+    %% 3. Le PID, sa source et sa destination
     pid = [MDL '/PID Controller'];
-    mesure = [MDL '/Vout'];
-    for b = {pid, mesure, [MDL '/Sum1'], [MDL '/' PWM]}
+    for b = {pid, [MDL '/Sum1'], [MDL '/' PWM]}
         if getSimulinkBlockHandle(b{1}) == -1
             close_system(MDL, 0);
             error('Bloc introuvable : %s', strrep(b{1}, newline, ' '));
         end
     end
+    if ~strcmp(get_param(pid, 'ControllerParametersSource'), 'internal') || ~strcmp(get_param(pid, 'Form'), 'Parallel')
+        close_system(MDL, 0);
+        error('%s : le PID devrait avoir des parametres internes et la forme Parallel.', SOURCE);
+    end
     lh = get_param(pid, 'LineHandles');
+    if numel(lh.Inport) ~= 1
+        close_system(MDL, 0);
+        error('%s : le PID devrait avoir une seule entree.', SOURCE);
+    end
     [src_err, ~] = extremites_ligne(lh.Inport(1));    % ce qui alimente le PID (Sum1, sortie 1)
     [~, dst_cmd] = extremites_ligne(lh.Outport(1));   % ce que le PID alimente (entree du PWM)
     if ~strcmp(src_err.bloc, [MDL '/Sum1']) || numel(dst_cmd) ~= 1 || ~strcmp(dst_cmd(1).bloc, [MDL '/' PWM])
         close_system(MDL, 0);
         error('%s : le PID devrait etre alimente par Sum1 et alimenter seulement le PWM.', SOURCE);
     end
+    mesure = [MDL '/Vout'];
+    if getSimulinkBlockHandle(mesure) == -1
+        close_system(MDL, 0);
+        error('%s : bloc de mesure "Vout" introuvable.', SOURCE);
+    end
     lm = get_param(mesure, 'LineHandles');
     [~, dst_m] = extremites_ligne(lm.Outport(1));     % la mesure doit aller sur l'entree 2 (-) de Sum1
     if ~any(arrayfun(@(d) strcmp(d.bloc, [MDL '/Sum1']) && d.port == 2, dst_m))
         close_system(MDL, 0);
-        error('%s : la sortie du bloc "Vout" devrait alimenter l''entree 2 (-) de Sum1.', SOURCE);
+        error('%s : "Vout" devrait alimenter l''entree 2 (-) de Sum1.', SOURCE);
     end
+    N_TXT = get_param(pid, 'N');                  % valeur du filtre, telle qu'ecrite dans le bloc
+    fprintf('PID de Ziegler-Nichols : P = %s, I = %s, D = %s, N = %s (ces champs ne serviront plus).\n', ...
+            get_param(pid, 'P'), get_param(pid, 'I'), get_param(pid, 'D'), N_TXT);
 
-    %% 4. Remplacement du PID par le PINN-PID
+    %% 4. Parametres du PID en entrees externes
+    delete_line(lh.Inport(1));                    % seule ligne supprimee (regle #16), refaite plus bas
+    set_param(pid, 'ControllerParametersSource', 'external');
+    ports = ports_par_nom(pid);                   % numero d'entree de u, P, I, D, N
+    for nom = {'u', 'P', 'I', 'D', 'N'}
+        if ~isfield(ports, nom{1})
+            noms = fieldnames(ports);
+            close_system(MDL, 0);
+            error('Entree "%s" introuvable sous le masque du PID ; entrees trouvees : %s.', nom{1}, strjoin(noms', ', '));
+        end
+    end
+    ph_pid = get_param(pid, 'PortHandles');
+    if numel(ph_pid.Inport) ~= 5
+        close_system(MDL, 0);
+        error('Le PID a parametres externes devrait avoir 5 entrees (u, P, I, D, N), il en a %d.', numel(ph_pid.Inport));
+    end
+    fprintf('PID en parametres externes : entrees u = %d, P = %d, I = %d, D = %d, N = %d.\n', ...
+            ports.u, ports.P, ports.I, ports.D, ports.N);
+
+    %% 5. Adaptateur PINN et branchements
     pos = get_param(pid, 'Position');             % [gauche haut droite bas]
-    delete_line(lh.Inport(1));                    % lignes du PID seulement (regle #16)
-    delete_line(lh.Outport(1));
-    delete_block(pid);
-
-    zohe = [MDL '/' NOM_ZOHE];
-    zohm = [MDL '/' NOM_ZOHM];
-    sys = [MDL '/' NOM_SYS];
-    term = [MDL '/' NOM_TERM];
-    add_block('simulink/Discrete/Zero-Order Hold', zohe, 'Position', [pos(1)-110, pos(2), pos(1)-70, pos(2)+30]);
-    add_block('simulink/Discrete/Zero-Order Hold', zohm, 'Position', [pos(1)-110, pos(4)+20, pos(1)-70, pos(4)+50]);
+    zohe  = [MDL '/' NOM_ZOHE];
+    zohm  = [MDL '/' NOM_ZOHM];
+    zohu  = [MDL '/' NOM_ZOHU];
+    sys   = [MDL '/' NOM_SYS];
+    demux = [MDL '/' NOM_DEMUX];
+    cn    = [MDL '/' NOM_N];
+    add_block('simulink/Discrete/Zero-Order Hold', zohe, 'Position', [pos(1)-260, pos(4)+40, pos(1)-220, pos(4)+70]);
     set_param(zohe, 'SampleTime', TC_TXT);
+    add_block('simulink/Discrete/Zero-Order Hold', zohm, 'Position', [pos(1)-260, pos(4)+90, pos(1)-220, pos(4)+120]);
     set_param(zohm, 'SampleTime', TC_TXT);
-    add_block('simulink/User-Defined Functions/MATLAB System', sys, 'Position', [pos(1), pos(2), pos(3)+40, pos(4)+40]);
+    add_block('simulink/Discrete/Zero-Order Hold', zohu, 'Position', [pos(3)+40, pos(4)+40, pos(3)+80, pos(4)+70]);
+    set_param(zohu, 'SampleTime', TC_TXT);
+    add_block('simulink/User-Defined Functions/MATLAB System', sys, 'Position', [pos(1)-190, pos(4)+30, pos(1)-110, pos(4)+120]);
     set_param(sys, 'System', CLASSE);
     set_param(sys, 'SimulateUsing', 'Interpreted execution');
     ph = get_param(sys, 'PortHandles');
-    if numel(ph.Inport) ~= 2 || numel(ph.Outport) ~= 2
+    if numel(ph.Inport) ~= 3 || numel(ph.Outport) ~= 1
         close_system(MDL, 0);
-        error('Le bloc %s devrait avoir 2 entrees et 2 sorties (il en a %d et %d).', NOM_SYS, ...
-              numel(ph.Inport), numel(ph.Outport));
+        error('Le bloc %s devrait avoir 3 entrees et 1 sortie (il en a %d et %d).', NOM_SYS, numel(ph.Inport), numel(ph.Outport));
     end
-    add_block('simulink/Sinks/Terminator', term, 'Position', [pos(3)+90, pos(4)+20, pos(3)+110, pos(4)+40]);
+    add_block('simulink/Signal Routing/Demux', demux, 'Position', [pos(1)-80, pos(4)+25, pos(1)-75, pos(4)+85]);
+    set_param(demux, 'Outputs', '3');
+    add_block('simulink/Sources/Constant', cn, 'Position', [pos(1)-80, pos(4)+100, pos(1)-40, pos(4)+120]);
+    set_param(cn, 'Value', N_TXT);
 
-    relier(MDL, src_err.bloc, src_err.port, zohe, 1);   % Sum1 -> echantillonneur de l'erreur
-    relier(MDL, mesure, 1, zohm, 1);                    % Vout -> echantillonneur (branche)
+    relier(MDL, src_err.bloc, src_err.port, pid, ports.u);   % Sum1 -> entree u du PID (refaite)
+    relier(MDL, src_err.bloc, src_err.port, zohe, 1);        % Sum1 -> echantillonneur (branche)
+    relier(MDL, mesure, 1, zohm, 1);                         % Vout -> echantillonneur (branche)
+    relier(MDL, pid, 1, zohu, 1);                            % commande du PID -> echantillonneur (branche)
     relier(MDL, zohe, 1, sys, 1);
     relier(MDL, zohm, 1, sys, 2);
-    relier(MDL, sys, 1, dst_cmd(1).bloc, dst_cmd(1).port);   % rapport cyclique -> PWM
-    relier(MDL, sys, 2, term, 1);                       % gains -> terminaison
-    fprintf('PID remplace par "%s" (%s, execution interpretee), alimente par l''erreur et Vout echantillonnees a %s s.\n', ...
-            NOM_SYS, CLASSE, TC_TXT);
+    relier(MDL, zohu, 1, sys, 3);
+    relier(MDL, sys, 1, demux, 1);
+    relier(MDL, demux, 1, pid, ports.P);
+    relier(MDL, demux, 2, pid, ports.I);
+    relier(MDL, demux, 3, pid, ports.D);
+    relier(MDL, cn, 1, pid, ports.N);
+    fprintf('Adaptateur "%s" (erreur, mesure, commande) branche sur P, I, D ; N = %s constant.\n', NOM_SYS, N_TXT);
 
-    %% 5. Sauvegarde (configuration de simulation non touchee)
+    %% 6. Sauvegarde (configuration de simulation non touchee)
     save_system(MDL);
     close_system(MDL, 0);
     fprintf('%s.slx sauvegarde.\n', MDL);
 end
 
-%% 6. Auto-tests
+%% 7. Auto-tests
 fprintf('\n=== Auto-tests (%.0f ms par modele) ===\n', DUREE_TEST * 1e3);
+pred_zn = jsondecode(fileread(fullfile(pwd, 'predictions_banc_pid_classique.json')));
 pred = jsondecode(fileread(fullfile(pwd, 'predictions_banc_pinn_pid.json')));
+reg = load(fullfile(pwd, 'pinn_pid_reglages.mat'));
+reg.K_ZN = double(reg.K_DEPART(:)');
+X_BASCULE = [1.349 0.950 1.109];                  % gains si la fenetre de 4 ms (0.1017 V) ne declenche pas
 pas_1ms = round(1e-3 / TC);                       % 220 periodes Tc
 for i = 1:size(MODELES, 1)
     MDL = MODELES{i, 2};
     code = MODELES{i, 3};
-    r = simuler_court(MDL, NOM_SYS, DUREE_TEST);
-    vb = pred.essais.(code).v_toutes_les_ms(:);
-    vs = r.v(1:pas_1ms:end);
-    n = min(numel(vs), numel(vb));
-    ecart = max(abs(vs(1:n) - vb(1:n)));
-    Kb = pred.essais.(code).K_toutes_les_ms;      % gains du banc toutes les ms
-    Ks = r.K(1 + (n - 1) * pas_1ms, :);           % gains a (n-1) ms, meme instant que Kb(n, :)
-    fprintf(['  %s : ecart maximal au banc (%s) sur Vout toutes les ms %.1f mV ; Vout maximal %.2f V ; ' ...
-             'gains a %d ms [%.5f %.4e %.4f] (banc [%.5f %.4e %.4f])\n'], ...
-            MDL, code, ecart * 1e3, max(r.v), n - 1, Ks(1), Ks(2), Ks(3), Kb(n, 1), Kb(n, 2), Kb(n, 3));
-    if ~(ecart <= TOLERANCE_TEST)
-        error('%s : ecart au banc de %.3f V, au-dela de %.2f V : verifier la construction.', MDL, ecart, TOLERANCE_TEST);
+    for fixes = [true, false]
+        r = simuler_court(MDL, NOM_SYS, DUREE_TEST, fixes);
+        if fixes
+            nom = 'T0'; vb = pred_zn.essais.S1.v_toutes_les_ms(:); quoi = 'PID classique du banc, S1'; tol = 0.1;
+        else
+            nom = 'T1'; vb = pred.essais.(code).v_toutes_les_ms(:); quoi = ['PINN-PID du banc, ' code]; tol = 0.05;
+        end
+        vs = r.v(1:pas_1ms:end);
+        n = min(numel(vs), numel(vb));
+        ecart = max(abs(vs(1:n) - vb(1:n)));
+        ecart_fin = max(abs(vs(11:n) - vb(11:n)));    % de 10 ms a la fin
+        Ks = r.K(1 + (n - 1) * pas_1ms, :);
+        fprintf('  %s %s (%s) : ecart maximal sur Vout %.1f mV, de 10 a %d ms %.1f mV ; Vout maximal %.2f V ; gains a %d ms x[%.3f %.3f %.3f] de ZN\n', ...
+                MDL, nom, quoi, ecart * 1e3, n - 1, ecart_fin * 1e3, max(r.v), n - 1, ...
+                Ks(1) / reg.K_ZN(1), Ks(2) / reg.K_ZN(2), Ks(3) / reg.K_ZN(3));
+        if ~(ecart <= tol)
+            error('%s %s : ecart de %.3f V, au-dela de %.2f V : envoie cette sortie.', MDL, nom, ecart, tol);
+        end
+        if ~fixes
+            Kb = pred.essais.(code).K_toutes_les_ms(n, :);
+            fprintf('       gains du banc a %d ms x[%.3f %.3f %.3f]\n', n - 1, Kb(1) / reg.K_ZN(1), Kb(2) / reg.K_ZN(2), ...
+                    Kb(3) / reg.K_ZN(3));
+            if max(abs(Ks - Kb) ./ abs(Kb)) > 0.01
+                if max(abs(Ks ./ reg.K_ZN - X_BASCULE) ./ X_BASCULE) <= 0.01
+                    fprintf(['       NOTE : gains sur le chemin ou la fenetre de 4 ms (0.1017 V, a 1.7 mV du seuil) ' ...
+                             'ne declenche pas : bascule attendue possible, pas un defaut du bloc.\n']);
+                else
+                    error(['%s T1 : gains a %d ms differents de ceux du banc de plus de 1 %% : une decision ' ...
+                           'd''adaptation a bascule. Envoie cette sortie.'], MDL, n - 1);
+                end
+            end
+        end
+        if fixes && max(abs(r.K(end, :) - reg.K_ZN(:)') ./ reg.K_ZN(:)') > 0
+            error('%s T0 : l''adaptateur n''a pas sorti les gains de Ziegler-Nichols.', MDL);
+        end
     end
 end
 fprintf(['\nLes trois modeles sont construits et leurs auto-tests sont passes :\n' ...
@@ -275,12 +342,32 @@ function controler_base(mdl, source)
     fprintf('Circuit de %s.slx controle (diode sans snubber, 10 mH, 47 uF, 22 kHz, pas exacts).\n', source);
 end
 
-function r = simuler_court(mdl, nom_sys, duree)
+function ports = ports_par_nom(bloc)
+    % Numero de chaque entree du bloc, d'apres le nom des Inport sous son
+    % masque (lien de bibliotheque suivi).
+    ib = find_system(bloc, 'LookUnderMasks', 'all', 'FollowLinks', 'on', 'SearchDepth', 1, 'BlockType', 'Inport');
+    ports = struct();
+    for i = 1:numel(ib)
+        nom = get_param(ib{i}, 'Name');
+        if isvarname(nom)
+            ports.(nom) = str2double(get_param(ib{i}, 'Port'));
+        end
+    end
+end
+
+function r = simuler_court(mdl, nom_sys, duree, gains_fixes)
     % Simulation avec enregistrements temporaires (Vout et gains), modele
     % ferme SANS enregistrer, meme en cas d'erreur.
     load_system(fullfile(pwd, [mdl '.slx']));
+    if gains_fixes                                % propriete logique : 'true' ou 'on' selon la version
+        try
+            set_param([mdl '/' nom_sys], 'GainsFixes', 'true');
+        catch
+            set_param([mdl '/' nom_sys], 'GainsFixes', 'on');
+        end
+    end
     ajouter_enregistrement(mdl, [mdl '/Log Vout tmp'], 'tmp_v', [mdl '/Vout'], 1);
-    ajouter_enregistrement(mdl, [mdl '/Log K tmp'], 'tmp_K', [mdl '/' nom_sys], 2);
+    ajouter_enregistrement(mdl, [mdl '/Log K tmp'], 'tmp_K', [mdl '/' nom_sys], 1);
     blocs = find_system(mdl, 'SearchDepth', 1, 'BlockType', 'ToWorkspace');
     for i = 1:numel(blocs)                        % journaux d'origine neutralises en memoire
         if ~startsWith(get_param(blocs{i}, 'VariableName'), 'tmp_')
