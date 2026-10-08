@@ -1,0 +1,94 @@
+PINN-PID, etape 3 : peut-on estimer l'etat, la charge et Vin a partir de Vout et de d ?
+Ecrit le 5 octobre 2026, apres la simulation des trajectoires de R0 et avant
+tout calcul d'estimateur.
+
+Question
+  Le PINN a besoin, au debut de chaque prediction, de Vout, iL, Vin et de la
+  conductance de charge G. Le regulateur ne mesure que Vout (sortie du
+  capteur, bruitee ou quantifiee selon l'essai) et connait le rapport
+  cyclique qu'il applique. Les autres methodes n'ont rien de plus : le
+  PINN-PID n'aura rien de plus.
+
+Ce que la physique permet d'attendre (ecrit avant le calcul)
+  En regime etabli, le couple (Vout, d) ne donne qu'une equation :
+  d Vin = Vout + Req iL + (1 - d) Vf, avec iL = G Vout et Req = d Ron + (1 - d) Rd,
+  soit Req de l'ordre de 0.05 ohm. Vin s'en deduit a environ 1 V pres (la
+  charge n'y entre que par Req iL, 1 V au plus a 5 ohms). G n'est pas
+  identifiable en regime etabli : 1 V d'erreur sur Vin equivaut a 10 A
+  d'erreur sur iL. La charge ne se voit que pendant les transitoires, par
+  l'amortissement.
+
+Donnees d'evaluation
+  Les onze essais du banc commun, en boucle fermee avec R0 (loi de Lu a
+  derivee filtree, gains de Ziegler-Nichols figes), trajectoires du banc
+  (r0_boucle.npz). L'estimateur recoit la mesure telle que le regulateur la
+  recoit (bruit de S7b, quantification de S7a) et le rapport cyclique
+  applique.
+
+Donnees de reglage (distinctes des essais)
+  ELM_A1 et ELM_A2 (Simulink, boucle ouverte), mesure quantifiee au pas de
+  S7a (200/4096 V), le cas le plus dur.
+
+L'estimateur (fixe avant le calcul)
+  Filtre de Kalman etendu a chaque periode Tc, etat [Vout, iL, ln G, Vin].
+  Prediction : le modele physique moyen par tranche Tc (fraction de
+  conduction du MOSFET dans la tranche, Ron, Vf, Rd, blocage de la diode),
+  le meme que la mesure de reference de l'etape 2. C'est le meilleur cas :
+  si l'estimation echoue avec le modele exact, elle echouera avec le PINN.
+  Bruit de mesure : ecart type 14.1 mV (quantification de S7a, 48.8 mV / racine de 12),
+  le meme pour tous les essais (le regulateur ne sait pas dans quel essai il est).
+  Bruit d'etat : 1 mV sur Vout, 10 mA sur iL par pas ; ln G et Vin en marche
+  aleatoire d'ecarts types sg et sv par pas.
+  Depart : Vout = premiere mesure, iL = 0 (ecart type 1 A), G = 1/5 ohm
+  (ecart type de 1.5 sur ln G), Vin = 200 V (ecart type 30 V).
+  Bornes : G de 1/200 a 1/2 S, Vin de 100 a 300 V.
+
+Reglage (regle fixee avant le calcul)
+  Grille sg dans {1e-4, 3e-4, 1e-3, 3e-3}, sv dans {0.01, 0.03, 0.1, 0.3} V.
+  Sur ELM_A1 et ELM_A2, apres 10 ms : on retient la mediane de |ln(G^/G)|
+  la plus faible parmi les reglages dont la mediane de |Vin^ - Vin| est
+  au plus 2 V.
+
+Criteres (sur chacun des onze essais, de 30 ms a la fin)
+  E1 : |Vin^ - Vin| <= 5 V pendant au moins 95 % du temps.
+  E2 : |ln(G^/G)| <= ln 2 (charge a un facteur 2 pres) pendant au moins 90 % du temps.
+  E3 : prediction de la fenetre suivante (0.5 ms) par le modele physique, a
+       partir de l'etat et des parametres estimes, avec le rapport cyclique
+       applique : erreur efficace mediane <= 20 mV et centile 99 <= 100 mV.
+       Pour comparaison, la meme prediction depuis l'etat vrai.
+  Mesure en plus : erreur efficace sur iL, et charge estimee au demarrage
+  de S8a et S8b (avant 30 ms).
+
+Decision
+  E1, E2 et E3 passent sur les onze essais : le PINN-PID utilise cet
+  estimateur.
+  E2 echoue : la charge n'est pas estimable a partir de Vout avec les
+  excitations de ces essais. On l'ecrit. Le PINN-PID utilise alors la
+  charge nominale (5 ohms), et l'etape 4 mesure ce que cela coute.
+  E1 ou E3 echoue : on regarde pourquoi avant de decider, sans changer les
+  criteres sans le declarer comme amendement.
+
+Prevision (ecrite avant le calcul)
+  E1 passe partout. E3 passe partout. E2 passe sur S1 a S7b (la charge vraie
+  y est proche du depart a 5 ohms), et sur S8a et S8b apres le demarrage,
+  dont le transitoire revele l'amortissement. E2 risque d'echouer sur S9 :
+  pendant la rampe de charge de 50 a 90 ms en boucle fermee, la tension
+  bouge peu, et un changement de charge se confond avec quelques volts de
+  Vin ; la charge estimee devrait rester en retard jusqu'au transitoire
+  suivant (consigne a 150 V, 120 ms).
+
+Amendement 1 (5 octobre 2026, apres le reglage, avant l'evaluation sur les essais)
+  Constat : sur ELM_A1 et ELM_A2 (mesure quantifiee a 48.8 mV), aucun des
+  16 reglages n'atteint une mediane de |Vin^ - Vin| de 2 V au plus (5.2 V au
+  mieux) : la regle de reglage ne designe rien. La phrase "Vin s'en deduit a
+  environ 1 V pres" de la section physique etait fausse : elle supposait la
+  charge connue a l'interieur de la plage des essais. Avec G libre entre
+  1/200 et 1/2 S, Req iL peut atteindre 2.5 V, soit 5 V sur Vin a d = 0.5.
+  Diagnostic (ELM_A1, 0.5 s) : avec G et Vin forces a leur vraie valeur,
+  le filtre suit iL a 12 mA efficaces pres ; avec G et Vin libres, l'erreur
+  sur iL monte a 4.9 A efficaces, pour des innovations a peine plus grandes
+  (17.9 mV contre 16.0 mV). Plusieurs combinaisons (iL, G, Vin) expliquent
+  presque aussi bien la mesure quantifiee.
+  Amendement : on retient le reglage de plus faible mediane de |ln(G^/G)|
+  sans condition sur Vin, soit sg = 1e-3, sv = 0.03 V (mediane 0.336 sur
+  ln G, 5.9 V sur Vin). Les criteres E1 a E3 ne changent pas.

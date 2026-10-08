@@ -1,0 +1,351 @@
+PINN-PID C : LA VERSION B CORRIGEE D'APRES SON DIAGNOSTIC
+Statut, corrections candidates, regle de choix, choix sur E1 a E4,
+previsions et resultats
+=============================================================================
+
+STATUT : APRES DIAGNOSTIC.
+Les corrections de ce dossier ont ete imaginees APRES avoir vu les
+resultats de la version B sur les onze essais (J = 0.893, PINN_PID_B,
+section 7 de son criteres_pinn_pid.txt). Elles ont donc le meme statut que
+les modifications M1 a M3 de l'ELM-PID : des corrections tirees d'un
+diagnostic, pas une methode fixee a l'aveugle. Pour ne pas regler sur les
+onze essais, le choix entre elles est fait UNIQUEMENT sur les essais de
+mise au point E1 a E4 (points R, Vin absents des onze essais), par une
+regle ecrite avant le calcul (section 3, regle_choix_pinn_c.json). Rien
+n'a ete execute sur S1 a S9 avant le commit des previsions, hors le
+controle d'identite sans adaptation (S1, S8b), autorise.
+
+Ordre de redaction (8 octobre 2026) : sections 1 a 3 et
+regle_choix_pinn_c.json ecrites avant tout calcul des combinaisons ;
+sections 4 a 6 apres les controles et le calcul sur E1 a E4 ; section 7
+(previsions) avant tout calcul sur les onze essais ; section 8
+(resultats) apres, sans rien changer aux sections 1 a 7.
+
+Ce dossier est une copie de PINN_PID_B (sans les sorties du banc). Le
+PINN, l'observateur, la loi (bloc PID parallele commun), le cout d'Ito et
+Wasa, Adam (5 iterations par fenetre de 0.5 ms, depart a chaud), l'horizon
+et tous les reglages de B sont inchanges, sauf ce que changent les
+corrections retenues. Ecarts a Ito et Wasa : ceux de B (PINN_PID_B,
+section 3), plus ceux que la combinaison retenue ajoute (section 6).
+
+
+1. CE QUI EST DEJA CONNU (diagnostic de la version B, cite tel quel)
+--------------------------------------------------------------------
+  Sur les onze essais, la version B fait J = 0.893 (0.878 apres 30 ms,
+  0.942 au demarrage). Diagnostic, deja etabli et publie dans PINN_PID_B :
+  D1. Sans seuil, l'optimisation tourne aussi en regime, ou l'erreur est
+      presque nulle : le terme W_F |x|^2 domine et ramene les gains au coin
+      (1, 0.25, 1) de la boite (constate sur les onze essais : coin atteint
+      a 11 ms sur S1, valeur finale partout).
+  D2. I colle a la borne basse 0.25 de la boite. Cette borne vient de la
+      limite de la grille (deux octaves), pas d'un critere : le gain de
+      regime de B depend donc d'un choix de grille. Dans le bloc commun, la
+      commande de regime est tenue par l'etat de l'integrateur, pas par I :
+      rien ne retient I.
+  D3. L'adaptation n'ajoute presque rien a ce coin : PID fige au coin
+      (1, 0.25, 1) des le depart, 0.890.
+  D4. Ablation "declenchement a 0.1 V d'erreur efficace" (celui de la
+      version 1) sur la version B : J = 0.757 (0.702 / 0.942).
+  Ces chiffres sont connus avant ce travail : ils informent les corrections
+  et les previsions (en particulier, si C1 seule est retenue, sa valeur sur
+  les onze essais est deja mesuree : 0.757, voir section 7).
+
+
+2. LES TROIS CORRECTIONS CANDIDATES ET LEUR JUSTIFICATION
+---------------------------------------------------------
+  (Ecrites avant tout calcul. Chacune corrige un point du diagnostic ;
+  aucune ne change W_U, W_F, alpha, le nombre d'iterations, la fenetre ni
+  l'horizon.)
+
+C1. Zone morte : optimisation seulement si l'erreur de la fenetre depasse
+    0.1 V  (corrige D1)
+  Pourquoi. En regime, l'erreur ne contient plus que des residus que les
+  gains ne peuvent pas corriger (ondulation de commutation, environ 27 mV
+  crete a crete ; bruit de mesure de 10 mV efficaces sur S7b ;
+  quantification de 12 bits, pas de 49 mV, environ 14 mV efficaces). Les
+  optimiser revient a laisser le terme de regularisation decider seul des
+  gains (D1) ou, sans regularisation, a les faire deriver. C'est le
+  probleme classique de la derive des parametres sur les petites erreurs,
+  et la regle classique : n'adapter que si l'erreur depasse une borne des
+  residus (zone morte).
+  References. B. B. Peterson, K. S. Narendra, "Bounded error adaptive
+  control", IEEE Transactions on Automatic Control, 27(6), 1161-1168,
+  1982 ; P. A. Ioannou, J. Sun, Robust Adaptive Control, Prentice Hall,
+  1996 (zone morte). Memes references que M1 de l'ELM-PID
+  (ELM_PID/criteres_elm_pid.txt, references [5] et [7]).
+  Definition retenue : erreur EFFICACE de la fenetre de 110 pas,
+  sqrt(moyenne de e^2) > 0.1 V. Raisons :
+    - le PINN-PID minimise un cout quadratique en e ; l'erreur efficace est
+      la racine du terme d'erreur de ce cout sur la fenetre ecoulee : la
+      zone morte porte sur la grandeur que l'adaptation cherche a reduire.
+      (L'ELM-PID met sa zone morte sur |ebar|, la moyenne signee, parce que
+      son pas NLMS est proportionnel a ebar ; ce n'est pas le cas ici) ;
+    - l'erreur efficace voit une oscillation de moyenne nulle (cycle a
+      charge legere), qu'une moyenne signee ignorerait ;
+    - c'est la definition de la version 1 et de l'ablation D4. Declare :
+      ce dernier point fait aussi que la valeur 0.757 s'applique telle
+      quelle a C1 seule ; ce n'est pas la raison du choix, mais il le
+      rend moins aveugle.
+  Seuil : 0.1 V, celui de l'ELM-PID et de la version 1, environ trois fois
+  les residus ci-dessus. Pas de nouveau chiffre.
+
+C2. Regularisation vers les gains stabilisants connus : W_F |x - 1|^2 au
+    lieu de W_F |x|^2  (corrige D2)
+  Pourquoi. Le terme mu |F|^2 d'Ito et Wasa (eq. 13b) est une
+  regularisation de Tikhonov vers zero. Dans l'article, elle est sans
+  danger : le gain multiplie l'integrale de l'erreur (u_k = F_k E_k,
+  p. 4), donc en regime mu |F|^2 annule Kp et Kd et ne garde de Ki que le
+  minimum qui tient la commande (section IV-A, eq. 17 a 20, lecture faite
+  pour B) ; les gains nuls y sont le point de repos de la regularisation
+  (la stabilite en boucle ouverte de leurs exemples n'a pas ete relue ici).
+  Ici ce n'est pas le cas : dans le bloc commun, la commande de regime est
+  tenue par l'etat de l'integrateur et non par I (forme integrale, ecart
+  declare de B), si bien que la regularisation vers zero n'a plus de
+  contrepoids et pousse I jusqu'a une borne de grille (D2). Le point sur
+  connu de ce procede est Ziegler-Nichols, le depart commun aux cinq
+  methodes. La forme generale de la regularisation de Tikhonov penalise
+  l'ecart a une solution a priori, |x - x0|^2 ; on prend x0 = (1, 1, 1).
+  En commande adaptative, c'est la meme idee que la sigma-modification
+  (fuite) de Ioannou et Kokotovic, qui ramene les parametres vers une
+  valeur de reference quand l'erreur ne les excite plus.
+  References. A. N. Tikhonov, V. Y. Arsenin, Solutions of Ill-Posed
+  Problems, Winston (Washington), 1977 ; P. A. Ioannou, P. V. Kokotovic,
+  "Instability analysis and improvement of robustness of adaptive
+  control", Automatica, 1984, doi:10.1016/0005-1098(84)90009-8 ;
+  P. A. Ioannou, J. Sun, Robust Adaptive Control, 1996 (modifications
+  robustes, fuite). Notices verifiees le 8 octobre par un moteur de
+  recherche (auteurs, titre, editeur, annee, DOI) ; textes non relus ;
+  volume et pages de l'article de 1984 non confirmes.
+  Mise en oeuvre : centre de la regularisation c = (1, 1, 1) dans le cout
+  de l'horizon et dans son gradient (2 W_F (x - c)) ; W_F = 1e-3
+  inchange. Le gradient est recontrole contre les differences finies.
+
+C3. Ensemble admissible de l'ELM-PID au lieu de la boite  (memes bornes
+    pour les deux methodes adaptatives ; reduit l'ecart E7)
+  Pourquoi. La boite de B est le plus grand pave admissible contenant le
+  depart ; le depart etant sur la frontiere (sa marge est le seuil), il en
+  est un coin : P et D ne peuvent que monter, I que baisser. L'ELM-PID a
+  remplace ce pave par l'ensemble admissible lui-meme (meme critere :
+  marge de phase nominale >= celle de Ziegler-Nichols, coupure <= fs/10)
+  et une projection qui glisse le long de sa frontiere (M2) avec
+  restauration (M3). Ito et Wasa projettent sur un ensemble admissible F
+  (Algorithme 1, ligne 8) : l'ensemble est plus proche de leur F qu'un
+  pave. Surtout, les deux methodes adaptatives du memoire auront les memes
+  bornes, et leur comparaison ne portera plus sur ce point.
+  References. Celles de M2 et M3 de l'ELM-PID : G. C. Goodwin, K. S. Sin,
+  Adaptive Filtering, Prediction and Control, Prentice Hall, 1984 ;
+  P. A. Ioannou, J. Sun, 1996 (operateur de projection) ; J. B. Rosen,
+  "The gradient projection method for nonlinear programming, Part II :
+  Nonlinear constraints", Journal of the SIAM, 9(4), 1961.
+  Mise en oeuvre : meme table (ensemble_gains_elm.mat, copie identique
+  octet pour octet de ELM_PID), memes fonctions g_interp, gradient_g,
+  restaurer et projeter (texte recopie a l'identique de
+  ELM_PID/banc_elm_pid.py, verifie au chargement du banc), memes reglages
+  (multiplicateurs dans [1/4 ; 4], 30 bissections, h = 1e-4, 10 passes).
+  Le pas projete est celui d'Adam : apres chaque iteration, x devient
+  projeter(x, pas d'Adam).
+  Limite dite d'avance : la table de l'ELM-PID s'arrete aussi a 1/4 sur
+  chaque axe (meme etendue de grille). C3 seule ne supprime donc PAS la
+  borne de grille de D2 : I peut toujours descendre a 0.25, et P et D
+  peuvent maintenant descendre sous 1 si I baisse. C3 ne corrige D2
+  qu'avec C2.
+
+
+3. REGLE DE CHOIX (ecrite avant le calcul ; regle_choix_pinn_c.json)
+--------------------------------------------------------------------
+  Combinaisons evaluees, sur E1 a E4 SEULEMENT : aucune (= version B), C1,
+  C2, C3, C1+C2, C1+C3, C2+C3, C1+C2+C3.
+  Critere : moyenne des 8 rapports a Ziegler-Nichols, IAE apres 30 ms et
+  IAE de demarrage (0 a 30 ms) sur E1, E2, E3 et E4 (meme structure que
+  J ; plus bas = meilleur).
+  Exclusion : une combinaison qui laisse un evenement de E1 a E4 hors de
+  +-1 V est exclue (exigence de la base commune).
+  Choix : parmi les combinaisons non exclues dont le critere est au plus
+  1.01 fois le meilleur, celle qui a le moins de corrections ; a nombre
+  egal, celle dont le critere est le plus bas. Le choix est fait par le
+  script (mise_au_point_pinn_pid_c.py), qui ecrit
+  choix_combinaison_pinn_c.json, lu ensuite par le banc. Tout est
+  rapporte.
+  Essais E1 a E4 (ceux de l'ELM-PID et de B) : E1 7 ohms, 190 V, charge a
+  4.5 ohms sur [40 ; 65) ms ; E2 15 ohms, 210 V, Vin 175 V puis 235 V ;
+  E3 60 ohms, 220 V, consigne +10 V sur [40 ; 65) ms ; E4 9 ohms, 200 V,
+  bruit et CAN 12 bits.
+  Limite connue de ce protocole : E1 a E4 ont deja servi a la mise au
+  point de l'ELM-PID et de B ; ils sont distincts des onze essais, mais
+  quatre essais ne couvrent pas tout (pas de saut de Vin a 5 ohms, pas de
+  rampe, pas de 98 ohms).
+
+
+4. CONTROLES (mise_au_point_pinn_pid_c.py, mise_au_point_pinn_pid_c_sortie_console.txt)
+---------------------------------------------------------------------------------------
+  - PINN relu : vecteurs de test a 6.4e-16 pres.
+  - Gradient de l'horizon (retropropagation) contre differences finies
+    centrees : hors saturation 4.4e-7 (c = 0) ; avec la loi de cout de C2
+    (c = (1, 1, 1)) 4.3e-7, au point interieur (1.3, 0.7, 1.6) et pres du
+    centre (1.02, 0.97, 1.03) ; en saturation avec clamping actif (pente
+    0), c = 0 et c = 1 : 9.0e-8.
+  - C3 : table identique octet pour octet a ELM_PID/ensemble_gains_elm.mat,
+    fonctions g_interp, gradient_g, restaurer, projeter identiques au texte
+    de ELM_PID/banc_elm_pid.py, reglages de projection identiques (verifie
+    au chargement du banc) ; depart (1, 1, 1) admissible. Dans les quatre
+    combinaisons avec C3 sur E1 a E4 : 0 fenetre hors de l'ensemble.
+  - Identite : sans adaptation (sans correction, et avec C1+C2+C3), ecart
+    0.0 sur d au PID de Ziegler-Nichols sur E1 a E4. Le banc refait le
+    controle sur S1 et S8b.
+  - Coherence avec B : la combinaison "aucune" redonne au centieme pres
+    tous les chiffres E1 a E4 de la version B, et "C1" ceux de sa variante
+    "declenchement a 0.1 V" (PINN_PID_B, section 5) : meme code.
+  - Correction de programmation faite avant le calcul des combinaisons :
+    le controle des reglages de projection comparait du texte ("0.0001"
+    contre "1e-4") ; il compare maintenant les valeurs. Ni loi ni chiffre
+    changes.
+
+
+5. LES 8 COMBINAISONS SUR E1 A E4 (critere de la section 3)
+-----------------------------------------------------------
+  Rapports a Ziegler-Nichols (apres 30 ms / demarrage) ; critere = moyenne
+  des 8 rapports. Aucun evenement non revenu, aucune exclusion.
+                 E1           E2           E3           E4        critere
+    aucune   0.894/0.975  1.129/0.964  0.307/0.950  0.550/0.973   0.8429
+    C1       0.888/0.975  0.455/0.964  0.265/0.950  0.594/0.974   0.7582
+    C2       0.952/0.975  0.801/0.964  0.479/0.952  0.726/0.972   0.8527
+    C3       1.215/0.978  4.155/0.969  1.874/0.950  0.521/0.980   1.4553
+    C1+C2    0.886/0.975  0.454/0.964  0.265/0.952  0.649/0.973   0.7649
+    C1+C3    0.904/0.978  0.432/0.969  0.268/0.950  0.611/0.982   0.7618
+    C2+C3    0.961/0.979  0.799/0.972  0.492/0.952  0.815/0.980   0.8688
+    C1+C2+C3 0.899/0.979  0.437/0.972  0.271/0.952  0.687/0.980   0.7721
+  Meilleur 0.7582 (C1) ; a 1 % pres : C1, C1+C3 (0.7618), C1+C2 (0.7649).
+  Gains finaux (exemples) : aucune (1, 0.25, 1) partout ; C1 de
+  (1.44, 1.00, 1.30) [E4] a (1.70, 1.00, 1.65) [E2], 9 a 20 fenetres
+  optimisees sur 120 ou 180 ; C2 revient pres de (1, 1, 1) ; C3 descend a
+  (0.34, 0.25, 0.26) [E1, E3].
+
+
+6. COMBINAISON RETENUE : C1 SEULE
+---------------------------------
+  Application mecanique de la regle : C1 (0.7582) a le moins de
+  corrections parmi les combinaisons a 1 % ; c'est aussi la meilleure.
+  Ce qu'on lit dans le tableau (constats sur E1 a E4, pas de reglage) :
+    1. C1 fait presque tout : avec la zone morte, l'optimisation ne tourne
+       que 9 a 21 fenetres par essai (demarrage et evenements), et le
+       centre de la regularisation ou les bornes comptent peu (C1+C2,
+       C1+C3 a moins de 1 %).
+    2. C3 seule est la pire (1.455) : dans l'ensemble de l'ELM-PID, la
+       regularisation vers zero fait descendre aussi P et D sous 1,
+       jusqu'a 0.26 a 0.34 (E2 apres 30 ms : 4.2 fois Ziegler-Nichols).
+       Cela confirme D1 : c'est |x|^2 qui tire les gains vers le bas ; la
+       boite de B (P et D >= 1) le masquait en partie.
+    3. C2 seule (0.853) fait moins bien que B sur E1 a E4 : revenir a I = 1
+       aide le saut de Vin (E2 0.80 contre 1.13) mais perd la marge du coin
+       a charge legere (E3 0.48 contre 0.31).
+  Consequence, a dire clairement : le PINN-PID C est EXACTEMENT
+  l'ablation D4 de la version B (meme code, memes reglages). Il remet le
+  declenchement de la version 1, que B avait supprime pour suivre
+  l'article ; l'ecart E6 a Ito et Wasa redevient : optimisation seulement
+  quand l'erreur efficace de la fenetre depasse 0.1 V (l'article optimise a
+  chaque pas). Les autres ecarts sont ceux de B (PINN_PID_B, section 3) ;
+  C2 et C3 n'etant pas retenues, le cout et la boite de B sont inchanges.
+
+
+7. PREVISIONS (ecrites avant tout calcul sur les onze essais)
+-------------------------------------------------------------
+  Declaration. La valeur de l'ablation D4 sur les onze essais est DEJA
+  CONNUE : J = 0.757 (0.702 apres 30 ms, 0.942 au demarrage), tous les
+  evenements revenus (PINN_PID_B, section 7 et sortie console). Comme C1
+  seule est cette ablation, P1, P2 et P7 ne sont pas de vraies
+  previsions : ce sont des controles de reproductibilite. Seul le J
+  agrege de l'ablation a ete relu avec plus de decimales
+  (banc_pinn_pid_resultats.json de B, cle J_ablations) ; ses valeurs par
+  essai (IAE de S2, S3, S8a, demarrage de S1, gains) n'ont PAS ete
+  ouvertes : P3 a P6 et P8 a P10 sont estimees a partir de E1 a E4 et des
+  resultats publies de B. Bornes dans previsions_pinn_pid_c.json, jugees
+  par le banc.
+  P1. J identique a l'ablation D4 de B a 1e-9 pres (0.757116218) : meme
+      code, calcul deterministe.
+  P2. Decomposition : apres 30 ms entre 0.700 et 0.704, demarrage entre
+      0.940 et 0.944 (connu : 0.702 / 0.942).
+  P3. S1, IAE du demarrage entre 91.9 et 92.3 mV.s (B : 92.06 ; sur E1 a
+      E3, C1 et B ont le meme demarrage, sur E4 0.04 mV.s d'ecart).
+  P4. S2 (F1, hors de J), IAE apres 30 ms entre 1.9 et 2.6 mV.s
+      (B 2.30 au coin ; ici gains de fin de demarrage plus hauts,
+      environ (1.45, 1, 1.3) ; sur E3, saut de consigne, C1 fait 0.86 fois
+      B).
+  P5. S3 (F2), IAE apres 30 ms entre 6.0 et 7.4 mV.s (B 6.77 ; sur E1,
+      saut de charge, C1 = 0.99 fois B).
+  P6. S8a, IAE apres 30 ms entre 4.5 et 6.8 mV.s (B 6.41 ; sur E3, charge
+      legere, C1 = 0.86 fois B).
+  P7. Tous les evenements des onze essais reviennent dans +-1 V (connu
+      par l'ablation D4).
+  P8. Gains pendant F1 et F2 : sur S2 et S3, un multiplicateur s'ecarte
+      d'au moins 0.05 de sa valeur a 50 ms dans une fenetre finie entre
+      50 et 55 ms (erreur efficace > 0.1 V apres le saut de 2 V et le saut
+      de charge ; 5 iterations d'Adam deplacent chaque multiplicateur d'au
+      plus 0.05 environ par fenetre : il faut au moins deux fenetres
+      optimisees, ou une composante libre de la boite ; prevision fragile).
+  P9. Gains en regime : sur S1, aucune fenetre optimisee apres 30 ms et
+      multiplicateurs constants de 30 ms a la fin ; valeur finale
+      P dans [1.30 ; 1.70], I dans [0.90 ; 1.00], D dans [1.15 ; 1.60]
+      (E4, point le plus proche de S1 : (1.44, 1.00, 1.30)).
+  P10. Pas de derive sur S7a et S7b : apres 30 ms, multiplicateurs a 0.05
+      au plus de ceux de S1 (plus strict que les 0.15 de B), au plus 2
+      fenetres optimisees apres 30 ms sur chacun (residus d'environ 15 a
+      30 mV efficaces, sous 0.1 V), et ecart efficace de S7b au plus 1.10
+      fois celui de Ziegler-Nichols.
+  Classement sur S1 demarrage, S2, S3 et S8a parmi PSO-PID (87.62 / 2.04
+  / 5.46 / 2.46), ELM-PID B (93.72 / 2.41 / 6.41 / 2.96), Fuzzy-PID
+  (110.91 / 2.43 / 7.94 / 4.12) et Ziegler-Nichols (93.77 / 2.84 / 8.67 /
+  12.07) : rapporte, sans prevision. J : PSO 0.714, ELM-PID B 0.746,
+  Fuzzy 0.877, ZN 1 ; si P1 est juste, le PINN-PID C (0.757) reste derriere
+  l'ELM-PID B et le PSO-PID.
+  Ablations rapportees, jamais choisies : plafond (modele physique) ;
+  aucune correction (= B, 0.893 attendu, controle) ; C1+C2 et C1+C3 (a
+  1 % sur E1 a E4, non retenues) ; PID fige aux gains finaux de S1 ;
+  sensibilite L ou C a +-0.1 %.
+  Regles de conclusion :
+    - resultats publies tels quels, prevision par prevision ;
+    - aucun reglage sur les onze essais : ni la combinaison, ni le seuil,
+      ni W_U, W_F, alpha, iterations, fenetre, horizon, boite ;
+    - si le script plante, seules les erreurs de programmation qui ne
+      changent ni la loi ni les chiffres sont corrigees, et listees ;
+    - le choix entre les versions 1, B et C revient a Jean-Riche.
+  Essai a sec : apres l'ecriture de previsions_pinn_pid_c.json et avant ce
+  texte, le banc complet a tourne jusqu'au bout sur de faux essais
+  (copies raccourcies a 0.13 s, R x 1.37 + 0.3 ohm, Vin x 1.07, aucun des
+  onze essais), dans un dossier hors du depot. Ses chiffres ont ete vus
+  (ils ne valent pas pour les onze essais) ; les bornes n'ont pas ete
+  touchees ensuite.
+
+
+8. RESULTATS
+------------
+  (A remplir apres le calcul sur les onze essais, sans changer les
+  sections 1 a 7.)
+
+
+9. REFERENCES
+-------------
+  [1] J. Ito, Y. Wasa, "Data-Driven Adaptive PID Control Based on
+      Physics-Informed Neural Networks", arXiv:2510.04591, 2025.
+  [2] B. B. Peterson, K. S. Narendra, "Bounded error adaptive control",
+      IEEE Transactions on Automatic Control, 27(6), 1161-1168, 1982.
+  [3] P. A. Ioannou, J. Sun, Robust Adaptive Control, Prentice Hall, 1996.
+  [4] A. N. Tikhonov, V. Y. Arsenin, Solutions of Ill-Posed Problems,
+      V. H. Winston (Washington), 1977 (traduction de "Metody resheniya
+      nekorrektnykh zadach") ; notice verifiee (catalogues de
+      bibliotheques).
+  [5] P. A. Ioannou, P. V. Kokotovic, "Instability analysis and improvement
+      of robustness of adaptive control", Automatica, 1984,
+      doi:10.1016/0005-1098(84)90009-8 ; notice verifiee (auteurs, titre,
+      revue, annee, DOI) ; volume et pages non confirmes.
+  [6] G. C. Goodwin, K. S. Sin, Adaptive Filtering, Prediction and
+      Control, Prentice Hall, 1984.
+  [7] J. B. Rosen, "The gradient projection method for nonlinear
+      programming, Part II : Nonlinear constraints", Journal of the
+      Society for Industrial and Applied Mathematics, 9(4), 1961.
+  [8] M. Diehl, H. G. Bock, J. P. Schloder, "A real-time iteration scheme
+      for nonlinear optimization in optimal feedback control", SIAM
+      Journal on Control and Optimization, 43(5), 1714-1736, 2005.
+  [9] D. P. Kingma, J. Ba, "Adam: A method for stochastic optimization",
+      ICLR, 2015.
+  [2], [3], [6], [7] : memes references et memes verifications que
+  l'ELM-PID (ELM_PID/criteres_elm_pid.txt) ; [8], [9] : comme la version B.

@@ -1,0 +1,15 @@
+{
+ "date": "2026-10-08",
+ "note": "Bornes des previsions P1 a P10 du PINN-PID C (combinaison C1), criteres_pinn_pid.txt section 7, ecrites avant tout calcul sur les onze essais ; lues par banc_pinn_pid.py. P1 et P2 reprennent des valeurs DEJA CONNUES (ablation 'declenchement a 0.1 V' de la version B).",
+ "bornes": {
+  "P1": 0.757116217866096,
+  "P2": [[0.700, 0.704], [0.940, 0.944]],
+  "P3": [91.9, 92.3],
+  "P4": [1.9, 2.6],
+  "P5": [6.0, 7.4],
+  "P6": [4.5, 6.8],
+  "P8": 0.05,
+  "P9": [[1.30, 1.70], [0.90, 1.00], [1.15, 1.60]],
+  "P10": [0.05, 2, 1.10]
+ }
+}

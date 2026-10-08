@@ -1,0 +1,135 @@
+PINN-PID, etape 2 : criteres de choix du PINN
+Ecrits le 5 octobre 2026, apres la mesure de reference du modele physique
+et avant tout entrainement d'un PINN.
+
+Mesure de reference (propriete du modele physique, pas d'un candidat)
+  Modele physique moyen par tranche Tc (fraction de conduction du MOSFET
+  dans la tranche, Ron, Vf, Rd, blocage de la diode), integre exactement,
+  depart de l'etat enregistre, fenetres de 0.5 ms (110 pas Tc) :
+  ELM_V1 : erreur efficace mediane 2.38 mV, centile 99 4.33 mV, max 16.1 mV
+  ELM_V2 : 1.85 mV, 5.33 mV, max 25.9 mV
+  C98 graines 51, 52, 53 (banc) : 4.11 / 2.40 / 3.35 mV en mediane,
+  centile 99 6.1 a 6.4 mV, max 10.7 a 24.3 mV.
+
+Le PINN (Ito et Wasa, arXiv:2510.04591, 2025, sections II-B et III-B)
+  x(tau) = x0 + (tau/Tc) S . N(z), x = [Vout, iL], S = [Tc 10/C, Tc 100/L]
+  (contrainte dure de la condition initiale), N reseau a tanh, entrees
+  normalisees z = [tau, Vout0, iL0, s, Vin, G] ; s = fraction de conduction
+  dans la tranche ; G = conductance de charge totale.
+  Perte L = L_donnees + lambda L_physique, lambda = 1 (valeur d'Ito et Wasa).
+  L_donnees : paires (etat k, entrees k) -> etat k+1 de ELM_A1 et ELM_A2
+  (Simulink), 40 000 paires tirees une fois (graine 7).
+  L_physique : residu (dx/dtau - f(x)) Tc / S en 40 000 points tires par
+  hypercube latin (comme Ito et Wasa) dans le domaine (graine 8) : Vout 0 a 200 V, iL 0 a 30 A,
+  Vin 150 a 240 V, R 4 a 98 ohms (uniforme sur le logarithme), s = 0 ou 1
+  (45 % chacun) ou uniforme (10 %), tau uniforme sur [0, Tc].
+  Optimisation : L-BFGS (Ito et Wasa), 15 000 iterations au plus,
+  initialisation de Glorot (graine 1).
+
+Candidats (liste fixee)
+  A : 3 couches de 32 neurones (valeur d'Ito et Wasa pour leur cas a deux
+      etats) ; B : 3 couches de 64.
+
+Validation : ELM_V1, ELM_V2 (Simulink), C98 graines 51 a 53 (banc), memes
+fenetres que la mesure de reference, depart de l'etat vrai.
+  C1 : sur chaque enregistrement, erreur efficace mediane <= 10 mV et
+       centile 99 <= 20 mV.
+  C2 : erreur maximale <= 0.5 V sur toutes les fenetres (seuil de la porte
+       de l'ELM-PID : au-dela, une fenetre serait jugee suspecte).
+Choix : le plus petit candidat qui passe C1 et C2. Si aucun ne passe, on le
+dit, on ne change pas les criteres sans le declarer comme amendement, et on
+donne l'erreur obtenue face a celle du modele physique.
+
+Prevision ecrite avant le calcul : le PINN ne fera pas mieux que le modele
+physique (il l'approche) ; il est probable qu'il fasse nettement moins bien
+a charge legere (98 ohms, circuit peu amorti : une erreur par pas n'y est
+pas amortie sur 0.5 ms) et en conduction discontinue (coude de f).
+
+Resultats (5 octobre 2026)
+  A (3 x 32) : L-BFGS arrete seul a 2 604 iterations (recherche lineaire
+  en echec), perte 1.51e-3. ELM_V1 : mediane 11.7 mV, centile 99 140 mV,
+  pire 3.4 V ; ELM_V2 : 9.8 / 130 mV / 4.5 V ; C98 : 79 a 83 mV, 2.3 a 2.8 V,
+  8 a 13 V. C1 et C2 echouent partout.
+  B (3 x 64) : arrete seul a 1 737 iterations, perte 1.56e-3. ELM_V1 :
+  15.0 / 110 mV / 3.5 V ; ELM_V2 : 16.2 / 117 mV / 4.5 V ; C98 : 81 a 84 mV,
+  2.4 a 2.8 V, 8 a 13 V. C1 et C2 echouent partout.
+  Aucun candidat ne passe. Modele physique : 1.9 a 4.1 mV en mediane,
+  26 mV au pire. La prevision (moins bien que le modele, surtout a charge
+  legere et en conduction discontinue) est confirmee.
+  Ou est l'erreur (erreurs a un pas de A sur les donnees d'apprentissage) :
+  iL a 0.15 mA pres quand le MOSFET conduit entre 5 et 25 ohms, 15 mA quand
+  iL < 0.3 A, 35 mA en conduction discontinue (coude du blocage de la
+  diode) ; derive de Vout de -0.46 mV par pas au-dessus de 50 ohms, que rien
+  n'amortit a 98 ohms.
+
+  Relance par le script livre (entrainement_pinn.py complete, 5 octobre
+  2026, 18 h) : memes iterations (2 604 et 1 737) et memes erreurs du
+  PINN, au chiffre pres. Le script recalcule la reference du modele
+  physique avec une autre approximation du blocage de la diode (passage a
+  zero interpole au lieu de sous-pas) : ELM_V1 2.38 / 4.33 / 17.3 mV,
+  ELM_V2 1.85 / 5.33 / 28.7 mV, C98 2.84 a 4.13 / 7.0 a 8.3 / 15.0 a
+  15.9 mV (mediane / centile 99 / pire). Ce sont ces chiffres qui sont dans
+  entrainement_pinn_complet_resultats.json ; la conclusion ne change pas.
+  Defaut corrige a cette occasion : le test "dans le domaine" excluait les
+  fenetres a 98 ohms tout rond (1/(1/98) = 98.00000000000001 en double
+  precision) ; marge relative de 1e-9 ajoutee aux bornes.
+
+Amendement 1 (5 octobre 2026, decide par Jean-Riche, option 1)
+  Raison : depuis l'etape 3, le regulateur n'appelle le PINN qu'avec la
+  charge nominale (5 ohms) et la tension Vin_eff de l'observateur. La
+  precision a 98 ohms et en conduction discontinue ne servirait jamais.
+  Domaine : R de 4 a 6 ohms (plage nominale +-20 %, celle de la boite des
+  gains) et Vin de 150 a 240 V. Ecart avec la proposition faite a
+  Jean-Riche (160 a 240 V) : Vin_eff descend a 150-152 V sur S9 ; la plage
+  de Vin des donnees et des essais est 150 a 240 V.
+  Donnees : 40 000 transitions tirees (graine 7) parmi les echantillons de
+  ELM_A1 et ELM_A2 dont R et Vin sont dans le domaine (171 710).
+  Physique : 40 000 points par hypercube latin (graine 8) sur Vout 0 a
+  200 V, iL 0 a 40 A, Vin 150 a 240 V, R 4 a 6 ohms (uniforme sur le
+  logarithme), s comme avant. Normalisation de G recentree sur 1/5 S.
+  Candidats, optimisation, initialisation : inchanges (A' 3 x 32, B' 3 x 64,
+  L-BFGS 15 000 iterations au plus, Glorot graine 1).
+  Validation : les fenetres de 0.5 ms de ELM_V1 (719) et ELM_V2 (487)
+  entierement dans le domaine, depart de l'etat vrai. Criteres C1 et C2
+  inchanges. Choix : le plus petit candidat qui passe.
+  Reference, modele physique sur ces fenetres : ELM_V1 mediane 2.27 mV,
+  centile 99 3.38 mV, pire 5.5 mV ; ELM_V2 1.19 / 3.15 / 5.4 mV.
+  Prevision : A' passe C2 (pas de conduction discontinue a 4-6 ohms, sauf
+  au repos) et la mediane de C1 ; le centile 99 est incertain (entre 10 et
+  25 mV). Le PINN reste au-dessus du modele physique d'un facteur 3 a 5.
+
+Deroulement de l'entrainement des candidats A' et B' (transparence)
+  Premier lancement a 12 h 06, avec les reglages ci-dessus. Il a ete
+  interrompu a 12 h 35 par la fin de la session de travail, avant la fin
+  des 15 000 iterations. Un point intermediaire de A' avait ete evalue a
+  12 h 23 : ELM_V1 9.7 / 43 / 64 mV, ELM_V2 6.5 / 25 / 46 mV (mediane /
+  centile 99 / pire). Ce n'est pas un resultat : l'entrainement n'etait pas
+  fini.
+  Un lancement a 15 h 49, avec une autre normalisation de iL ((iL - 20)/12),
+  a ete arrete au bout de quelques minutes, sans aucune evaluation, pour
+  revenir aux reglages ecrits dans l'amendement.
+  Relance a 15 h 54 par entrainement_pinn.py (livre), memes reglages que
+  le premier lancement, A' et B' en parallele.
+
+Regle de choix si aucun candidat ne passe (precision ecrite le 5 octobre
+2026 a 17 h 35, apres le resultat de A' et avant celui de B')
+  Le regulateur a besoin d'un PINN meme si aucun candidat ne passe C1 et
+  C2. On garde alors le candidat dont la plus grande des erreurs medianes
+  (sur ELM_V1 et ELM_V2) est la plus faible, et on ecrit son ecart au
+  modele physique. C'est la regle codee dans entrainement_pinn.py.
+  Resultat de A' (15 000 iterations) : ELM_V1 9.51 / 42.9 / 61.9 mV,
+  ELM_V2 9.78 / 39.5 / 74.2 mV (mediane / centile 99 / pire) : C2 passe,
+  C1 echoue par le centile 99. La prevision tient pour C2 et pour la
+  mediane ; le centile 99 depasse la fourchette prevue (10 a 25 mV), et
+  l'ecart au modele physique vaut un facteur 4 (ELM_V1) a 8 (ELM_V2) sur la
+  mediane, au lieu de 3 a 5.
+
+Resultat final, plage nominale (5 octobre 2026, 19 h 07)
+  A' (3 x 32, 15 000 iterations) : ELM_V1 9.51 / 42.90 / 61.9 mV,
+  ELM_V2 9.78 / 39.48 / 74.2 mV ; C1 non, C2 oui.
+  B' (3 x 64, 15 000 iterations) : ELM_V1 10.03 / 50.47 / 71.0 mV,
+  ELM_V2 9.74 / 42.05 / 62.3 mV ; C1 non, C2 oui.
+  Aucun candidat ne passe. Garde (regle ecrite avant le resultat de B') :
+  A', plus grande mediane 9.78 mV contre 10.03 mV pour B'. Ecart au modele
+  physique : mediane x4 (ELM_V1) a x8 (ELM_V2), centile 99 x13, pire x11
+  a x14.
