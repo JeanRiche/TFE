@@ -1,5 +1,6 @@
 Dossier de travail : /home/user/TFE/FUZZY_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Essais complementaires lus (hors du cout J) : S10
 Ku = 0.156517, Tu = 0.62380 ms ; Kp de 0.050085 a 0.093910 (0.533 a 1.000 fois P) ; Kd de 7.8108e-06 a 1.4645e-05 (1.067 a 2.000 fois D).
 Echelles : E_M = 100.0 V, DE_M = 0.37244 V par periode Tc.
 Controle du systeme flou : quatre points calcules a la main retrouves.
@@ -144,7 +145,7 @@ Gains au repos (ZO, ZO) : Kp 0.991 P, Ki 0.661 I, Kd 1.983 D.
     meilleur PID fige    apres 30 ms 0.710 ; demarrage 0.831
     Fuzzy-PID            apres 30 ms 0.827 ; demarrage 1.041
 
-  Rappel, autre structure (loi de Lu ; R0 = cette loi sans adaptation) : ELM-PID 0.784 (R0 0.917) ; PINN-PID 0.684 (R0 0.917)
+  Rappel, autre structure (loi de Lu ; R0 = cette loi sans adaptation) : ELM-PID 0.746 (R0 nan) ; PINN-PID 0.757 (R0 nan)
 
   Previsions de criteres_fuzzy_pid.txt :
     P1 FAUSSE : depassement S1 entre 2 et 10 % : 27.34 % (ZN 13.99 %)
@@ -154,6 +155,26 @@ Gains au repos (ZO, ZO) : Kp 0.991 P, Ki 0.661 I, Kd 1.983 D.
     P5 juste : J entre 0.85 et 1.10 : 0.877
 
 ==============================================================================
+ ETAPE 5b : essais complementaires, hors du cout J (S10)
+==============================================================================
+  S10 Ziegler-Nichols  montee 1.09 ms, depassement 13.99 %, etabli a 3.40 ms ; IAE 220.39 mV.s, ecart max 110.59 V, efficace 7658.6 mV ; |dd| 0.0029, butee 1.5 %, DCM 0.4 % ; iL crete au demarrage 24.1 A
+      evenement a   50.0 ms : IAE  149.73 mV.s, ecart max 110.59 V, retour en 14.90 ms
+      evenement a  100.0 ms : IAE    9.51 mV.s, ecart max   3.08 V, PAS REVENU
+      evenement a  115.0 ms : IAE   14.07 mV.s, ecart max   3.20 V, PAS REVENU
+      evenement a  130.0 ms : IAE   15.49 mV.s, ecart max   2.62 V, PAS REVENU
+      evenement a  145.0 ms : IAE    5.62 mV.s, ecart max   1.35 V, retour en 1.83 ms
+      evenement a  160.0 ms : IAE    9.97 mV.s, ecart max   3.22 V, PAS REVENU
+      evenement a  175.0 ms : IAE   15.82 mV.s, ecart max   3.19 V, retour en 9.39 ms
+  S10 Fuzzy-PID        montee 1.09 ms, depassement 27.34 %, etabli a 3.35 ms ; IAE 132.09 mV.s, ecart max 110.59 V, efficace 7572.8 mV ; |dd| 0.0046, butee 1.2 %, DCM 0.2 % ; iL crete au demarrage 26.5 A
+      evenement a   50.0 ms : IAE  122.74 mV.s, ecart max 110.59 V, retour en 2.86 ms
+      evenement a  100.0 ms : IAE    1.66 mV.s, ecart max   2.11 V, retour en 1.00 ms
+      evenement a  115.0 ms : IAE    1.72 mV.s, ecart max   2.18 V, retour en 1.00 ms
+      evenement a  130.0 ms : IAE    1.18 mV.s, ecart max   1.46 V, retour en 0.85 ms
+      evenement a  145.0 ms : IAE    1.16 mV.s, ecart max   1.38 V, retour en 0.88 ms
+      evenement a  160.0 ms : IAE    1.66 mV.s, ecart max   2.11 V, retour en 1.00 ms
+      evenement a  175.0 ms : IAE    1.79 mV.s, ecart max   2.18 V, retour en 1.00 ms
+
+==============================================================================
  ETAPE 6 : fichiers pour Simulink et MATLAB
 ==============================================================================
   predictions_banc_fuzzy_pid.json ecrit.
@@ -161,4 +182,4 @@ Gains au repos (ZO, ZO) : Kp 0.991 P, Ki 0.661 I, Kd 1.983 D.
   reference_rejeu_fuzzy_pid.mat ecrit (S1, S7a, S8b, S9, et 255 points du systeme flou).
   banc_fuzzy_pid_resultats.json ecrit.
   banc_fuzzy_pid.png ecrit.
-  fuzzy_pid_surfaces.png ecrit. Duree totale : 128 s.
+  fuzzy_pid_surfaces.png ecrit. Duree totale : 137 s.

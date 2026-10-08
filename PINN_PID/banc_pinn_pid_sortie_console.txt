@@ -1,5 +1,6 @@
 Dossier de travail : /home/user/TFE/PINN_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Essais complementaires lus (hors du cout J) : S10
 Ensemble admissible de l'ELM-PID (C3) : 33^3 points, 35.2% admissibles ; table et fonctions identiques a ELM_PID.
 Boite (multiplicateurs de ZN) : P de 1.000 a 2.378, I de 0.250 a 1.000, D de 1.000 a 2.378 ; depart a Ziegler-Nichols (1, 1, 1).
 PINN : 3 couches cachees de 32 neurones (candidat A, plage nominale).
@@ -28,14 +29,14 @@ Gradient de l'horizon contre differences finies : ecart relatif maximal 4.4e-07 
     S8a  optimise apres 30 ms  11/341 ; depassement  52.1 %, IAE    2.95 mV.s, dem.  104.73 mV.s, efficace   65.3 mV ; x final (2.149, 1.000, 1.997), x apres 30 ms de (1.60, 0.95, 1.45) a (2.15, 1.00, 2.00)
     S8b  optimise apres 30 ms  11/341 ; depassement  82.4 %, IAE    2.96 mV.s, dem.  198.28 mV.s, efficace   64.1 mV ; x final (2.247, 1.000, 2.069), x apres 30 ms de (1.70, 0.95, 1.53) a (2.25, 1.00, 2.07)
     S9   optimise apres 30 ms  41/781 ; depassement  13.2 %, IAE  291.14 mV.s, dem.   92.05 mV.s, efficace 6278.5 mV ; x final (2.378, 1.000, 2.305), x apres 30 ms de (1.25, 0.65, 1.06) a (2.38, 1.00, 2.30)
-  (9 s)
+  (10 s)
 
 ==============================================================================
  ETAPE 4 : ablations (rapportees, jamais choisies)
 ==============================================================================
   Plafond (modele physique nominal a la place du PINN) J = 0.7573 (0.702 / 0.942) ; non revenus : - (9 s)
-  Aucune correction (sans zone morte, 0.893 attendu)   J = 0.8931 (0.878 / 0.942) ; non revenus : - (36 s)
-  C1+C2 (a 1 % sur E1-E4, non retenue)                 J = 0.7523 (0.695 / 0.943) ; non revenus : - (9 s)
+  Aucune correction (sans zone morte, 0.893 attendu)   J = 0.8931 (0.878 / 0.942) ; non revenus : - (37 s)
+  C1+C2 (a 1 % sur E1-E4, non retenue)                 J = 0.7523 (0.695 / 0.943) ; non revenus : - (10 s)
   C1+C3 (a 1 % sur E1-E4, non retenue)                 J = 0.7542 (0.695 / 0.952) ; non revenus : - (10 s)
   PID fige aux gains finaux du PINN-PID sur S1         J = 0.7681 (0.719 / 0.931) ; non revenus : - (3 s)
   (gains finaux S1 x(1.299, 0.900, 1.059))
@@ -93,10 +94,31 @@ Gradient de l'horizon contre differences finies : ecart relatif maximal 4.4e-07 
   Classement S8a           : PSO-PID 2.46 < PINN-PID 2.95 < ELM-PID B 2.96 < Fuzzy-PID 4.12 < Ziegler-Nichols 12.07
 
 ==============================================================================
+ ETAPE 5b : essais complementaires, hors du cout J (S10)
+==============================================================================
+  S10 Ziegler-Nichols  montee 1.09 ms, depassement 13.99 %, etabli a 3.40 ms ; IAE 220.39 mV.s, ecart max 110.59 V, efficace 7658.6 mV ; |dd| 0.0029, butee 1.5 %, DCM 0.4 % ; iL crete au demarrage 24.1 A
+      evenement a   50.0 ms : IAE  149.73 mV.s, ecart max 110.59 V, retour en 14.90 ms
+      evenement a  100.0 ms : IAE    9.51 mV.s, ecart max   3.08 V, PAS REVENU
+      evenement a  115.0 ms : IAE   14.07 mV.s, ecart max   3.20 V, PAS REVENU
+      evenement a  130.0 ms : IAE   15.49 mV.s, ecart max   2.62 V, PAS REVENU
+      evenement a  145.0 ms : IAE    5.62 mV.s, ecart max   1.35 V, retour en 1.83 ms
+      evenement a  160.0 ms : IAE    9.97 mV.s, ecart max   3.22 V, PAS REVENU
+      evenement a  175.0 ms : IAE   15.82 mV.s, ecart max   3.19 V, retour en 9.39 ms
+  S10 PINN-PID         montee 1.09 ms, depassement 13.20 %, etabli a 2.70 ms ; IAE 134.86 mV.s, ecart max 110.59 V, efficace 7604.1 mV ; |dd| 0.0035, butee 1.6 %, DCM 0.4 % ; iL crete au demarrage 24.0 A
+      evenement a   50.0 ms : IAE  128.05 mV.s, ecart max 110.59 V, retour en 3.86 ms
+      evenement a  100.0 ms : IAE    1.17 mV.s, ecart max   1.92 V, retour en 0.70 ms
+      evenement a  115.0 ms : IAE    1.28 mV.s, ecart max   1.96 V, retour en 0.73 ms
+      evenement a  130.0 ms : IAE    0.90 mV.s, ecart max   1.36 V, retour en 0.27 ms
+      evenement a  145.0 ms : IAE    0.81 mV.s, ecart max   1.30 V, retour en 0.26 ms
+      evenement a  160.0 ms : IAE    1.14 mV.s, ecart max   1.97 V, retour en 0.69 ms
+      evenement a  175.0 ms : IAE    1.33 mV.s, ecart max   2.05 V, retour en 0.71 ms
+  S10 PINN-PID : x final (1.698, 0.296, 1.258)
+
+==============================================================================
  ETAPE 6 : fichiers
 ==============================================================================
   predictions_banc_pinn_pid.json ecrit.
   pinn_pid_reglages.mat ecrit (VERSION 3, corrections C1).
   reference_rejeu_pinn_pid.mat ecrit (S1, S3, S7b, S8b, S9).
   banc_pinn_pid_resultats.json ecrit.
-  banc_pinn_pid.png ecrit. Duree totale : 136 s.
+  banc_pinn_pid.png ecrit. Duree totale : 142 s.

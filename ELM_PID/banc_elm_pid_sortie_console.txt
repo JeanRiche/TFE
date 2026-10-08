@@ -1,5 +1,6 @@
-Dossier de travail : /home/user/TFE/ELM_PID_B
+Dossier de travail : /home/user/TFE/ELM_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Essais complementaires lus (hors du cout J) : S10
 ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.2% admissibles ; jacobien constant des ablations 11.0687.
 Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
 
@@ -105,10 +106,31 @@ Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
   Q8 juste : J de 0.746 a 0.751 (nominal 0.746)
 
 ==============================================================================
+ ETAPE 5b : essais complementaires, hors du cout J (S10)
+==============================================================================
+  S10 Ziegler-Nichols  montee 1.09 ms, depassement 13.99 %, etabli a 3.40 ms ; IAE 220.39 mV.s, ecart max 110.59 V, efficace 7658.6 mV ; |dd| 0.0029, butee 1.5 %, DCM 0.4 % ; iL crete au demarrage 24.1 A
+      evenement a   50.0 ms : IAE  149.73 mV.s, ecart max 110.59 V, retour en 14.90 ms
+      evenement a  100.0 ms : IAE    9.51 mV.s, ecart max   3.08 V, PAS REVENU
+      evenement a  115.0 ms : IAE   14.07 mV.s, ecart max   3.20 V, PAS REVENU
+      evenement a  130.0 ms : IAE   15.49 mV.s, ecart max   2.62 V, PAS REVENU
+      evenement a  145.0 ms : IAE    5.62 mV.s, ecart max   1.35 V, retour en 1.83 ms
+      evenement a  160.0 ms : IAE    9.97 mV.s, ecart max   3.22 V, PAS REVENU
+      evenement a  175.0 ms : IAE   15.82 mV.s, ecart max   3.19 V, retour en 9.39 ms
+  S10 ELM-PID          montee 1.09 ms, depassement 13.99 %, etabli a 3.40 ms ; IAE 138.70 mV.s, ecart max 110.58 V, efficace 7607.2 mV ; |dd| 0.0038, butee 2.0 %, DCM 0.4 % ; iL crete au demarrage 24.1 A
+      evenement a   50.0 ms : IAE  129.89 mV.s, ecart max 110.58 V, retour en 4.82 ms
+      evenement a  100.0 ms : IAE    1.71 mV.s, ecart max   1.87 V, retour en 0.90 ms
+      evenement a  115.0 ms : IAE    2.03 mV.s, ecart max   1.91 V, retour en 1.22 ms
+      evenement a  130.0 ms : IAE    1.22 mV.s, ecart max   1.21 V, retour en 0.53 ms
+      evenement a  145.0 ms : IAE    0.94 mV.s, ecart max   1.06 V, retour en 0.16 ms
+      evenement a  160.0 ms : IAE    1.32 mV.s, ecart max   1.87 V, retour en 0.55 ms
+      evenement a  175.0 ms : IAE    1.42 mV.s, ecart max   1.62 V, retour en 0.55 ms
+  S10 ELM-PID : gains changes sur 9 fenetres ; finaux x(3.372, 2.067, 1.352)
+
+==============================================================================
  ETAPE 6 : fichiers pour Simulink et MATLAB
 ==============================================================================
   predictions_banc_elm_pid.json ecrit.
   elm_pid_reglages.mat ecrit.
   reference_rejeu_elm_pid.mat ecrit (S1, S3, S7b, S8b, S9).
   banc_elm_pid_resultats.json ecrit.
-  banc_elm_pid.png ecrit. Duree totale : 83 s.
+  banc_elm_pid.png ecrit. Duree totale : 86 s.

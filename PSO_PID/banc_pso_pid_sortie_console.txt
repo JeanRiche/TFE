@@ -1,5 +1,6 @@
 Dossier de travail : /home/user/TFE/PSO_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Essais complementaires lus (hors du cout J) : S10
 
 ==============================================================================
  ETAPE 1 : les cinq recherches et le reglage retenu
@@ -71,7 +72,7 @@ Dossier de travail : /home/user/TFE/PSO_PID
     graine=4   J = 0.730 ; tous revenus
     graine=5   J = 0.727 ; tous revenus
 
-  Rappel des autres methodes (J sur les memes onze essais) : ELM-PID 0.784 ; PINN-PID 0.684 ; Fuzzy-PID 0.877
+  Rappel des autres methodes (J sur les memes onze essais) : ELM-PID 0.746 ; PINN-PID 0.757 ; Fuzzy-PID 0.877
 
 ==============================================================================
  ETAPE 3 : previsions de criteres_pso_pid.txt
@@ -85,8 +86,28 @@ Dossier de travail : /home/user/TFE/PSO_PID
   R7 juste : J 0.714, meilleur PID fige 0.738
 
 ==============================================================================
+ ETAPE 3b : essais complementaires, hors du cout J (S10)
+==============================================================================
+  S10 Ziegler-Nichols  montee 1.09 ms, depassement 13.99 %, etabli a 3.40 ms ; IAE 220.39 mV.s, ecart max 110.59 V, efficace 7658.6 mV ; |dd| 0.0029, butee 1.5 %, DCM 0.4 % ; iL crete au demarrage 24.1 A
+      evenement a   50.0 ms : IAE  149.73 mV.s, ecart max 110.59 V, retour en 14.90 ms
+      evenement a  100.0 ms : IAE    9.51 mV.s, ecart max   3.08 V, PAS REVENU
+      evenement a  115.0 ms : IAE   14.07 mV.s, ecart max   3.20 V, PAS REVENU
+      evenement a  130.0 ms : IAE   15.49 mV.s, ecart max   2.62 V, PAS REVENU
+      evenement a  145.0 ms : IAE    5.62 mV.s, ecart max   1.35 V, retour en 1.83 ms
+      evenement a  160.0 ms : IAE    9.97 mV.s, ecart max   3.22 V, PAS REVENU
+      evenement a  175.0 ms : IAE   15.82 mV.s, ecart max   3.19 V, retour en 9.39 ms
+  S10 PSO-PID          montee 1.09 ms, depassement 7.06 %, etabli a 2.64 ms ; IAE 129.01 mV.s, ecart max 110.58 V, efficace 7588.5 mV ; |dd| 0.0063, butee 1.8 %, DCM 0.4 % ; iL crete au demarrage 23.0 A
+      evenement a   50.0 ms : IAE  124.86 mV.s, ecart max 110.58 V, retour en 3.30 ms
+      evenement a  100.0 ms : IAE    0.78 mV.s, ecart max   1.87 V, retour en 0.30 ms
+      evenement a  115.0 ms : IAE    0.69 mV.s, ecart max   1.44 V, retour en 0.22 ms
+      evenement a  130.0 ms : IAE    0.50 mV.s, ecart max   0.98 V, reste dans la bande
+      evenement a  145.0 ms : IAE    0.47 mV.s, ecart max   0.96 V, reste dans la bande
+      evenement a  160.0 ms : IAE    0.78 mV.s, ecart max   1.87 V, retour en 0.30 ms
+      evenement a  175.0 ms : IAE    0.75 mV.s, ecart max   1.44 V, retour en 0.22 ms
+
+==============================================================================
  ETAPE 4 : fichiers pour Simulink, resultats et figures
 ==============================================================================
   predictions_banc_pso_pid.json ecrit.
   banc_pso_pid_resultats.json ecrit.
-  banc_pso_pid.png et pso_pid_convergence.png ecrits. Duree totale : 37 s.
+  banc_pso_pid.png et pso_pid_convergence.png ecrits. Duree totale : 38 s.

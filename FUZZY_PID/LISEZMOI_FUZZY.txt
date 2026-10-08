@@ -146,6 +146,50 @@ CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
   propre base sans adaptation (Fuzzy-PID 1.000 -> 0.877 ; ELM-PID
   1.000 -> 0.746 ; PINN-PID 1.000 -> 0.757).
 
+ESSAI S10 (ajoute le 8 octobre 2026, HORS DU COUT J)
+----------------------------------------------------
+S10 a ete defini apres les onze essais, apres le calcul de J et apres le
+gel des methodes (COMPARAISON/S10/criteres_S10.txt). A 50 ms, Vin passe de
+200 a 160 V et la charge de 5 a 25 ohms, pour de bon ; de 100 a 175 ms,
+trois echelons de charge de 15 ms au nouveau point (20, 30, 20 ohms).
+Grandeur de classement : IAE de 100 ms a la fin.
+Il figure dans ce dossier comme les onze essais (scenario_S10.mat,
+scenarios_communs.json, banc Python, fichiers de predictions,
+Simuler_Fuzzy_PID.m), mais il N'ENTRE PAS dans le cout J : J reste la
+moyenne des 13 termes des onze essais. Le banc ne simule S10 qu'a la fin
+(etape 5b), apres J, les previsions, la sensibilite et le diagnostic ; les chiffres
+de S1 a S9 et J sont restes identiques, chiffre par chiffre. La methode
+n'a ete ni modifiee ni reglee pour S10.
+- scenarios_communs.json : la liste "essais" (les onze) ne change pas ; S10
+  est dans la liste a part "essais_complementaires".
+- scenario_S10.mat : ecrit par COMPARAISON/S10/fichiers_S10.py avec les
+  fonctions et le format de scenarios_communs.py. Ecart declare a la base
+  commune : R0 = 5 ohms et gx negative apres 50 ms (la charge electronique
+  fournit du courant ; charge equivalente 20, 25 ou 30 ohms), exactement
+  comme dans le calcul de COMPARAISON/S10.
+- Banc, S10 (Fuzzy-PID) : IAE de 100 ms a la fin 9.18 mV.s
+  (IAE de 30 ms a la fin 132.09) ; tous les evenements reviennent ; gains
+  x(0.981, 0.666, 1.929) de Ziegler-Nichols a 50 ms, x(0.986, 0.667,
+  1.943) a 100 ms et a la fin.
+  Ziegler-Nichols : 70.48 mV.s de 100 ms a la fin ; quatre fenetres sur six
+  pas revenues dans +-1 V. Ces chiffres sont identiques, bit a bit, a
+  COMPARAISON/S10/resultats_S10.json.
+
+Simuler S10 seul sous MATLAB (sans relancer les onze essais deja valides) :
+  1. ouvrir Simuler_Fuzzy_PID.m et mettre, dans le reglage "Essais a simuler"
+     en tete du script :   ESSAIS_A_SIMULER = {'S10'};
+  2. lancer Simuler_Fuzzy_PID (le modele Buck_Commun_Fuzzy_PID.slx doit deja exister).
+  Seul S10 est simule et compare au banc ; les resultats vont dans
+  resultats_Buck_Commun_Fuzzy_PID_S10.mat, et resultats_Buck_Commun_Fuzzy_PID.mat
+  (onze essais) n'est pas touche. Remettre ESSAIS_A_SIMULER = {} pour tout
+  simuler (onze essais puis S10).
+  L'IAE de 100 ms a la fin est la somme des IAE des six evenements de 100 a
+  175 ms, que le script affiche (Simulink / banc).
+  Ce qu'on attend : IAE de 100 ms a la fin a 1 % pres du banc, memes
+  retours dans la bande (le Fuzzy-PID a ete valide a 0.2 % pres, S7a
+  excepte).
+  Envoie-moi la sortie console.
+
 FICHIERS
 --------
 Base commune v2.1 (copies, ne pas modifier)
@@ -154,6 +198,7 @@ PID_Classique_Control.slx              ton modele de base (Rs = inf), pour le ve
 verifier_modele_commun.py              controle de Buck_Commun.slx
 charger_scenario.m                     charge un essai dans le workspace
 scenario_S1.mat ... scenario_S9.mat    les onze essais
+scenario_S10.mat                       essai ajoute apres coup, hors du cout J
 scenarios_communs.json                 liste des essais
 banc_commun.py                         banc Python commun, version 2.1
 predictions_banc_pid_classique.json    Ziegler-Nichols sur le banc (auto-test T0)

@@ -28,6 +28,13 @@
 %
 % VERSION
 % -------
+% Complement du 8 octobre 2026 : les essais complementaires de
+% scenarios_communs.json (liste "essais_complementaires", aujourd'hui S10,
+% ajoute apres coup et hors du cout J) sont simules apres les onze essais,
+% avec les memes grandeurs et la meme comparaison au banc. Reglage
+% ESSAIS_A_SIMULER en tete du script : {} pour tous les essais, {'S10'}
+% pour S10 seul (les resultats vont alors dans resultats_<MODELE>_S10.mat
+% et le fichier des onze essais deja valides n'est pas ecrase).
 % 2.1 (4 octobre 2026) : observation du courant de la bobine iL (courant
 % crete au demarrage et a chaque evenement, ondulation de courant,
 % comparaison au banc toutes les millisecondes) ; si le bloc regulateur a
@@ -130,6 +137,15 @@ TE = 1/(22000*10);                                        % periode commune des 
 TE_TXT = '1/(22000*10)';                                  % la meme, en texte exact pour Simulink
 FICHIER_RESULTATS = ['resultats_' MODELE '.mat'];
 
+% --- Essais a simuler ---
+% {} : tous les essais de scenarios_communs.json, les onze essais du cout J
+% puis les essais complementaires (S10, ajoute apres coup, hors du cout J).
+% Sinon, une liste de codes : {'S10'} ne simule que S10, sans relancer les
+% onze essais deja valides. Avec une liste, les resultats sont ecrits dans
+% resultats_<MODELE>_<codes>.mat (le fichier des onze essais n'est pas
+% ecrase).
+ESSAIS_A_SIMULER = {};
+
 % --- Prerequis, un seul exemplaire de chaque fichier sur le chemin ---
 for f = {[MODELE '.slx'], 'charger_scenario.m'}
     if ~isfile(fullfile(pwd, f{1}))
@@ -153,6 +169,26 @@ if iscell(liste.essais)                                    % jsondecode rend une
 else
     codes = {liste.essais.code};
 end
+codes = reshape(codes, 1, []);                             % les onze essais du cout J
+if isfield(liste, 'essais_complementaires') && ~isempty(liste.essais_complementaires)
+    ec = liste.essais_complementaires;                     % essais hors du cout J (S10)
+    if iscell(ec)
+        codes = [codes, reshape(cellfun(@(x) x.code, ec, 'UniformOutput', false), 1, [])];
+    else
+        codes = [codes, {ec.code}];
+    end
+end
+if ~isempty(ESSAIS_A_SIMULER)
+    ESSAIS_A_SIMULER = cellstr(ESSAIS_A_SIMULER);
+    inconnus = setdiff(ESSAIS_A_SIMULER, codes);
+    if ~isempty(inconnus)
+        error('ESSAIS_A_SIMULER : essai(s) inconnu(s) : %s (essais disponibles : %s).', ...
+              strjoin(inconnus, ', '), strjoin(codes, ', '));
+    end
+    codes = codes(ismember(codes, ESSAIS_A_SIMULER));      % dans l'ordre de scenarios_communs.json
+    FICHIER_RESULTATS = ['resultats_' MODELE '_' strjoin(codes, '_') '.mat'];
+end
+fprintf('Essais simules : %s (resultats dans %s).\n', strjoin(codes, ', '), FICHIER_RESULTATS);
 pred = [];
 if ~isempty(FICHIER_PREDICTIONS) && isfile(fullfile(pwd, FICHIER_PREDICTIONS))
     pred = jsondecode(fileread(fullfile(pwd, FICHIER_PREDICTIONS)));

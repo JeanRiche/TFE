@@ -2,6 +2,9 @@
 # banc_pso_pid.py
 #
 # VERSION
+#   1, complement du 8 octobre 2026 : etape 3b, essais complementaires
+#   (S10, ajoute apres coup, hors du cout J), simules apres tout le reste et
+#   ajoutes aux fichiers de resultats. Rien de ce qui precede ne change.
 #   1 (7 octobre 2026).
 #
 # OBJECTIF
@@ -82,9 +85,9 @@ for nom, g in (("meilleur PID fige", GAINS_FIGE),):
 
 # %% ETAPE 2 : jugement sur les onze essais
 
-def evaluer_essais(P, I, D):
+def evaluer_essais(P, I, D, essais=None):
     res = {}
-    for code, sc in ESSAIS.items():
+    for code, sc in (essais or ESSAIS).items():
         sim = simuler(PIDParallele(P, I, D), sc)
         o = grandeurs(sim, sc)
         e = sim["consigne"] - sim["v"]
@@ -176,6 +179,28 @@ for k in P:
     print(f"  {k} {'juste' if P[k] else 'FAUSSE'} : {TEXTE[k]}")
 
 
+# %% ETAPE 3b : essais complementaires, hors du cout J (ajoutee le 8 octobre 2026)
+# S10 (COMPARAISON/S10/criteres_S10.txt) a ete defini apres les onze essais et apres le gel de la
+# methode. Il est simule ici apres tout le reste, avec les memes gains, pour figurer comme les onze
+# essais dans predictions_banc_pso_pid.json (lu par Simuler_PSO_PID.m) et dans
+# banc_pso_pid_resultats.json. Il n'entre ni dans J ni dans les previsions.
+
+ESSAIS_HORS_J = {sc["code"]: sc for sc in SCENARIOS_COMPLEMENTAIRES}
+HORS_J = {}
+if ESSAIS_HORS_J:
+    titre("ETAPE 3b : essais complementaires, hors du cout J (" + ", ".join(ESSAIS_HORS_J) + ")")
+    HORS_J = {"Ziegler-Nichols": evaluer_essais(PID_P, PID_I, PID_D, ESSAIS_HORS_J),
+              "PSO-PID": evaluer_essais(P_R, I_R, D_R, ESSAIS_HORS_J)}
+    for code in ESSAIS_HORS_J:
+        for n, res in HORS_J.items():
+            print(f"  {code} {n:16s} {resume(res[code]['o'])}")
+            for ev in res[code]["o"]["evenements"]:
+                etat = ("reste dans la bande" if ev["reste_dans_bande"] else
+                        (f"retour en {ev['t_retour_ms']:.2f} ms" if ev["revenu"] else "PAS REVENU"))
+                print(f"      evenement a {ev['t_ms']:6.1f} ms : IAE {ev['IAE'] * 1e3:7.2f} mV.s, ecart max "
+                      f"{ev['e_max_V']:6.2f} V, {etat}")
+
+
 # %% ETAPE 4 : fichiers pour Simulink, resultats et figures
 
 titre("ETAPE 4 : fichiers pour Simulink, resultats et figures")
@@ -186,7 +211,7 @@ predictions = {"version": 2, "Te": TC,
                "critere": {"J_reglage": RET["J_reglage"], "J_essais": J_pso, "marge_min_deg": RET["marge_min"],
                            "fc_max_Hz": RET["fc_max"]},
                "controle": {}, "essais": {}}
-for code, r in PSO.items():
+for code, r in list(PSO.items()) + list(HORS_J.get("PSO-PID", {}).items()):   # onze essais, puis S10
     sim = r["sim"]
     predictions["essais"][code] = {"grandeurs": r["o"],
                                    "v_toutes_les_ms": sim["v"][::pas_1ms].tolist(),
@@ -203,6 +228,11 @@ sortie = {"version": 1, "retenu": CLE_RETENUE, "gains": predictions["gains"],
           "previsions": {k: {"juste": bool(P[k]), "detail": TEXTE[k]} for k in P},
           "references": {n: {c: {"grandeurs": TOUS[n][c]["o"], "IAE_dem": TOUS[n][c]["IAE_dem"],
                                  "revenus": TOUS[n][c]["revenus"]} for c in ESSAIS} for n in TOUS},
+          "essais_hors_J": {"codes": list(ESSAIS_HORS_J),
+                            "note": "ajoutes apres coup (S10 : COMPARAISON/S10/criteres_S10.txt), hors du cout J",
+                            "references": {n: {c: {"grandeurs": HORS_J[n][c]["o"], "IAE_dem": HORS_J[n][c]["IAE_dem"],
+                                                   "revenus": HORS_J[n][c]["revenus"]} for c in ESSAIS_HORS_J}
+                                           for n in HORS_J}},
           "duree_s": round(time.time() - T_DEBUT, 1)}
 with open(os.path.join(DOSSIER_PSO, "banc_pso_pid_resultats.json"), "w", encoding="utf-8") as f:
     json.dump(sortie, f, indent=1, allow_nan=False, default=lambda x: None)

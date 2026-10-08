@@ -91,3 +91,14 @@ SCENARIO S10 (8 octobre 2026) : dossier S10/
   +-0.1 %) ; Ziegler-Nichols 70.48, quatre echelons sur six non revenus.
   Gains figes a 50 ms : ELM-PID 14.60 (adaptation +41 %), PINN-PID 17.19
   (+61 %). Previsions : 9 justes sur 15.
+- S10 dans les dossiers de methode (8 octobre 2026) : S10/fichiers_S10.py
+  (python fichiers_S10.py, quelques secondes) ecrit scenario_S10.mat dans
+  PSO_PID, FUZZY_PID, ELM_PID et PINN_PID, avec les fonctions et le format
+  de scenarios_communs.py, et l'ajoute a leur scenarios_communs.json dans
+  une liste a part "essais_complementaires" (la liste des onze essais du
+  cout J ne change pas). Controles : profils identiques bit a bit a ceux de
+  scenario_S10.py. Ecart declare : R0 = 5 ohms et gx negative apres 50 ms,
+  comme dans le calcul ci-dessus. Les bancs des quatre dossiers simulent
+  ensuite S10 apres tout le reste : J et les chiffres de S1 a S9 restent
+  identiques, et leurs chiffres de S10 sont identiques, bit a bit, a
+  S10/resultats_S10.json. ELM_PID_INCREMENTAL n'est pas touche.

@@ -23,7 +23,7 @@ Dossiers de premier niveau : `COMPARAISON/`, `ELM_PID/` (retenu), `ELM_PID_INCRE
 
 ## 2. Fichiers créés ou modifiés, avec leur statut réel
 
-Les copies de la base commune présentes dans chaque dossier sont identiques et ne sont pas répétées : `Buck_Commun.slx`, trois `PID_Classique_Control*.slx`, `banc_commun.py`, `charger_scenario.m`, `scenario_S*.mat`, `scenarios_communs.json`, `verifier_modele_commun.py`, `predictions_banc_pid_classique.json` et `predictions_banc_pid_fige.json`. La base commune elle-même a été validée avant cette série de séances.
+Les copies de la base commune présentes dans chaque dossier sont identiques et ne sont pas répétées : `Buck_Commun.slx`, trois `PID_Classique_Control*.slx`, `banc_commun.py`, `charger_scenario.m`, `scenario_S*.mat`, `scenarios_communs.json`, `verifier_modele_commun.py`, `predictions_banc_pid_classique.json` et `predictions_banc_pid_fige.json`. La base commune elle-même a été validée avant cette série de séances. Depuis le 8 oct., S10 y est ajouté dans les quatre dossiers de méthode (pas dans `ELM_PID_INCREMENTAL`, dont la base commune reste celle d'avant) : `scenario_S10.mat`, liste `essais_complementaires` de `scenarios_communs.json`, `SCENARIOS_COMPLEMENTAIRES` dans `banc_commun.py`, S10 dans `predictions_banc_pid_classique.json`.
 
 ### 2.1 `FUZZY_PID/` — Fuzzy-PID (Zhao, Tomizuka, Isaka 1993)
 
@@ -101,6 +101,8 @@ Bloc PID commun à gains externes ; coût (éq. 13) et Adam d'Ito et Wasa en it�
 | `elm_incremental_contre_B.py` et sorties | les deux versions de l'ELM-PID (chapitre 4) | BANC |
 | `banc_*_resultats.json` (4 copies) | données d'entrée | copies des versions finales (ELM 0.746, PINN 0.757) |
 | `LISEZMOI_COMPARAISON.txt` | mode d'emploi | document |
+| `S10/criteres_S10.txt`, `S10/scenario_S10.py`, `S10/resultats_S10.json` et sorties | scénario S10, ajouté après coup, hors du coût J | BANC (8 oct.) |
+| `S10/fichiers_S10.py` | écrit `scenario_S10.mat` et l'entrée S10 de `scenarios_communs.json` dans les quatre dossiers de méthode | BANC (8 oct. : profils identiques bit à bit à `scenario_S10.py`) |
 | `diagnostic_lois/diagnostic_perturbations.py`, `diagnostic_cout_J.py` et leurs sorties | diagnostic de la loi de Lu (lisent `ELM_PID_INCREMENTAL`) | BANC (relancés le 8 oct. : mêmes chiffres) |
 
 ### 2.6 Racine
@@ -305,4 +307,5 @@ Points de la proposition de TFE à revoir plus tard avec Jean-Riche :
 2. **PINN-PID final sous Simulink** (Jean-Riche) : même chaîne dans `PINN_PID/` (`LISEZMOI_PINN.txt`, étapes 1 à 7).
 3. **Rédaction** des chapitres avec Jean-Riche (corps : J, S1, S2, S3, S8a ; annexe : classement essai par essai ; chapitre 4 : ELM incrémental contre option B).
 4. **PSO-PID, trois modèles de base sous Simulink** (Jean-Riche) : `Construction_PSO_PID_Trois_Modeles`, `verifier_modeles_pso_pid_trois.py`, `Simuler_PSO_PID_Trois_Modeles` (`PSO_PID/LISEZMOI_PSO.txt`, étapes 6 à 8). Le modèle commun est validé (8 oct.).
-5. Points ouverts non tranchés, à décider par Jean-Riche : F1 appliqué à la consigne plutôt qu'à la commande (§4bis) ; scénario « dynamique non linéaire » (P2).
+5. **S10 sous Simulink** (Jean-Riche), dans chaque dossier : `ESSAIS_A_SIMULER = {'S10'}` en tête de `Simuler_*.m`, résultats dans `resultats_<MODELE>_S10.mat`. Banc : S10 ajouté après coup dans les quatre bancs (étape 3b ou 5b), hors de J ; J et S1–S9 inchangés chiffre par chiffre, S10 identique bit à bit à `COMPARAISON/S10/resultats_S10.json`. Attendu : IAE de 100 ms à la fin à 1 % près (PSO, Fuzzy), à 3 % près (ELM, PINN).
+6. Points ouverts non tranchés, à décider par Jean-Riche : F1 appliqué à la consigne plutôt qu'à la commande (§4bis) ; scénario « dynamique non linéaire » (P2).

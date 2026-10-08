@@ -149,5 +149,25 @@
    ],
    "description": "demarrage 5 ohms ; rampe 5 -> 98 ohms ; consigne 150 V, 50 V ; Vin 150 V ; consigne 100 V ; Vin 200 V et rampe 98 -> 5 ohms"
   }
+ ],
+ "note_essais_complementaires": "Essais complementaires : simules et compares a Simulink comme les onze essais, mais ajoutes apres coup et hors du cout J (J reste defini sur les onze essais de la liste 'essais'). S10 : COMPARAISON/S10/criteres_S10.txt.",
+ "essais_complementaires": [
+  {
+   "code": "S10",
+   "nom": "Changement durable du point",
+   "duree": 0.2,
+   "R0": 5.0,
+   "q": 1e-09,
+   "evenements": [
+    0.05,
+    0.1,
+    0.115,
+    0.13,
+    0.145,
+    0.16,
+    0.175
+   ],
+   "description": "essai ajoute apres coup, hors du cout J : Vin 200 -> 160 V et charge 5 -> 25 ohms a 50 ms (durable) ; 20 ohms sur [0.10 ; 0.115) s, 30 ohms sur [0.13 ; 0.145) s, 20 ohms sur [0.16 ; 0.175) s"
+  }
  ]
 }

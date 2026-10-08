@@ -2,6 +2,10 @@
 # banc_fuzzy_pid.py
 #
 # VERSION
+#   2, complement du 8 octobre 2026 : etape 5b, essais complementaires
+#   (S10, ajoute apres coup, hors du cout J), simules apres tout le reste et
+#   ajoutes aux fichiers de resultats ; evaluer() accepte une autre liste
+#   d'essais (par defaut les onze). Rien de ce qui precede ne change.
 #   2 (6 octobre 2026) : ordonnancement flou de Zhao, Tomizuka et Isaka
 #   (1993) sur le PID classique. Remplace la version 1 du meme jour (systeme
 #   flou dans la coquille de l'ELM-PID), supprimee.
@@ -240,15 +244,16 @@ print(f"Gains au repos (ZO, ZO) : Kp {Kp0 / PID_P:.3f} P, Ki {Ki0 / PID_I:.3f} I
 
 # %% ETAPE 2 : evaluation d'un regulateur sur les onze essais
 
-def evaluer(fabrique, codes=None):
+def evaluer(fabrique, codes=None, essais=None):
     """Simule un nouveau regulateur (fabrique()) sur chaque essai et renvoie,
     par essai : grandeurs du banc commun, IAE du demarrage, retours, et le
-    regulateur (pour ses gains)."""
+    regulateur (pour ses gains). Essais : les onze (ESSAIS) par defaut."""
+    essais = essais or ESSAIS
     res = {}
-    for code in (codes or list(ESSAIS)):
+    for code in (codes or list(essais)):
         reg = fabrique()
-        sim = simuler(reg, ESSAIS[code])
-        o = grandeurs(sim, ESSAIS[code])
+        sim = simuler(reg, essais[code])
+        o = grandeurs(sim, essais[code])
         e = sim["consigne"] - sim["v"]
         res[code] = {"o": o, "IAE_dem": float(np.sum(np.abs(e[:K30])) * TC),
                      "revenus": bool(all(ev["revenu"] for ev in o["evenements"])), "reg": reg, "sim": sim}
@@ -436,6 +441,29 @@ for k in P:
     print(f"    {k} {'juste' if P[k] else 'FAUSSE'} : {TEXTE_P[k]}")
 
 
+# %% ETAPE 5b : essais complementaires, hors du cout J (ajoutee le 8 octobre 2026)
+# S10 (COMPARAISON/S10/criteres_S10.txt) a ete defini apres les onze essais et apres le gel de la
+# methode. Il est simule ici apres tout le reste, avec le meme regulateur, pour figurer comme les
+# onze essais dans predictions_banc_fuzzy_pid.json (lu par Simuler_Fuzzy_PID.m) et dans
+# banc_fuzzy_pid_resultats.json. Il n'entre ni dans J, ni dans les previsions, ni dans la
+# sensibilite ou le diagnostic, calcules plus haut sur les onze essais seulement.
+
+ESSAIS_HORS_J = {sc["code"]: sc for sc in SCENARIOS_COMPLEMENTAIRES}
+HORS_J = {}
+if ESSAIS_HORS_J:
+    titre("ETAPE 5b : essais complementaires, hors du cout J (" + ", ".join(ESSAIS_HORS_J) + ")")
+    HORS_J = {"Ziegler-Nichols": evaluer(lambda: PIDClassique(), essais=ESSAIS_HORS_J),
+              "Fuzzy-PID": evaluer(lambda: FuzzyPID(), essais=ESSAIS_HORS_J)}
+    for code in ESSAIS_HORS_J:
+        for n, res in HORS_J.items():
+            print(f"  {code} {n:16s} {resume(res[code]['o'])}")
+            for ev in res[code]["o"]["evenements"]:
+                etat = ("reste dans la bande" if ev["reste_dans_bande"] else
+                        (f"retour en {ev['t_retour_ms']:.2f} ms" if ev["revenu"] else "PAS REVENU"))
+                print(f"      evenement a {ev['t_ms']:6.1f} ms : IAE {ev['IAE'] * 1e3:7.2f} mV.s, ecart max "
+                      f"{ev['e_max_V']:6.2f} V, {etat}")
+
+
 # %% ETAPE 6 : fichiers pour Simulink et MATLAB, resultats et figures
 
 titre("ETAPE 6 : fichiers pour Simulink et MATLAB")
@@ -448,7 +476,7 @@ predictions = {"version": 2, "Te": TC,
                "regulateur": "Fuzzy-PID (ordonnancement flou de Zhao, Tomizuka et Isaka 1993, bloc PID de "
                              "Ziegler-Nichols a gains externes)",
                "reglages": REGLAGES, "controle": {"ecart_gains_forces_PID_classique": ecart_zn}, "essais": {}}
-for code, r in FZ.items():
+for code, r in list(FZ.items()) + list(HORS_J.get("Fuzzy-PID", {}).items()):   # onze essais, puis S10
     K = np.array(r["reg"].K_pas)              # gains [P I D] utilises a chaque pas
     predictions["essais"][code] = {"grandeurs": r["o"],
                                    "v_toutes_les_ms": r["sim"]["v"][::pas_1ms].tolist(),
@@ -492,6 +520,9 @@ sortie = {"version": 2, "reglages": REGLAGES, "J": J_TOUS, "decomposition": DECO
           "diagnostic": DIAGNOSTIC,
           "previsions": {k: {"juste": bool(P[k]), "detail": TEXTE_P[k]} for k in P},
           "autres_methodes_J": AUTRES, "references": {n: resume_essais(TOUS[n]) for n in TOUS},
+          "essais_hors_J": {"codes": list(ESSAIS_HORS_J),
+                            "note": "ajoutes apres coup (S10 : COMPARAISON/S10/criteres_S10.txt), hors du cout J",
+                            "references": {n: resume_essais(HORS_J[n]) for n in HORS_J}},
           "duree_s": round(time.time() - T_DEBUT, 1)}
 with open(os.path.join(DOSSIER_FUZZY, "banc_fuzzy_pid_resultats.json"), "w", encoding="utf-8") as f:
     json.dump(sortie, f, indent=1, allow_nan=False, default=lambda x: None)

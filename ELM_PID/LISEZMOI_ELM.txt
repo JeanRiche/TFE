@@ -106,12 +106,59 @@ CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE (banc)
   ne se rouvre (criteres_elm_pid.txt, section 8).
 - Le jacobien du reseau ne change pas le resultat (constante : 0.745).
 
+ESSAI S10 (ajoute le 8 octobre 2026, HORS DU COUT J)
+----------------------------------------------------
+S10 a ete defini apres les onze essais, apres le calcul de J et apres le
+gel des methodes (COMPARAISON/S10/criteres_S10.txt). A 50 ms, Vin passe de
+200 a 160 V et la charge de 5 a 25 ohms, pour de bon ; de 100 a 175 ms,
+trois echelons de charge de 15 ms au nouveau point (20, 30, 20 ohms).
+Grandeur de classement : IAE de 100 ms a la fin.
+Il figure dans ce dossier comme les onze essais (scenario_S10.mat,
+scenarios_communs.json, banc Python, fichiers de predictions,
+Simuler_ELM_PID.m), mais il N'ENTRE PAS dans le cout J : J reste la
+moyenne des 13 termes des onze essais. Le banc ne simule S10 qu'a la fin
+(etape 5b), apres J, les previsions, les ablations et la sensibilite ; les chiffres
+de S1 a S9 et J sont restes identiques, chiffre par chiffre. La methode
+n'a ete ni modifiee ni reglee pour S10.
+- scenarios_communs.json : la liste "essais" (les onze) ne change pas ; S10
+  est dans la liste a part "essais_complementaires".
+- scenario_S10.mat : ecrit par COMPARAISON/S10/fichiers_S10.py avec les
+  fonctions et le format de scenarios_communs.py. Ecart declare a la base
+  commune : R0 = 5 ohms et gx negative apres 50 ms (la charge electronique
+  fournit du courant ; charge equivalente 20, 25 ou 30 ohms), exactement
+  comme dans le calcul de COMPARAISON/S10.
+- Banc, S10 (ELM-PID) : IAE de 100 ms a la fin 8.63 mV.s
+  (IAE de 30 ms a la fin 138.70) ; tous les evenements reviennent ; gains
+  x(1.469, 1.058, 1.152) de Ziegler-Nichols a 50 ms, x(2.476, 1.828,
+  1.218) a 100 ms, x(3.372, 2.067, 1.352) a la fin.
+  Ziegler-Nichols : 70.48 mV.s de 100 ms a la fin ; quatre fenetres sur six
+  pas revenues dans +-1 V. Ces chiffres sont identiques, bit a bit, a
+  COMPARAISON/S10/resultats_S10.json.
+
+Simuler S10 seul sous MATLAB (sans relancer les onze essais deja valides) :
+  1. ouvrir Simuler_ELM_PID.m et mettre, dans le reglage "Essais a simuler"
+     en tete du script :   ESSAIS_A_SIMULER = {'S10'};
+  2. lancer Simuler_ELM_PID (le modele Buck_Commun_ELM_PID.slx doit deja exister).
+  Seul S10 est simule et compare au banc ; les resultats vont dans
+  resultats_Buck_Commun_ELM_PID_S10.mat, et resultats_Buck_Commun_ELM_PID.mat
+  (onze essais) n'est pas touche. Remettre ESSAIS_A_SIMULER = {} pour tout
+  simuler (onze essais puis S10).
+  L'IAE de 100 ms a la fin est la somme des IAE des six evenements de 100 a
+  175 ms, que le script affiche (Simulink / banc).
+  Ce qu'on attend : IAE de 100 ms a la fin a 3 % pres du banc, memes
+  retours dans la bande, memes ordres de grandeur des gains. Les decisions
+  d'adaptation dependent du seuil de 0.1 V : les gains peuvent suivre un
+  chemin un peu different (comme sur S8b, 0.85 %). Sur le banc, L ou C a
+  +-0.1 % font deja passer cette IAE de 8.63 a 7.88 mV.s : un ecart de
+  quelques % ne serait pas une erreur de construction.
+  Envoie-moi la sortie console.
+
 FICHIERS
 --------
 Base commune v2.1 (copies, ne pas modifier)
 Buck_Commun.slx, PID_Classique_Control.slx, PID_Classique_Control_control_disturbance.slx,
 PID_Classique_Control_load_disturbance.slx, verifier_modele_commun.py, charger_scenario.m,
-scenario_S1.mat ... scenario_S9.mat, scenarios_communs.json, banc_commun.py,
+scenario_S1.mat ... scenario_S9.mat, scenario_S10.mat (hors du cout J), scenarios_communs.json, banc_commun.py,
 predictions_banc_pid_classique.json, predictions_banc_pid_fige.json
 
 Donnees d'apprentissage

@@ -2,6 +2,9 @@
 # banc_elm_pid.py
 #
 # VERSION
+#   4, complement du 8 octobre 2026 : etape 5b, essais complementaires
+#   (S10, ajoute apres coup, hors du cout J), simules apres tout le reste et
+#   ajoutes aux fichiers de resultats. Rien de ce qui precede ne change.
 #   4 (8 octobre 2026), option B. Methode, modifications M1 a M4 et
 #   previsions : criteres_elm_pid.txt. La version 3 (loi incrementale de Lu)
 #   est dans le dossier ELM_PID_INCREMENTAL.
@@ -591,6 +594,33 @@ for k in P:
     print(f"  {k} {'juste' if P[k] else 'FAUSSE'} : {TEXTE[k]}")
 
 
+# %% ETAPE 5b : essais complementaires, hors du cout J (ajoutee le 8 octobre 2026)
+# S10 (COMPARAISON/S10/criteres_S10.txt) a ete defini apres les onze essais et apres le gel de la
+# methode. Il est simule ici apres tout le reste, avec le meme regulateur, pour figurer comme les
+# onze essais dans predictions_banc_elm_pid.json (lu par Simuler_ELM_PID.m) et dans
+# banc_elm_pid_resultats.json. Il n'entre ni dans J, ni dans les previsions, ni dans les ablations
+# ou la sensibilite, calcules plus haut sur ESSAIS (les onze essais) seulement.
+
+ESSAIS_HORS_J = {sc["code"]: sc for sc in SCENARIOS_COMPLEMENTAIRES}
+HORS_J = {}
+if ESSAIS_HORS_J:
+    titre("ETAPE 5b : essais complementaires, hors du cout J (" + ", ".join(ESSAIS_HORS_J) + ")")
+    HORS_J = {"Ziegler-Nichols": evaluer(lambda: PIDClassique(), essais=ESSAIS_HORS_J),
+              "ELM-PID": evaluer(lambda: ELMPID(), essais=ESSAIS_HORS_J)}
+    for code in ESSAIS_HORS_J:
+        for n, res in HORS_J.items():
+            print(f"  {code} {n:16s} {resume(res[code]['o'])}")
+            for ev in res[code]["o"]["evenements"]:
+                etat = ("reste dans la bande" if ev["reste_dans_bande"] else
+                        (f"retour en {ev['t_retour_ms']:.2f} ms" if ev["revenu"] else "PAS REVENU"))
+                print(f"      evenement a {ev['t_ms']:6.1f} ms : IAE {ev['IAE'] * 1e3:7.2f} mV.s, ecart max "
+                      f"{ev['e_max_V']:6.2f} V, {etat}")
+        reg = HORS_J["ELM-PID"][code]["reg"]
+        Kf = reg.journal[-1]["K"] / K_ZN
+        print(f"  {code} ELM-PID : gains changes sur {len(fenetres_changees(reg))} fenetres ; finaux "
+              f"x({Kf[0]:.3f}, {Kf[1]:.3f}, {Kf[2]:.3f})")
+
+
 # %% ETAPE 6 : fichiers pour Simulink et MATLAB, resultats et figure
 
 titre("ETAPE 6 : fichiers pour Simulink et MATLAB")
@@ -601,7 +631,7 @@ predictions = {"version": 2, "Te": TC,              # format de la base commune 
                "reglages": REGL_JSON, "K_depart": K_ZN.tolist(),
                "controle": {"ecart_vecteurs_test_V": ecart_y, "ecart_sans_adaptation_ZN": ecart_zn},
                "essais": {}}
-for code, r in ELM.items():
+for code, r in list(ELM.items()) + list(HORS_J.get("ELM-PID", {}).items()):   # onze essais, puis S10
     Kp = np.array(r["reg"].K_pas)
     predictions["essais"][code] = {"grandeurs": r["o"],
                                    "v_toutes_les_ms": r["sim"]["v"][::pas_1ms].tolist(),
@@ -653,6 +683,14 @@ sortie = {"version": 3, "reglages": REGL_JSON, "J": J_TOUS, "decomposition": DEC
           "fenetres_adaptees": {c: fenetres_adaptees(ELM[c]["reg"]) for c in ELM},
           "fenetres_gains_changes": {c: fenetres_changees(ELM[c]["reg"]) for c in ELM},
           "porte_elm": {c: float(np.mean([x["porte"] for x in ELM[c]["reg"].journal])) for c in ELM},
+          "essais_hors_J": {"codes": list(ESSAIS_HORS_J),
+                            "note": "ajoutes apres coup (S10 : COMPARAISON/S10/criteres_S10.txt), hors du cout J",
+                            "references": {n: resume_essais(HORS_J[n]) for n in HORS_J},
+                            "gains_elm": {c: [x["K"].tolist() for x in HORS_J["ELM-PID"][c]["reg"].journal]
+                                          for c in ESSAIS_HORS_J},
+                            "fenetres_adaptees": {c: fenetres_adaptees(HORS_J["ELM-PID"][c]["reg"]) for c in ESSAIS_HORS_J},
+                            "fenetres_gains_changes": {c: fenetres_changees(HORS_J["ELM-PID"][c]["reg"])
+                                                       for c in ESSAIS_HORS_J}},
           "duree_s": round(time.time() - T_DEBUT, 1)}
 with open(os.path.join(DOSSIER_ELM, "banc_elm_pid_resultats.json"), "w", encoding="utf-8") as f:
     json.dump(sortie, f, indent=1, allow_nan=False, default=lambda x: None)

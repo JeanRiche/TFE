@@ -2,6 +2,12 @@
 # banc_commun.py
 #
 # VERSION
+#   2.1, complement du 8 octobre 2026 : lecture des essais complementaires
+#   (liste "essais_complementaires" de scenarios_communs.json, aujourd'hui
+#   S10, ajoute apres coup et hors du cout J) dans SCENARIOS_COMPLEMENTAIRES ;
+#   le PID classique les simule apres les onze essais et les ecrit dans
+#   predictions_banc_pid_classique.json. SCENARIOS reste la liste des onze
+#   essais : rien de ce qui en depend ne change.
 #   2.1 (4 octobre 2026) : observation du courant de la bobine iL (courant
 #   crete au demarrage et a chaque evenement, ondulation de courant en
 #   regime, courant toutes les millisecondes dans le fichier de predictions,
@@ -152,6 +158,11 @@ def charger_scenario(code):
 
 SCENARIOS = [charger_scenario(e["code"]) for e in LISTE["essais"]]
 print(f"{len(SCENARIOS)} essais lus : " + ", ".join(s["code"] for s in SCENARIOS))
+# Essais complementaires (S10, 8 octobre 2026) : ajoutes apres coup, hors du cout J. Ils ne sont pas
+# dans SCENARIOS ; un script ne les simule que s'il les demande.
+SCENARIOS_COMPLEMENTAIRES = [charger_scenario(e["code"]) for e in LISTE.get("essais_complementaires", [])]
+if SCENARIOS_COMPLEMENTAIRES:
+    print("Essais complementaires lus (hors du cout J) : " + ", ".join(s["code"] for s in SCENARIOS_COMPLEMENTAIRES))
 
 
 # %% ETAPE 1 : le circuit et la boucle fermee
@@ -445,11 +456,11 @@ controle = {"regroupement_ecart_max_V": float(np.max(np.abs(v_rapide - v_lent)))
             "S1_99V_ms": float(np.argmax(sim_ref["v"] >= 99.0) * TC * 1e3), "S1_max_V": float(sim_ref["v"].max()),
             "charge_electronique_ecart_max_V": float(ecart.max())}
 
-titre("ETAPE 3b : le PID classique sur les onze essais")
+titre("ETAPE 3b : le PID classique sur les onze essais (puis les essais complementaires, hors du cout J)")
 predictions = {"version": 2, "Te": TC, "regulateur": "PID classique (Ziegler-Nichols, PID_Classique_Control.slx)",
                "controle": controle, "essais": {}}
 sims = {}
-for sc in SCENARIOS:
+for sc in SCENARIOS + SCENARIOS_COMPLEMENTAIRES:
     t0 = time.time()
     sim = simuler(PIDClassique(), sc)
     o = grandeurs(sim, sc)

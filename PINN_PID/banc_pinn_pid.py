@@ -2,6 +2,9 @@
 # banc_pinn_pid.py
 #
 # VERSION
+#   3, complement du 8 octobre 2026 : etape 5b, essais complementaires
+#   (S10, ajoute apres coup, hors du cout J), simules apres tout le reste et
+#   ajoutes aux fichiers de resultats. Rien de ce qui precede ne change.
 #   3 (8 octobre 2026). Format des fichiers de reglages : VERSION 3 (le bloc
 #   pinn_pid_adaptatif.m refuse tout autre numero). Methode, ecarts a Ito et
 #   Wasa, regle de choix de la correction, previsions et resultats :
@@ -914,6 +917,30 @@ if __name__ == "__main__":
         CLASSEMENT[nom_q] = [f"{n} {v:.2f}" for v, n in liste]
         print(f"  Classement {nom_q:13s} : " + " < ".join(CLASSEMENT[nom_q]))
 
+    # %% ETAPE 5b : essais complementaires, hors du cout J (ajoutee le 8 octobre 2026)
+    # S10 (COMPARAISON/S10/criteres_S10.txt) a ete defini apres les onze essais et apres le gel de
+    # la methode. Il est simule ici apres tout le reste, avec le meme regulateur, pour figurer comme
+    # les onze essais dans predictions_banc_pinn_pid.json (lu par Simuler_PINN_PID.m) et dans
+    # banc_pinn_pid_resultats.json. Il n'entre ni dans J, ni dans les previsions, ni dans les
+    # ablations ou la sensibilite, calcules plus haut sur les onze essais seulement.
+
+    ESSAIS_HORS_J = {sc["code"]: sc for sc in SCENARIOS_COMPLEMENTAIRES}
+    HORS_J = {}
+    if ESSAIS_HORS_J:
+        titre("ETAPE 5b : essais complementaires, hors du cout J (" + ", ".join(ESSAIS_HORS_J) + ")")
+        HORS_J = {"Ziegler-Nichols": evaluer(lambda: PIDClassique(), essais=ESSAIS_HORS_J),
+                  NOM_C: evaluer(lambda: PINNPID(), essais=ESSAIS_HORS_J)}
+        for code in ESSAIS_HORS_J:
+            for n, res in HORS_J.items():
+                print(f"  {code} {n:16s} {resume(res[code]['o'])}")
+                for ev in res[code]["o"]["evenements"]:
+                    etat = ("reste dans la bande" if ev["reste_dans_bande"] else
+                            (f"retour en {ev['t_retour_ms']:.2f} ms" if ev["revenu"] else "PAS REVENU"))
+                    print(f"      evenement a {ev['t_ms']:6.1f} ms : IAE {ev['IAE'] * 1e3:7.2f} mV.s, ecart max "
+                          f"{ev['e_max_V']:6.2f} V, {etat}")
+            X = multiplicateurs(HORS_J[NOM_C], code)
+            print(f"  {code} {NOM_C} : x final ({X[-1, 0]:.3f}, {X[-1, 1]:.3f}, {X[-1, 2]:.3f})", flush=True)
+
     # %% ETAPE 6 : fichiers, resultats et figure
 
     titre("ETAPE 6 : fichiers")
@@ -928,7 +955,7 @@ if __name__ == "__main__":
                                 "ecart_gradient": ECART_GRAD, "ecart_gradient_saturation": ECART_GRAD_SAT,
                                 "ecart_gradient_C2": ECART_GRAD_C2},
                    "essais": {}}
-    for code, r in PINN.items():
+    for code, r in list(PINN.items()) + list(HORS_J.get(NOM_C, {}).items()):   # onze essais, puis S10
         Kp = r["reg"].K_pas
         predictions["essais"][code] = {"grandeurs": r["o"],
                                        "v_toutes_les_ms": r["sim"]["v"][::pas_1ms].tolist(),
@@ -988,6 +1015,11 @@ if __name__ == "__main__":
               "references": {n: resume_essais(TOUS[n]) for n in TOUS},
               "ablations": {n: resume_essais(RES_ABL[n]) for n in RES_ABL},
               "multiplicateurs_par_fenetre": {c: multiplicateurs(PINN, c).tolist() for c in PINN},
+              "essais_hors_J": {"codes": list(ESSAIS_HORS_J),
+                                "note": "ajoutes apres coup (S10 : COMPARAISON/S10/criteres_S10.txt), hors du cout J",
+                                "references": {n: resume_essais(HORS_J[n]) for n in HORS_J},
+                                "multiplicateurs_par_fenetre": {c: multiplicateurs(HORS_J[NOM_C], c).tolist()
+                                                                for c in ESSAIS_HORS_J}},
               "duree_s": round(time.time() - T_DEBUT, 1)}
     with open(os.path.join(DOSSIER_PINN, "banc_pinn_pid_resultats.json"), "w", encoding="utf-8") as f:
         json.dump(sortie, f, indent=1, allow_nan=False, default=lambda x: None)
