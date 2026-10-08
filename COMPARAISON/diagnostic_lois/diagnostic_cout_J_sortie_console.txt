@@ -1,0 +1,8 @@
+[ZN] parallele (bloc, derivee sur e)                 J 1.000  apres30 1.000  dem 1.000  non revenus S8b,S9
+[ZN] parallele, derivee sur la mesure                J 0.970  apres30 1.008  dem 0.843  non revenus S8b,S9
+[ZN] loi de Lu (derivee sur e)                       J 0.917  apres30 0.986  dem 0.687  non revenus S8b,S9
+[ZN] loi de Lu, derivee sur la mesure                J 0.915  apres30 0.984  dem 0.687  non revenus S8b,S9
+[PSO] parallele (bloc, derivee sur e)                J 0.714  apres30 0.672  dem 0.855  non revenus -
+[PSO] parallele, derivee sur la mesure               J 0.702  apres30 0.685  dem 0.758  non revenus -
+[PSO] loi de Lu (derivee sur e)                      J 0.707  apres30 0.739  dem 0.600  non revenus -
+[PSO] loi de Lu, derivee sur la mesure               J 0.706  apres30 0.737  dem 0.600  non revenus -

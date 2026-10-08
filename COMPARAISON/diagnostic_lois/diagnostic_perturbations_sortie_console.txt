@@ -1,0 +1,13 @@
+variante                                             S2             S3             S4             S5             S6             S9   (IAE apres 30 ms mV.s / ecart max V)
+ZN parallele (bloc)                         2.84/ 2.01    8.67/ 5.73   23.61/11.52    3.87/ 1.13    1.65/ 0.08  531.80/100.05
+R0 = loi de Lu, gains ZN                    5.27/ 4.81    8.48/ 5.73   22.74/11.52    3.81/ 1.12    1.65/ 0.08  537.28/100.12
+R0, derivee sur la mesure                   3.10/ 2.01    8.48/ 5.73   22.74/11.52    3.81/ 1.12    1.69/ 0.10  511.05/99.98
+PSO parallele (bloc)                        2.04/ 2.01    5.46/ 5.52   16.54/11.23    2.46/ 0.54    1.55/ 0.05  283.25/100.01
+loi de Lu, gains PSO                        6.56/ 4.38    7.53/ 5.53   23.50/11.23    2.46/ 0.54    1.55/ 0.05  316.83/100.17
+loi de Lu, gains PSO, derivee mesure        2.18/ 2.01    7.53/ 5.53   23.50/11.23    2.46/ 0.54    1.62/ 0.07  287.24/100.01
+ELM-PID (retenu)                            5.61/ 5.34    7.79/ 5.66   19.57/11.52    2.97/ 1.05    1.64/ 0.08  307.01/100.08
+
+  S4 ELM fenetre finissant a  52.0 ms : ebar +0.703 V -> x(1.186, 1.174, 1.070)
+  S4 ELM fenetre finissant a  52.5 ms : ebar -0.170 V -> x(1.379, 1.202, 0.996)
+  S4 ELM fenetre finissant a 102.0 ms : ebar +0.213 V -> x(1.533, 1.213, 0.950)
+  S4 ELM fenetre finissant a 102.5 ms : ebar -0.103 V -> x(1.578, 1.217, 0.943)
