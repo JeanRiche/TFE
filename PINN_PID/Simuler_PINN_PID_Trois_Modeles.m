@@ -2,31 +2,36 @@
 %
 % OBJECTIF
 % --------
-% Simuler les trois modeles du PINN-PID construits sur les modeles de base
-% de Jean-Riche (Construction_PINN_PID_Trois_Modeles.m), mesurer les memes
-% grandeurs que Simuler_PINN_PID.m, comparer chaque modele a l'essai du banc
-% qui lui correspond, tracer une figure par modele et enregistrer les
-% resultats :
+% Simuler les trois modeles du PINN-PID construits sur les
+% modeles de base de Jean-Riche (Construction_PINN_PID_Trois_Modeles.m),
+% mesurer les memes grandeurs que Simuler_PINN_PID.m, comparer chaque modele
+% a l'essai du banc qui lui correspond, tracer une figure par modele et
+% enregistrer les resultats :
 %   PINN_PID_Control.slx                     nominal          banc : S1
 %   PINN_PID_Control_control_disturbance.slx F1 a la consigne banc : S2
 %   PINN_PID_Control_load_disturbance.slx    F2 (4.333 ohms)  banc : S3
 %
 % VERSION
 % -------
-% 1 (5 octobre 2026), PINN-PID.
+% 3 (8 octobre 2026). Copie de
+% ELM_PID/Simuler_ELM_PID_Trois_Modeles.m (meme montage, repris de
+% Simuler_Fuzzy_PID_Trois_Modeles.m) ; changent seulement les modeles, le
+% bloc des gains (sortie de "PINN-PID Adaptatif" : [P I D]) et le fichier
+% de predictions.
 %
 % CE QUI EST ENREGISTRE PENDANT LA SIMULATION
 % -------------------------------------------
 % Des blocs To Workspace temporaires, ajoutes en memoire et echantillonnes
 % a Tc = 1/(22000*10) s : Vout (bloc de mesure "Vout"), rapport cyclique
 % (signal qui entre dans le PWM), courant de la bobine (bloc "iL") et gains
-% du PINN-PID (sortie 2 du bloc). Les To Workspace propres au modele (y et
-% x du modele nominal, au pas du powergui) sont mis en commentaire pendant
-% la simulation. Chaque modele est ferme SANS etre enregistre, meme si la
-% simulation echoue : les fichiers .slx ne changent pas.
+% [P I D] (sortie de "PINN-PID Adaptatif"). Les To Workspace propres au
+% modele (y et x du modele nominal, au pas du powergui) sont mis en
+% commentaire pendant la simulation. Chaque modele est ferme SANS etre
+% enregistre, meme si la simulation echoue : les fichiers .slx ne changent
+% pas.
 %
 % LES GRANDEURS (memes definitions que banc_commun.py et Simuler_PINN_PID.m)
-% -------------------------------------------------------------------------
+% -----------------------------------------------------------------------
 %   Demarrage (0 a 50 ms) : temps de montee 10-90 V, depassement, temps
 %   d'etablissement dans +-1 V. De 30 ms a la fin : IAE, ecart maximal,
 %   ecart efficace (e = consigne - Vout ; la consigne vaut 100 + F1(t) dans
@@ -36,13 +41,20 @@
 %
 % CE QU'ON ATTEND
 % ---------------
-% Les memes resultats que le banc et que Buck_Commun_PINN_PID.slx sur S1,
-% S2 et S3, a quelques mV pres. Le PINN-PID adapte ses gains sur quelques
-% fenetres (7 sur S1, 13 sur S2 et S3 sur le banc) : pendant le demarrage
-% et apres chaque evenement. Chaque decision depend du seuil de 0.1 V sur
-% l'erreur efficace de la fenetre ; une fenetre proche du seuil peut
-% basculer et changer un peu les gains finaux. Deux petites differences de
-% circuit sont possibles :
+% Les memes resultats que le banc sur S1, S2 et S3. Gains : optimises sur
+% les fenetres de 0.5 a 4 ms dans les trois modeles, x(1.299, 0.900, 1.059)
+% de Ziegler-Nichols a la fin du demarrage ; puis, apres F1 (S2), a 50.5,
+% 51, 51.5, 70.5 et 71 ms, gains finaux x(1.247, 0.724, 1.009) ; apres F2
+% (S3), a 50.5, 51, 51.5, 70.5, 71 et 71.5 ms, gains finaux
+% x(1.488, 0.950, 1.159). Fenetres proches du seuil de 0.1 V sur l'erreur
+% efficace : 4 ms (0.1017 V ; si elle ne declenche pas, les gains restent a
+% x(1.349, 0.950, 1.109), Vout bouge de moins de 0.5 mV), 51.5 ms sur S2
+% (0.104 V) et 72 ms sur S3 (0.097 V, non declenchee). Ces modeles n'ont
+% ni bruit ni quantification de la mesure : ces decisions peuvent
+% basculer, et ce n'est pas un defaut du bloc si elles basculent (le
+% test de rejeu fait foi).
+% Deux autres petites differences sont possibles (chiffres calcules pour
+% l'ELM-PID, non recalcules pour le PINN-PID) :
 %   - modele F2 : 5.001 ohms au lieu de 5 ohms hors de la fenetre ; le banc
 %     prevoit +0.1 % d'IAE et une quinzaine de mV au plus d'ecart sur Vout
 %     prise toutes les ms, meme avec un modele parfait ;
@@ -57,9 +69,7 @@
 %   - une figure par modele : Vout et consigne, rapport cyclique, courant
 %     iL, gains (multiples de Ziegler-Nichols) ;
 %   - resultats_PINN_PID_Trois_Modeles.mat : meme format que les autres
-%     fichiers de resultats (codes S1, S2, S3), donc lisible par
-%     Afficher_Scenarios.m pour superposer ces modeles et
-%     Buck_Commun_PINN_PID.slx.
+%     fichiers de resultats (codes S1, S2, S3).
 %
 % ORDRE D'EXECUTION
 % -----------------
@@ -68,8 +78,7 @@
 %
 % Prerequis dans le dossier courant MATLAB : les trois modeles construits,
 % pinn_pid_adaptatif.m, pinn_pid_modele.mat, pinn_pid_reglages.mat,
-% predictions_banc_pinn_pid.json. Duree : deux a trois minutes. Compatible
-% R2024a.
+% predictions_banc_pinn_pid.json. Duree : cinq a dix minutes. Compatible R2024a.
 % ---------------------------------------------------------------------
 
 clear; clc;
@@ -78,10 +87,12 @@ clear; clc;
 ESSAIS = {'PINN_PID_Control',                     'S1', 'Nominal (ton modele)',          [],           false; ...
           'PINN_PID_Control_control_disturbance', 'S2', 'F1 a la consigne (ton modele)', [0.05, 0.07], true; ...
           'PINN_PID_Control_load_disturbance',    'S3', 'F2 (ton modele)',               [0.05, 0.07], false};
-NOM_SYS = 'PINN-PID Adaptatif';                    % bloc du PINN-PID
+NOM_SYS = 'PINN-PID Adaptatif';                    % bloc des gains [P I D]
+NOM_PID = 'PID Controller';                       % bloc dont la sortie est la commande
 TE = 1/(22000*10);                                % periode des enregistrements (s)
 TE_TXT = '1/(22000*10)';                          % la meme, en texte exact
 DUREE = 0.2;                                      % duree des trois modeles (s)
+K_ZN = [0.093910, 301.089, 7.3227e-6];            % Ziegler-Nichols (champs P, I, D du bloc, forme Parallel)
 FICHIER_RESULTATS = 'resultats_PINN_PID_Trois_Modeles.mat';
 
 % --- Prerequis ---
@@ -92,8 +103,6 @@ for f = [strcat(ESSAIS(:, 1)', '.slx'), {'pinn_pid_adaptatif.m', 'pinn_pid_model
     end
 end
 pred = jsondecode(fileread(fullfile(pwd, 'predictions_banc_pinn_pid.json')));
-reg = load(fullfile(pwd, 'pinn_pid_reglages.mat'));
-K_ZN = double(reg.K_DEPART(:)');                  % gains de depart (Ziegler-Nichols, forme incrementale), valeurs exactes du banc
 N = round(DUREE / TE) + 1;                        % instants k*Te, 0 compris (44 001)
 t_profil = (0:N-1)' * TE;
 
@@ -117,10 +126,10 @@ for i = 1:size(ESSAIS, 1)
     end
     src_pwm = source_entree_pwm(mdl);
     ajouter_enregistrement(mdl, [mdl '/Log Vout sc'], 'sc_log_v', TE_TXT, [mdl '/Vout'], 1);
-    ajouter_enregistrement(mdl, [mdl '/Log mu sc'], 'sc_log_mu', TE_TXT, sys, 1);
+    ajouter_enregistrement(mdl, [mdl '/Log mu sc'], 'sc_log_mu', TE_TXT, [mdl '/' NOM_PID], 1);
     ajouter_enregistrement(mdl, [mdl '/Log d sc'], 'sc_log_d', TE_TXT, src_pwm.bloc, src_pwm.port);
     ajouter_enregistrement(mdl, [mdl '/Log iL sc'], 'sc_log_iL', TE_TXT, [mdl '/iL'], 1);
-    ajouter_enregistrement(mdl, [mdl '/Log K sc'], 'sc_log_K', TE_TXT, sys, 2);
+    ajouter_enregistrement(mdl, [mdl '/Log K sc'], 'sc_log_K', TE_TXT, sys, 1);
     neutraliser_enregistrements_modele(mdl);
     t_debut = tic;
     try
@@ -164,7 +173,7 @@ for i = 1:size(ESSAIS, 1)
                                 'mu', mu, 'd', d, 'iL', iL, 'K', K, 'grandeurs', g, 'duree_calcul_s', duree_calcul, ...
                                 'us_par_pas', duree_calcul / N * 1e6); %#ok<SAGROW>
     fprintf('  Simulink : %s\n', resume(g));
-    fprintf('  temps de calcul : %.1f s ; gains finaux [%.5f %.4e %.4f] (depart [%.5f %.4e %.4f])\n', ...
+    fprintf('  temps de calcul : %.1f s ; gains finaux [%.5f %.4f %.4e] (Ziegler-Nichols [%.5f %.4f %.4e])\n', ...
             duree_calcul, K(end, 1), K(end, 2), K(end, 3), K_ZN(1), K_ZN(2), K_ZN(3));
     for j = 1:numel(g.evenements)
         ev = g.evenements(j);
@@ -223,9 +232,9 @@ for i = 1:size(ESSAIS, 1)
     ylabel(ax(2), 'rapport cyclique');
     plot(ax(3), t_ms, iL, 'LineWidth', 0.6);
     ylabel(ax(3), 'iL (A)');
-    plot(ax(4), t_ms, K(:, 1) / K_ZN(1), '-', 'LineWidth', 1.0, 'DisplayName', 'Kp');
-    plot(ax(4), t_ms, K(:, 2) / K_ZN(2), '--', 'LineWidth', 1.0, 'DisplayName', 'Ki');
-    plot(ax(4), t_ms, K(:, 3) / K_ZN(3), ':', 'LineWidth', 1.0, 'DisplayName', 'Kd');
+    plot(ax(4), t_ms, K(:, 1) / K_ZN(1), '-', 'LineWidth', 1.0, 'DisplayName', 'P');
+    plot(ax(4), t_ms, K(:, 2) / K_ZN(2), '--', 'LineWidth', 1.0, 'DisplayName', 'I');
+    plot(ax(4), t_ms, K(:, 3) / K_ZN(3), ':', 'LineWidth', 1.0, 'DisplayName', 'D');
     legend(ax(4), 'Location', 'best');
     ylabel(ax(4), 'gains / ZN');
     xlabel(ax(4), 'temps (ms)');
@@ -250,7 +259,7 @@ end
 
 function o = grandeurs(v, consigne, d, iL, evenements, Te)
     % Memes definitions que la fonction grandeurs de banc_commun.py (copie
-    % de Simuler_PINN_PID.m). Les numeros de pas commencent a 0 (comme en
+    % de Simuler_PINN_PID.m, la meme que Simuler_Fuzzy_PID.m). Les numeros de pas commencent a 0 (comme en
     % Python) ; l'indice MATLAB du pas n est n + 1.
     N = numel(v);
     n = (0:N-1)';

@@ -1,26 +1,37 @@
 %% SIMULER_PINN_PID.m
 %
-% COPIE DE Simuler_Scenarios.m (base commune, version 2.1) pour le PINN-PID,
-% faite comme Simuler_ELM_PID.m (valide chez Jean-Riche le 5 octobre 2026).
-% Seuls les trois reglages du debut changent : modele
-% Buck_Commun_PINN_PID.slx (Construction_PINN_PID.m), bloc
-% "PINN-PID Adaptatif" (sa deuxieme sortie, les gains, est enregistree et
-% comparee au banc), resultats attendus predictions_banc_pinn_pid.json
-% (banc_pinn_pid.py). Les resultats sont ecrits dans
+% COPIE DE ELM_PID/Simuler_ELM_PID.m (elle-meme copie de
+% Simuler_Fuzzy_PID.m et de Simuler_Scenarios.m, base commune 2.1) pour le
+% PINN-PID (meme montage que l'ELM-PID option B et le Fuzzy-PID).
+% Changent seulement les quatre reglages du debut : modele
+% Buck_Commun_PINN_PID.slx, bloc "PID Controller" dont la sortie est la
+% commande, resultats attendus predictions_banc_pinn_pid.json, et
+% BLOC_GAINS : les gains [P I D] sont enregistres a la sortie de
+% "PINN-PID Adaptatif" et compares au banc. Les resultats sont ecrits dans
 % resultats_Buck_Commun_PINN_PID.mat.
-% Ordre (PINN-PID) : entrainement_pinn.py ; estimation_etat_pinn.py ;
-% banc_pinn_pid.py ; Tester_PINN_PID_Rejeu.m ; Construction_PINN_PID.m ;
-% verifier_modele_pinn_pid.py ; ce script.
-% Duree : dix a trente minutes (le bloc MATLAB System tourne en execution
-% interpretee, 44 001 appels par essai de 0.2 s, et une optimisation de
-% 5 iterations sur 110 pas a chaque fenetre adaptee).
-% Ce qu'on attend : le PINN-PID adapte ses gains sur quelques fenetres
-% pendant le demarrage (Kp x1.27 a 30 ms sur le banc) et apres chaque
-% evenement ; chaque decision depend du seuil de 0.1 V sur l'erreur
-% efficace de la fenetre. Sur le banc, changer L ou C de 0.1 % ne change J
-% que de 0.678 a 0.687 et tous les evenements reviennent : on attend que
-% Simulink retrouve le banc a quelques mV pres sur S1 a S7b, et les memes
-% ordres de grandeur (gains finaux, IAE, retours) sur S8a, S8b et S9.
+% Ordre : banc_pinn_pid.py ; Tester_PINN_PID_Rejeu.m ;
+% Construction_PINN_PID.m ; verifier_modele_pinn_pid.py ; ce script.
+% Duree : vingt a quarante minutes (l'adaptateur tourne en execution
+% interpretee, 44 001 appels par essai de 0.2 s, et 5 iterations d'Adam
+% sur un horizon de 110 pas a chaque fenetre optimisee).
+% Ce qu'on attend (banc) : J = 0.757 ; tous les evenements reviennent dans
+% la bande ; les gains sont optimises sur 7 a 49 fenetres de 0.5 ms par
+% essai (194 en tout), pendant le demarrage (0.5 a 4 ms sur S1, x final
+% (1.299, 0.900, 1.059) de Ziegler-Nichols) et apres chaque evenement
+% (S3 finit a (1.488, 0.950, 1.159), S8b a (2.247, 1.000, 2.069), S9 a
+% (2.378, 1.000, 2.305)). Chaque decision depend du seuil de 0.1 V sur
+% l'erreur efficace de la fenetre : un ecart de quelques mV entre Simulink
+% et le banc peut faire apparaitre ou disparaitre une optimisation, et les
+% gains suivent alors un autre chemin (sur le banc, L ou C a +-0.1 % font
+% varier J de 0.748 a 0.763). Fenetres proches du seuil : 4 ms sur S1, S2,
+% S3 (0.1017 V) et S9 (0.1013 V) (si elle ne declenche pas sur S1, les
+% gains restent a x(1.349, 0.950, 1.109) et Vout bouge de moins de
+% 0.5 mV), 51.5 ms sur
+% S2 (0.104 V), 72 ms sur S3 (0.097 V, non declenchee) et 51 ms sur S9
+% (0.098 V, non declenchee). La validation du bloc est le test de rejeu
+% (Tester_PINN_PID_Rejeu.m). Ici, on attend : memes retours dans la bande,
+% memes ordres de grandeur des gains et des IAE, egalite point par point
+% jusqu'a la premiere decision qui bascule.
 %
 % Le reste de l'en-tete est celui de Simuler_Scenarios.m.
 %
@@ -120,8 +131,9 @@ clear; clc;
 
 % --- Les trois reglages propres a chaque methode ---
 MODELE = 'Buck_Commun_PINN_PID';                           % modele a simuler
-BLOC_REGULATEUR = 'PINN-PID Adaptatif';                    % bloc dont la sortie 1 est la commande
+BLOC_REGULATEUR = 'PID Controller';                       % bloc dont la sortie 1 est la commande
 FICHIER_PREDICTIONS = 'predictions_banc_pinn_pid.json';    % '' : pas de comparaison
+BLOC_GAINS = 'PINN-PID Adaptatif';                         % sortie 1 : gains [P I D] ('' : pas de gains a part)
 
 TE = 1/(22000*10);                                        % periode commune des enregistrements (s)
 TE_TXT = '1/(22000*10)';                                  % la meme, en texte exact pour Simulink
@@ -186,9 +198,18 @@ for i = 1:numel(codes)
     ajouter_enregistrement(MODELE, [MODELE '/Log d sc'], 'sc_log_d', TE_TXT, src_pwm.bloc, src_pwm.port);
     ajouter_enregistrement(MODELE, [MODELE '/Log iL sc'], 'sc_log_iL', TE_TXT, [MODELE '/iL'], 1);
     ph_reg = get_param(bloc_reg, 'PortHandles');
-    avec_gains = numel(ph_reg.Outport) >= 2;               % deuxieme sortie : gains d'une methode adaptative
-    if avec_gains
-        ajouter_enregistrement(MODELE, [MODELE '/Log K sc'], 'sc_log_K', TE_TXT, bloc_reg, 2);
+    if ~isempty(BLOC_GAINS)                                % gains sortis par un autre bloc (sortie 1)
+        if getSimulinkBlockHandle([MODELE '/' BLOC_GAINS]) == -1
+            close_system(MODELE, 0);
+            error('Bloc des gains introuvable : %s', BLOC_GAINS);
+        end
+        avec_gains = true;
+        ajouter_enregistrement(MODELE, [MODELE '/Log K sc'], 'sc_log_K', TE_TXT, [MODELE '/' BLOC_GAINS], 1);
+    else
+        avec_gains = numel(ph_reg.Outport) >= 2;           % deuxieme sortie : gains d'une methode adaptative
+        if avec_gains
+            ajouter_enregistrement(MODELE, [MODELE '/Log K sc'], 'sc_log_K', TE_TXT, bloc_reg, 2);
+        end
     end
     neutraliser_enregistrements_modele(MODELE);
     t_debut = tic;
@@ -283,7 +304,7 @@ for i = 1:numel(codes)
             n_k = min(size(Kb, 1), size(Ks, 1));
             ecart_K = max(max(abs(Ks(1:n_k, :) - Kb(1:n_k, :)) ./ abs(Kb(1:n_k, :))));
             fprintf(['  gains : ecart relatif maximal Simulink - banc (toutes les ms) %.2g ; gains finaux ' ...
-                     'Simulink [%.5f %.4e %.4f], banc [%.5f %.4e %.4f]\n'], ecart_K, K(end, 1), K(end, 2), ...
+                     'Simulink [%.5f %.4e %.4e], banc [%.5f %.4e %.4e]\n'], ecart_K, K(end, 1), K(end, 2), ...
                     K(end, 3), Kb(end, 1), Kb(end, 2), Kb(end, 3));
         end
         evb = gb.evenements;                              % structure, cellule ou vide selon jsondecode

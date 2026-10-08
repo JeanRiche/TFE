@@ -1,4 +1,4 @@
-Dossier de travail : /home/user/TFE/PINN_PID_B
+Dossier de travail : /home/user/TFE/PINN_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
 Gains de depart (Ziegler-Nichols, bloc PID parallele) : P = 0.093910, I = 3.010890e+02, D = 7.322700e-06
 Point de depart : marge minimale 24.93 deg et coupure maximale 1078 Hz aux coins nominaux ; marge minimale -3.1 deg a charge legere.
@@ -34,4 +34,4 @@ Point de depart : marge minimale 24.93 deg et coupure maximale 1078 Hz aux coins
     (2.378, 1.000, 2.378) :  48.0 deg,  2013 Hz,  31.6 dB ;   29.6 deg a charge legere
   Lecture : depuis le depart (1, 1, 1), P ne peut que monter, I ne peut que baisser, D ne peut que monter.
 
-  boite_gains_pinn_b.json ecrit. Duree totale : 32 s.
+  boite_gains_pinn.json ecrit. Duree totale : 32 s.

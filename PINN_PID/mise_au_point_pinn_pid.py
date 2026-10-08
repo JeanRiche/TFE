@@ -1,16 +1,15 @@
 # =============================================================================
-# mise_au_point_pinn_pid_c.py
+# mise_au_point_pinn_pid.py
 #
 # VERSION
-#   1 (8 octobre 2026), PINN-PID C (version B + corrections C1, C2, C3).
-#   Memes essais E1 a E4 que mise_au_point_elm_pid.py et
-#   mise_au_point_pinn_pid_b.py.
+#   1 (8 octobre 2026), PINN-PID, corrections candidates C1, C2, C3.
+#   Memes essais E1 a E4 que mise_au_point_elm_pid.py.
 #
 # OBJECTIF
 #   Choisir MECANIQUEMENT, sur les seuls essais de mise au point E1 a E4
 #   (points R, Vin absents des onze essais), la combinaison de corrections
-#   du PINN-PID C, selon la regle ecrite avant le calcul
-#   (regle_choix_pinn_c.json, criteres_pinn_pid.txt section 3) :
+#   du PINN-PID, selon la regle ecrite avant le calcul
+#   (regle_choix_correction_pinn.json, criteres_pinn_pid.txt) :
 #     1. controles : gradient de l'horizon (c = 0 et c = 1, faits au
 #        chargement du banc), fonctions et table de l'ensemble admissible
 #        identiques a celles de l'ELM-PID, identite sans adaptation (ecart 0
@@ -18,12 +17,12 @@
 #     2. les 8 combinaisons (aucune, C1, C2, C3, C1+C2, C1+C3, C2+C3,
 #        C1+C2+C3) sur E1 a E4 : IAE du demarrage et apres 30 ms, rapports a
 #        Ziegler-Nichols, critere, retours dans +-1 V, gains ;
-#     3. application de la regle ; ecriture de choix_combinaison_pinn_c.json,
+#     3. application de la regle ; ecriture de choix_correction_pinn.json,
 #        lu ensuite par banc_pinn_pid.py.
 #   Rien n'est execute sur les onze essais S1 a S9 ici.
 #
 # COMMENT LANCER CE SCRIPT
-#   python mise_au_point_pinn_pid_c.py      (quelques minutes)
+#   python mise_au_point_pinn_pid.py      (quelques minutes)
 # =============================================================================
 
 import os
@@ -38,12 +37,12 @@ except NameError:
 __file__ = os.path.join(DOSSIER_PINN, "banc_pinn_pid.py")
 with open(__file__, encoding="utf-8") as f:
     _SRC = f.read()
-exec(_SRC[:_SRC.index("# %% ETAPE 2 :")])   # banc commun, PINN, observateur, horizon, PINNPIDC, controles
+exec(_SRC[:_SRC.index("# %% ETAPE 2 :")])   # banc commun, PINN, observateur, horizon, PINNPID, controles
 
-with open(os.path.join(DOSSIER_PINN, "regle_choix_pinn_c.json"), "rb") as f:
+with open(os.path.join(DOSSIER_PINN, "regle_choix_correction_pinn.json"), "rb") as f:
     _octets = f.read()
 REGLE = json.loads(_octets.decode("utf-8"))
-print(f"Regle de choix lue : regle_choix_pinn_c.json, sha256 {hashlib.sha256(_octets).hexdigest()}")
+print(f"Regle de choix lue : regle_choix_correction_pinn.json, sha256 {hashlib.sha256(_octets).hexdigest()}")
 
 
 # %% ETAPE 1 : essais de mise au point E1 a E4 (definitions de mise_au_point_elm_pid.py)
@@ -86,12 +85,12 @@ titre("ETAPE 1 : identite sans adaptation (E1 a E4)")
 zn = evaluer(lambda: PIDClassique(), essais=ESSAIS_E)
 ECART_ID = 0.0
 for corr in ((), ("C1", "C2", "C3")):
-    fige = evaluer(lambda: PINNPIDC(adapter=False, corrections=corr), essais=ESSAIS_E)
+    fige = evaluer(lambda: PINNPID(adapter=False, corrections=corr), essais=ESSAIS_E)
     ECART_ID = max(ECART_ID, max(float(np.max(np.abs(fige[c]["sim"]["d"] - zn[c]["sim"]["d"]))) for c in ESSAIS_E))
-print(f"  PINN-PID C sans adaptation (sans correction et avec C1+C2+C3) contre Ziegler-Nichols, ecart maximal "
+print(f"  PINN-PID sans adaptation (sans correction et avec C1+C2+C3) contre Ziegler-Nichols, ecart maximal "
       f"sur d : {ECART_ID:.1e}")
 if ECART_ID != 0.0:
-    raise RuntimeError("Sans adaptation, le PINN-PID C ne redonne pas le PID de Ziegler-Nichols.")
+    raise RuntimeError("Sans adaptation, le PINN-PID ne redonne pas le PID de Ziegler-Nichols.")
 
 
 # %% ETAPE 2 : les 8 combinaisons sur E1 a E4
@@ -112,7 +111,7 @@ T_ZN = {c: iae(zn[c]) for c in ESSAIS_E}
 TABLEAU = {}
 for comb in REGLE["combinaisons"]:
     comb = tuple(comb)
-    res = evaluer(lambda: PINNPIDC(corrections=comb), essais=ESSAIS_E)
+    res = evaluer(lambda: PINNPID(corrections=comb), essais=ESSAIS_E)
     rapports, lignes, non, hors = [], [], [], 0
     for sc in E:
         c = sc["code"]
@@ -142,17 +141,17 @@ for comb in REGLE["combinaisons"]:
 
 # %% ETAPE 3 : application mecanique de la regle
 
-titre("ETAPE 3 : choix (regle_choix_pinn_c.json)")
+titre("ETAPE 3 : choix (regle_choix_correction_pinn.json)")
 admis = {n: t for n, t in TABLEAU.items() if not t["non_revenus"]}
 meilleur = min(t["critere"] for t in admis.values())
 proches = {n: t for n, t in admis.items() if t["critere"] <= (1.0 + REGLE["tolerance_relative"]) * meilleur}
 retenue = min(proches, key=lambda n: (len(proches[n]["corrections"]), proches[n]["critere"]))
 print(f"  Meilleur critere {meilleur:.4f} ; a 1 % pres : " + ", ".join(f"{n} ({t['critere']:.4f})" for n, t in proches.items()))
 print(f"  Combinaison retenue : {retenue} (critere {TABLEAU[retenue]['critere']:.4f})")
-with open(os.path.join(DOSSIER_PINN, "choix_combinaison_pinn_c.json"), "w", encoding="utf-8") as f:
+with open(os.path.join(DOSSIER_PINN, "choix_correction_pinn.json"), "w", encoding="utf-8") as f:
     json.dump({"date": "2026-10-08", "regle_sha256": hashlib.sha256(_octets).hexdigest(),
                "combinaison_retenue": TABLEAU[retenue]["corrections"], "nom": retenue,
                "meilleur_critere": meilleur, "a_1_pct": list(proches), "ecart_identite_ZN": ECART_ID,
                "ecart_gradient": ECART_GRAD, "ecart_gradient_saturation": ECART_GRAD_SAT,
                "ecart_gradient_C2": ECART_GRAD_C2, "tableau": TABLEAU}, f, indent=1)
-print("  choix_combinaison_pinn_c.json ecrit.")
+print("  choix_correction_pinn.json ecrit.")

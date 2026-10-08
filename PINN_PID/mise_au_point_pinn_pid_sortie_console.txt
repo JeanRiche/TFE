@@ -1,16 +1,16 @@
-Dossier de travail : /home/user/TFE/PINN_PID_C
+Dossier de travail : /home/user/TFE/PINN_PID
 11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
 Ensemble admissible de l'ELM-PID (C3) : 33^3 points, 35.2% admissibles ; table et fonctions identiques a ELM_PID.
 Boite (multiplicateurs de ZN) : P de 1.000 a 2.378, I de 0.250 a 1.000, D de 1.000 a 2.378 ; depart a Ziegler-Nichols (1, 1, 1).
 PINN : 3 couches cachees de 32 neurones (candidat A, plage nominale).
 Vecteurs de test du PINN : ecart maximal 6.4e-16.
 Gradient de l'horizon contre differences finies : ecart relatif maximal 4.4e-07 (hors saturation), 9.0e-08 (pente 0 ; pas en butee / pas sous clamping sur 110 : 9 / 9, 28 / 28) ; avec C2 (centre (1, 1, 1)) 4.3e-07.
-Regle de choix lue : regle_choix_pinn_c.json, sha256 d738f1fbc6e826d17536401220f74f828d4605a69d62add7867ae2442a85757c
+Regle de choix lue : regle_choix_correction_pinn.json, sha256 d738f1fbc6e826d17536401220f74f828d4605a69d62add7867ae2442a85757c
 
 ==============================================================================
  ETAPE 1 : identite sans adaptation (E1 a E4)
 ==============================================================================
-  PINN-PID C sans adaptation (sans correction et avec C1+C2+C3) contre Ziegler-Nichols, ecart maximal sur d : 0.0e+00
+  PINN-PID sans adaptation (sans correction et avec C1+C2+C3) contre Ziegler-Nichols, ecart maximal sur d : 0.0e+00
 
 ==============================================================================
  ETAPE 2 : les 8 combinaisons sur E1 a E4 (IAE en mV.s)
@@ -57,12 +57,8 @@ Regle de choix lue : regle_choix_pinn_c.json, sha256 d738f1fbc6e826d17536401220f
     E4 demarrage  82.34 (0.980), apres 30 ms   0.98 (0.687) ; optimise sur   9/120 fenetres ; x final (1.459, 1.273, 1.267) ; apres 30 ms P 1.46-1.46, I 1.27-1.27, D 1.27-1.27
 
 ==============================================================================
- ETAPE 3 : choix (regle_choix_pinn_c.json)
+ ETAPE 3 : choix (regle_choix_correction_pinn.json)
 ==============================================================================
   Meilleur critere 0.7582 ; a 1 % pres : C1 (0.7582), C1+C2 (0.7649), C1+C3 (0.7618)
   Combinaison retenue : C1 (critere 0.7582)
-  choix_combinaison_pinn_c.json ecrit.
-
-real	0m25.369s
-user	1m24.894s
-sys	0m1.457s
+  choix_correction_pinn.json ecrit.

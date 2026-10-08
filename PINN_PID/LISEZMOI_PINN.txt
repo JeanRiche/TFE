@@ -1,58 +1,107 @@
-PINN-PID : PID AUTO-ADAPTATIF A PREDICTEUR PINN (7 octobre 2026)
-================================================================
+PINN-PID : PID AUTO-ADAPTATIF A PREDICTEUR PINN (8 octobre 2026)
+=================================================================
+Bloc PID parallele commun aux autres methodes. Cout et optimisation
+d'Ito et Wasa (arXiv:2510.04591) : iteration en temps reel, 5 iterations
+d'Adam par fenetre de 0.5 ms, depart a chaud. L'optimisation n'a lieu que
+si l'erreur efficace de la fenetre depasse 0.1 V (meme seuil de zone
+morte que l'ELM-PID).
+Resultat sur le banc : J = 0.757. Pas encore teste sous MATLAB/Simulink.
+Historique : les versions anterieures du PINN-PID ne sont gardees que dans
+l'historique git du depot.
 
 DOSSIER COMPLET ET AUTONOME : il contient la base commune v2.1 (modele
 Buck_Commun.slx, tes trois modeles de base, essais, banc Python), les
-donnees d'apprentissage Simulink, le PINN et tout le PINN-PID. Dezippe-le
-dans un dossier vide, fais de ce dossier le dossier courant MATLAB. Ne
-garde pas les dossiers ELM, FUZZY ou PSO sur le chemin MATLAB en meme temps
-(memes noms de fichiers de base).
+donnees d'apprentissage Simulink, le PINN et tout le PINN-PID.
+Dezippe-le dans un dossier vide, fais de ce dossier le dossier courant
+MATLAB, et lance les etapes ci-dessous. Ne garde pas les dossiers ELM,
+FUZZY ou PSO sur le chemin MATLAB en meme temps (memes noms de fichiers).
+Le bloc pinn_pid_adaptatif.m n'accepte que des reglages de VERSION 3
+(pinn_pid_reglages.mat de ce dossier).
 
-LA VERSION RETENUE EST CELLE DU 5 OCTOBRE, DEJA VALIDEE DANS SIMULINK
-  Le bloc pinn_pid_adaptatif.m, pinn_pid_reglages.mat, les predictions et
-  les scripts Simulink sont exactement ceux qui ont produit tes resultats
-  du 5 octobre (onze essais et trois modeles de base, conformes au banc).
-  Rien n'est a relancer dans MATLAB. Le 7 octobre, on a seulement verifie
-  que la boite des gains ne limitait pas la methode (variante "ensemble
-  admissible", section 6 de criteres_pinn_pid.txt) : elle ne la limite pas,
-  la variante n'est pas retenue.
-
-A LIRE D'ABORD : criteres_pinn_pid.txt (le regulateur)
-  Methode (Ito et Wasa 2025) et sa mise en oeuvre, ecarts declares,
-  previsions et resultats, verification de la boite, validation Simulink,
-  lecture pour le memoire, references.
+A LIRE D'ABORD : criteres_pinn_pid.txt
+  Ce qui est repris de l'article, ecarts declares et leurs raisons,
+  controles, choix de la correction sur E1 a E4, previsions, resultats,
+  et la section 8 (Simulink : montage, controles faits sans MATLAB, ce
+  qu'on attend).
 Et : criteres_etape2_pinn.txt (choix et apprentissage du PINN),
 criteres_etape3_estimation.txt (ce qu'on peut estimer a partir de Vout).
 
-ORDRE D'EXECUTION (tout est deja fait ; pour refaire)
------------------------------------------------------
-Python : excitation_donnees_elm.py (donnees : MATLAB Construction_Modele_
-Donnees_ELM, verifier_modele_donnees_elm.py, Generer_Donnees_ELM) ;
-entrainement_pinn.py ; estimation_etat_pinn.py ; banc_pinn_pid.py (six a
-huit minutes).
-MATLAB (deja passe le 5 octobre) : Tester_PINN_PID_Rejeu ;
-Construction_PINN_PID ; python verifier_modele_pinn_pid.py ;
-Simuler_PINN_PID ; Construction_PINN_PID_Trois_Modeles ;
-python verifier_modeles_pinn_pid_trois.py ; Simuler_PINN_PID_Trois_Modeles.
-Variante (facultatif) : ensemble_gains_pinn.py (trois minutes), puis
-variante_ensemble_admissible_pinn.py (deux minutes).
+LA METHODE EN BREF
+- Le PID est le bloc "PID Controller" de la base commune (le meme que
+  Ziegler-Nichols, PSO-PID, Fuzzy-PID et ELM-PID), passe en gains
+  externes. Sans adaptation, c'est exactement le PID de Ziegler-Nichols.
+- L'adaptateur PINN (bloc MATLAB System) lit l'erreur, la mesure et la
+  commande. Un filtre de Kalman etendu estime Vout, iL et Vin. A la fin
+  de chaque fenetre de 0.5 ms ou l'erreur efficace depasse 0.1 V, il
+  simule 110 pas avec le PINN et le bloc PID, et fait 5 iterations d'Adam
+  sur les multiplicateurs des gains de Ziegler-Nichols ; cout
+  1/2 (e^2 + 1e-5 u^2) + 1e-3 |x|^2 ; projection sur la boite
+  (boite_gains_pinn.json).
 
-CE QUE DONNE LE BANC (et Simulink, le 5 octobre)
-------------------------------------------------
-- Cout J : PINN-PID 0.684 ; R0 (meme loi, gains figes) 0.917 ;
+ORDRE D'EXECUTION
+-----------------
+Deja fait en Python (ne pas relancer sans raison) :
+  donnees d'apprentissage (donnees_elm_*.mat, deja fournies) ;
+  python entrainement_pinn.py (PINN, pinn_pid_modele.mat) ;
+  python estimation_etat_pinn.py (observateur) ;
+  python boite_gains_pinn.py (boite des gains) ;
+  python mise_au_point_pinn_pid.py (controles, choix de la correction
+  sur E1 a E4) ;
+  python banc_pinn_pid.py (jugement sur les onze essais, dix a vingt
+  minutes ; ecrit aussi les fichiers lus par MATLAB).
+A lancer dans MATLAB (dossier courant = ce dossier) :
+1. Tester_PINN_PID_Rejeu
+   Donne a l'adaptateur MATLAB les memes entrees que le banc (e, mesure,
+   u), pas par pas, sur S1, S3, S7b, S8b et S9. Fin attendue : chaque essai
+   "identique" (gains a 1e-9 pres, observateur a 1e-9 pres, aucune
+   decision de fenetre differente, copie du PID egale a u).
+   C'EST LA VALIDATION DU BLOC : si un essai est "DIFFERENT", arrete-toi et
+   envoie la sortie.
+2. Construction_PINN_PID
+   Copie Buck_Commun.slx en Buck_Commun_PINN_PID.slx, passe le PID en gains
+   externes et branche l'adaptateur (meme montage que l'ELM-PID). Auto-tests :
+   T0 (sans adaptation = PID classique, 0.1 V), T1 (20 ms de S1 : 0.05 V,
+   gains a 1 %), T2 (S8b). Une NOTE sur les gains de T1 est possible (voir
+   plus bas) ; ce n'est pas une erreur.
+3. python verifier_modele_pinn_pid.py
+   Fin attendue : "RESULTAT : Buck_Commun_PINN_PID.slx est conforme."
+4. Simuler_PINN_PID
+   Onze essais, comparaison au banc. Vingt a quarante minutes.
+5. Construction_PINN_PID_Trois_Modeles
+   Tes trois modeles de base -> PINN_PID_Control.slx,
+   PINN_PID_Control_control_disturbance.slx, PINN_PID_Control_load_disturbance.slx.
+6. python verifier_modeles_pinn_pid_trois.py
+   Fin attendue : "RESULTAT : les trois modeles sont conformes."
+7. Simuler_PINN_PID_Trois_Modeles
+   Nominal, F1, F2 compares a S1, S2, S3 du banc ; une figure par modele,
+   avec les gains.
+
+Envoie-moi la sortie console des etapes 1 a 7. Si une etape s'arrete sur
+une erreur, envoie-la telle quelle sans passer a la suivante.
+Aucun script MATLAB n'a pu etre execute ici (pas de MATLAB). Ce qui a ete
+controle sans MATLAB : le rejeu emule en Python (transcription ligne a
+ligne du bloc) a partir du fichier de reference redonne les gains, les
+decisions et l'observateur du banc a l'identique ; les deux verificateurs
+ont ete passes sur des modeles fabriques (conformes, puis avec deux
+entrees de l'adaptateur inversees : rejete).
+
+CE QUE SIMULINK DOIT DONNER (banc)
+----------------------------------
+- Cout J : PINN-PID 0.757 (0.702 apres 30 ms, 0.942 au demarrage) ;
   Ziegler-Nichols 1.000 ; meilleur PID fige sur grille 0.738.
-- Tous les evenements reviennent dans la bande ; les gains changent dans
-  les trois cas de base (S1 7 fenetres, S2 13, S3 13).
-- Simulink : IAE a 0.1 % pres du banc (S7a 1.8 %), memes gains finaux.
-
-CE QU'IL FAUDRA ECRIRE DANS LE MEMOIRE
---------------------------------------
-- Le PINN-PID a le plus petit J, mais son avance vient surtout du
-  demarrage, que la meme loi sans adaptation (R0) a deja : apres 30 ms,
-  0.694 contre 0.710 pour le meilleur PID fige.
-- La precision du predicteur compte peu (modele faux : 0.692 a 0.694) ; le
-  seuil compte beaucoup (sans lui : 0.745).
-- La boite des gains ne limite pas la methode (variante : 0.692).
+- Tous les evenements reviennent dans la bande, S8b et S9 compris.
+- Gains : optimises sur les fenetres de 0.5 a 4 ms au demarrage, arrivee a
+  x(1.299, 0.900, 1.059) de Ziegler-Nichols sur S1 ; puis apres chaque
+  evenement (S2 finit a x(1.247, 0.724, 1.009), S3 a x(1.488, 0.950, 1.159),
+  S8b a x(2.247, 1.000, 2.069), S9 a x(2.378, 1.000, 2.305)).
+- Chaque decision depend du seuil de 0.1 V. La fenetre de 4 ms est a
+  0.1017 V : si elle ne declenche pas sous Simulink, les gains restent a
+  x(1.349, 0.950, 1.109), Vout bouge de moins de 0.5 mV, et T1 l'affiche
+  en NOTE. On attend les memes retours, les memes ordres de grandeur, et
+  l'egalite point par point jusqu'a la premiere decision qui bascule.
+- Duree : l'adaptateur tourne en execution interpretee ; chaque fenetre
+  optimisee coute 5 horizons de 110 pas du PINN (194 fenetres sur les
+  onze essais).
 
 FICHIERS
 --------
@@ -67,21 +116,27 @@ excitation_donnees_elm.py, scenario_ELM_A1/A2/V1/V2.mat, predictions_banc_donnee
 Construction_Modele_Donnees_ELM.m, verifier_modele_donnees_elm.py, Generer_Donnees_ELM.m,
 donnees_elm_ELM_A1/A2/V1/V2.mat
 
-PINN (etapes 2 et 3)
+PINN et observateur (etapes 2 et 3)
 criteres_etape2_pinn.txt, entrainement_pinn.py, entrainement_pinn_resultats.json,
 entrainement_pinn_complet_resultats.json, pinn_candidat_A/B_complete/nominale.npz,
 pinn_pid_modele.mat ; criteres_etape3_estimation.txt, estimation_etat_pinn.py,
 estimation_etat_pinn.json
 
-PINN-PID (etape 4)
-criteres_pinn_pid.txt                       methode, ecarts, resultats, verification, references
-boite_gains_elm.json                        boite des gains admissibles
+PINN-PID
+criteres_pinn_pid.txt                       methode, ecarts, correction, previsions, resultats, Simulink
+boite_gains_pinn.py, boite_gains_pinn.json,
+boite_gains_pinn_sortie_console.txt         boite des gains
+ensemble_gains_elm.mat, ensemble_gains_elm.json   ensemble admissible de l'ELM-PID (candidate C3,
+                                            non retenue ; lue par le banc pour les ablations)
+regle_choix_correction_pinn.json            regle de choix ecrite avant le calcul (gardee telle
+                                            quelle : sa note cite les noms de fichiers de l'epoque)
+mise_au_point_pinn_pid.py, mise_au_point_pinn_pid_sortie_console.txt,
+choix_correction_pinn.json                  controles et choix de la correction sur E1 a E4
+previsions_pinn_pid.json                    bornes des previsions (gardees telles quelles)
 banc_pinn_pid.py, banc_pinn_pid_sortie_console.txt, banc_pinn_pid_resultats.json,
 banc_pinn_pid.png                           jugement sur les onze essais
-pinn_pid_adaptatif.m, pinn_pid_reglages.mat le bloc MATLAB et ses reglages
+pinn_pid_adaptatif.m, pinn_pid_reglages.mat le bloc MATLAB et ses reglages (VERSION 3)
 predictions_banc_pinn_pid.json, reference_rejeu_pinn_pid.mat   ce que Simulink doit retrouver
 Tester_PINN_PID_Rejeu.m, Construction_PINN_PID.m, verifier_modele_pinn_pid.py, Simuler_PINN_PID.m
 Construction_PINN_PID_Trois_Modeles.m, verifier_modeles_pinn_pid_trois.py,
 Simuler_PINN_PID_Trois_Modeles.m
-Variante (section 6) : ensemble_gains_pinn.py, ensemble_gains_pinn.json, ensemble_gains_pinn.mat,
-variante_ensemble_admissible_pinn.py, variante_ensemble_admissible_pinn_sortie_console.txt

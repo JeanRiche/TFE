@@ -1,14 +1,14 @@
 # =============================================================================
-# boite_gains_pinn_b.py
+# boite_gains_pinn.py
 #
 # VERSION
-#   1 (8 octobre 2026), PINN-PID B (bloc PID parallele de la base commune).
+#   1 (8 octobre 2026), PINN-PID (bloc PID parallele de la base commune).
 #   Copie de boite_gains_elm.py (version 1 du 4 octobre 2026, archive
 #   ELM2.zip), dont seule la loi change : la regle, la grille, la recherche
 #   de la plus grande boite et les controles sont inchanges.
 #
 # OBJECTIF
-#   Construire la boite des gains admissibles du PINN-PID B : le pave dans
+#   Construire la boite des gains admissibles du PINN-PID : le pave dans
 #   lequel Adam a le droit de deplacer les gains P, I, D du bloc PID.
 #   Gains figes en un point de la boite, la boucle garde, sur la plage
 #   nominale, une marge de phase au moins egale a celle du regulateur de
@@ -48,13 +48,13 @@
 # FICHIERS
 #   Lus : banc_commun.py, scenarios_communs.json et scenario_S*.mat (lus par
 #     le banc commun ; aucun essai n'est simule ici).
-#   Ecrit : boite_gains_pinn_b.json.
+#   Ecrit : boite_gains_pinn.json.
 #
 # COMMENT LANCER CE SCRIPT
-#   python boite_gains_pinn_b.py      (moins d'une minute)
+#   python boite_gains_pinn.py      (moins d'une minute)
 #
-# ORDRE D'EXECUTION (PINN-PID B)
-#   1. ce script ; 2. mise_au_point_pinn_pid_b.py ; 3. banc_pinn_pid.py.
+# ORDRE D'EXECUTION
+#   1. ce script ; 2. mise_au_point_pinn_pid.py ; 3. banc_pinn_pid.py.
 # =============================================================================
 
 
@@ -276,6 +276,6 @@ resultat = {"version": 1, "date": "2026-10-08",
             "grille_fine": {"marge_minimale_deg": pire_marge, "coupure_maximale_Hz": pire_fc, "reglages": n_fin},
             "coins_boite": coins_boite, "bornes_fixees_par_la_grille": borne_grille,
             "volume_max": int(VOLUME_MAX), "paves_admissibles": len(paves), "sens_depuis_depart": SENS}
-with open(os.path.join(DOSSIER_PINN, "boite_gains_pinn_b.json"), "w", encoding="utf-8") as f:
+with open(os.path.join(DOSSIER_PINN, "boite_gains_pinn.json"), "w", encoding="utf-8") as f:
     json.dump(resultat, f, indent=1)
-print(f"\n  boite_gains_pinn_b.json ecrit. Duree totale : {time.time() - T_DEBUT:.0f} s.")
+print(f"\n  boite_gains_pinn.json ecrit. Duree totale : {time.time() - T_DEBUT:.0f} s.")
