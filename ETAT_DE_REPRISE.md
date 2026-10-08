@@ -1,8 +1,12 @@
 # État de reprise — TFE PID auto-adaptatif (ELM) et comparaison
 
-*Rédigé le 8 octobre 2026. Dépôt `jeanriche/tfe`, branche `claude/clever-newton-1t2wt7`, dernier commit avant ce fichier : `Diagnostic : pourquoi ELM-PID et PINN-PID rejettent moins bien les perturbations…` (8 octobre, 02:20).*
+*Mis à jour le 8 octobre 2026 (versions finales). Dépôt `jeanriche/tfe`, branche `claude/clever-newton-1t2wt7`.*
 
 Base commune v2.1 pour tout ce qui suit : circuit L = 10 mH, C = 47 µF, R = 5 Ω, Vin = 200 V, fs = 22 kHz, régulateur à Tc = 1/220 000 s. Il y a onze essais (S1 à S9, S7a/b, S8a/b). Le coût **J** est la moyenne de 13 rapports d'IAE à Ziegler-Nichols : 10 termes d'IAE de 30 ms à la fin (S1, S3–S9) et 3 termes d'IAE de démarrage (S1, S8a, S8b). Banc : `banc_commun.py`.
+
+**En bref (8 oct.).** Les cinq méthodes sont figées : Ziegler-Nichols, PSO-PID (J = 0.714), Fuzzy-PID (0.877), ELM-PID option B (0.746), PINN-PID final (0.757). Les chiffres de référence sont ceux du banc Python. Scénarios du corps : S1, S2, S3, S8a. Reste à faire : Simulink de l'ELM-PID et du PINN-PID (Jean-Riche), puis la rédaction.
+
+Dossiers de premier niveau : `COMPARAISON/`, `ELM_PID/` (retenu), `ELM_PID_INCREMENTAL/` (chapitre 4), `FUZZY_PID/`, `PINN_PID/` (version finale seule), `PSO_PID/`, `REDACTION/`, plus les archives et documents versés par Jean-Riche. Les versions abandonnées (`PINN_PID` du 5 octobre, `PINN_PID_B`, `PINN_PID_C` sous ce nom, `ELM_PID_B2`) ne sont plus que dans l'historique git.
 
 ---
 
@@ -32,8 +36,8 @@ Les copies de la base commune présentes dans chaque dossier sont identiques et 
 | `Construction_Fuzzy_PID.m`, `verifier_modele_fuzzy_pid.py`, `Simuler_Fuzzy_PID.m`, `predictions_banc_fuzzy_pid.json` | modèle commun, 11 essais | SIMULINK (6 oct. : IAE à 0.2 % près ; S7a +4.8 %) |
 | `Construction_Fuzzy_PID_Trois_Modeles.m`, `verifier_modeles_fuzzy_pid_trois.py`, `Simuler_Fuzzy_PID_Trois_Modeles.m` | nominal, F1, F2 | SIMULINK (6 oct. : 1.49 / 2.43 / 7.96 mV·s contre 1.49 / 2.43 / 7.94 au banc) |
 | `Diagnostic_T1_Fuzzy.m`, `comparer_diagnostic_T1.py`, `diagnostic_T1_fuzzy.mat` | diagnostic de l'auto-test T1 | SIMULINK (6 oct.) |
-| `LISEZMOI_FUZZY.txt` | mode d'emploi | document |
-| `banc_elm_pid_resultats.json`, `banc_pinn_pid_resultats.json` | copies pour le rappel des autres méthodes | **périmé** : ELM 0.784 (ancienne version), voir §6 |
+| `LISEZMOI_FUZZY.txt` | mode d'emploi | document (rappels ELM et PINN corrigés le 8 oct.) |
+| `banc_elm_pid_resultats.json`, `banc_pinn_pid_resultats.json` | copies pour le rappel des autres méthodes | copies des versions finales (ELM 0.746, PINN 0.757), rafraîchies le 8 oct. |
 
 ### 2.2 `PSO_PID/` — PSO-PID (essaim de Gaing 2004, coût modifié)
 
@@ -46,8 +50,8 @@ Les copies de la base commune présentes dans chaque dossier sont identiques et 
 | `verifier_pso_pid.py` | vérificateur du modèle commun | VÉRIF-FAB |
 | `Construction_PSO_PID_Trois_Modeles.m`, `Simuler_PSO_PID_Trois_Modeles.m` | trois modèles de base | **NON TESTÉ** |
 | `verifier_modeles_pso_pid_trois.py` | vérificateur des trois modèles | VÉRIF-FAB |
-| `LISEZMOI_PSO.txt` | mode d'emploi | document ; rappel « ELM-PID 0.784 » **périmé** |
-| `banc_elm_pid_resultats.json`, `banc_pinn_pid_resultats.json`, `banc_fuzzy_pid_resultats.json` | copies pour le rappel | ELM **périmé** (0.784) |
+| `LISEZMOI_PSO.txt` | mode d'emploi | document (rappels ELM 0.746 et PINN 0.757 corrigés le 8 oct.) |
+| `banc_elm_pid_resultats.json`, `banc_pinn_pid_resultats.json`, `banc_fuzzy_pid_resultats.json` | copies pour le rappel | copies des versions finales (8 oct.) |
 
 ### 2.3 `ELM_PID/` — ELM-PID option B (8 oct. : bloc PID commun à gains externes, M1–M4)
 
@@ -67,35 +71,42 @@ Les copies de la base commune présentes dans chaque dossier sont identiques et 
 
 Ancien dossier `ELM_PID` renommé tel quel le 8 oct. (J = 0.728, validé SIMULINK le 7 oct., sauf les trois modèles de base jamais lancés). Seule modification : note en tête de `LISEZMOI_ELM.txt`. Les scripts de `COMPARAISON/diagnostic_lois/` le lisent.
 
-### 2.4 `PINN_PID/` — PINN-PID (Ito & Wasa 2025), version du 5 octobre conservée
+### 2.4 `PINN_PID/` — PINN-PID final (Ito & Wasa 2025, arXiv:2510.04591)
+
+Bloc PID commun à gains externes ; coût (éq. 13) et Adam d'Ito et Wasa en itération temps réel (5 itérations par fenêtre de 0.5 ms) ; projection sur une boîte ; observateur (EKF) car seule Vout est mesurée ; zone morte de 0.1 V sur l'erreur efficace de la fenêtre (même seuil que l'ELM-PID), choisie après un premier calcul sans elle parmi trois corrections testées sur E1–E4.
 
 | Fichier | Rôle | Statut |
 |---|---|---|
-| `criteres_pinn_pid.txt` | document unique : méthode, écarts E1–E7, résultats, vérification de la boîte (§6), validation Simulink | document (réécrit le 7 oct.) |
-| `criteres_etape2_pinn.txt`, `criteres_etape3_estimation.txt`, `entrainement_pinn*.{py,json}`, `pinn_candidat_*.npz`, `pinn_pid_modele.mat`, `estimation_etat_pinn.{py,json}` | PINN et estimation de l'état (5 oct.) | BANC |
-| `banc_pinn_pid.py` (seul un commentaire modifié le 7 oct.), `banc_pinn_pid_resultats.json`, `banc_pinn_pid.png`, `predictions_banc_pinn_pid.json`, `pinn_pid_reglages.mat`, `reference_rejeu_pinn_pid.mat` | jugement (J = 0.684) | BANC (relancé le 7 oct. : identique bit à bit) + SIMULINK (5 oct.) |
-| `banc_pinn_pid_sortie_console.txt` | sortie du banc relancé le 7 oct. | BANC |
-| `pinn_pid_adaptatif.m`, `Tester_PINN_PID_Rejeu.m`, `Construction_PINN_PID.m`, `verifier_modele_pinn_pid.py`, `Simuler_PINN_PID.m`, `Construction_PINN_PID_Trois_Modeles.m`, `verifier_modeles_pinn_pid_trois.py`, `Simuler_PINN_PID_Trois_Modeles.m` | chaîne Simulink | SIMULINK (5 oct. ; preuves : `resultats_Buck_Commun_PINN_PID.mat` et `resultats_PINN_PID_Trois_Modeles.mat` de l'archive `PINN1.zip`, relus le 7 oct. ; la console du rejeu n'a pas été revue dans ces séances) |
-| `boite_gains_elm.json` | boîte des gains | BANC + SIMULINK (5 oct.) |
-| `ensemble_gains_pinn.py`, `.mat`, `.json`, `variante_ensemble_admissible_pinn.py`, `…_sortie_console.txt` | variante non retenue (§6 du document) | BANC |
-| `LISEZMOI_PINN.txt` | mode d'emploi | document |
+| `criteres_pinn_pid.txt` | document unique : reprise de l'article (pages, équations), écarts déclarés, contrôles, choix de la correction, prévisions, résultats, Simulink | document (réécrit le 8 oct.) |
+| `criteres_etape2_pinn.txt`, `criteres_etape3_estimation.txt`, `entrainement_pinn*.{py,json}`, `pinn_candidat_*.npz`, `pinn_pid_modele.mat`, `estimation_etat_pinn.{py,json}` | PINN et estimation de l'état (5 oct.) | BANC (données d'apprentissage : SIMULINK) |
+| `boite_gains_pinn.py`, `.json`, `…_sortie_console.txt` | boîte des gains pour le bloc parallèle | BANC (relancé le 8 oct. : JSON identique) |
+| `regle_choix_correction_pinn.json`, `previsions_pinn_pid.json` | règle et prévisions commitées avant le calcul | gardées octet pour octet |
+| `mise_au_point_pinn_pid.py`, `…_sortie_console.txt`, `choix_correction_pinn.json` | contrôles et choix de la correction sur E1–E4 (C1) | BANC (relancé le 8 oct. : identique) |
+| `banc_pinn_pid.py`, sorties, `predictions_banc_pinn_pid.json`, `pinn_pid_reglages.mat` (VERSION 3), `reference_rejeu_pinn_pid.mat` | jugement sur les onze essais (J = 0.757) | BANC (relancé le 8 oct. après renommage : mêmes chiffres) |
+| `ensemble_gains_elm.mat`, `.json` | ensemble de l'ELM-PID (candidate C3, ablations) | copie de `ELM_PID` |
+| `pinn_pid_adaptatif.m` v3 | adaptateur : (e, mesure, u) → [P I D] | **NON TESTÉ** sous MATLAB ; rejeu émulé en Python identique (8 oct.) |
+| `Tester_PINN_PID_Rejeu.m`, `Construction_PINN_PID.m`, `Simuler_PINN_PID.m`, les trois scripts « Trois_Modeles » | chaîne Simulink, même montage que l'ELM-PID | **NON TESTÉ** sous MATLAB |
+| `verifier_modele_pinn_pid.py`, `verifier_modeles_pinn_pid_trois.py` | vérificateurs | VÉRIF-FAB |
+| `LISEZMOI_PINN.txt` | mode d'emploi, ordre d'exécution MATLAB | document |
 
 ### 2.5 `COMPARAISON/`
 
 | Fichier | Rôle | Statut |
 |---|---|---|
-| `criteres_comparaison.txt` | règle de choix du scénario (commitée avant le calcul), résultats, lecture | document |
-| `comparaison_methodes.py`, `…_sortie_console.txt`, `comparaison_resultats.json`, `classement_par_essai.png` | tableau par essai, critères C1–C4, choix (S4), classement | BANC |
-| `simulations_scenario.py`, `…_sortie_console.txt`, `robustesse_scenario.json`, `comparaison_S4.png`, `scenario_retenu.npz` | S4 rejoué pour les 5 méthodes, robustesse L/C ±0.1 % | BANC |
-| `banc_*_resultats.json` (4 copies) | données d'entrée | copies des versions finales (ELM 0.728) |
+| `criteres_comparaison.txt` | règle de choix du scénario (commitée avant le calcul, inchangée), résultats successifs ; dernière section : versions finales | document |
+| `comparaison_methodes.py`, `…_sortie_console.txt`, `comparaison_resultats.json`, `classement_par_essai.png` | tableau par essai, critères C1–C4 ; avec les versions finales, aucun scénario désigné | BANC (8 oct.) |
+| `simulations_scenario.py`, `simulations_scenario_sortie_console.txt` (S4), `simulations_scenario_S8a_sortie_console.txt`, `robustesse_S4.json`, `robustesse_S8a.json`, `comparaison_S4.png`, `comparaison_S8a.png`, `scenario_S4.npz`, `scenario_S8a.npz` | essai rejoué pour les 5 méthodes, robustesse L/C ±0.1 % | BANC (8 oct.) |
+| `elm_incremental_contre_B.py` et sorties | les deux versions de l'ELM-PID (chapitre 4) | BANC |
+| `banc_*_resultats.json` (4 copies) | données d'entrée | copies des versions finales (ELM 0.746, PINN 0.757) |
 | `LISEZMOI_COMPARAISON.txt` | mode d'emploi | document |
-| `diagnostic_lois/diagnostic_perturbations.py`, `diagnostic_cout_J.py` et leurs sorties | diagnostic de la loi de Lu (8 oct.) | BANC |
+| `diagnostic_lois/diagnostic_perturbations.py`, `diagnostic_cout_J.py` et leurs sorties | diagnostic de la loi de Lu (lisent `ELM_PID_INCREMENTAL`) | BANC (relancés le 8 oct. : mêmes chiffres) |
 
 ### 2.6 Racine
 
 | Fichier | Statut |
 |---|---|
-| `ETAT_DE_REPRISE.md` (ce fichier) | document |
+| `ETAT_DE_REPRISE.md` (ce fichier), `CLAUDE.md` | documents |
+| `REDACTION/` | rédaction du mémoire |
 | `ELM1–4.zip`, `PINN1–2.zip`, `FUZZY.zip`, `PSO.zip`, `*.docx` | archives et documents versés par Jean-Riche, non modifiés |
 
 ---
@@ -119,7 +130,12 @@ Ancien dossier `ELM_PID` renommé tel quel le 8 oct. (J = 0.728, validé SIMULIN
 | 8 oct. | Demande de rédiger cet état de reprise avant de trancher la suite. |
 | 8 oct. | **Option B adoptée** pour l'ELM-PID (même bloc PID que les autres méthodes). La version actuelle à loi incrémentale est conservée pour justifier ce choix au chapitre 4 (S4 ou autre scénario adapté). |
 | 8 oct. | Les chapitres du mémoire seront rédigés ensemble ; rédaction et conversation suivent les skills humanizer, remove-ai-marks et doc-to-markdown (voir `CLAUDE.md`). |
-| 8 oct. | PINN-PID : à reprendre plus tard en suivant entièrement l'article d'Ito et Wasa, après l'ELM. |
+| 8 oct. | PINN-PID : à reprendre plus tard en suivant entièrement l'article d'Ito et Wasa, après l'ELM (fait le même jour, voir ci-dessous). |
+| 8 oct. | **PINN-PID final retenu** (dossier `PINN_PID`) : bloc PID commun, coût et optimisation d'Ito et Wasa en itération temps réel, zone morte commune avec l'ELM-PID. On ne garde que cette version « comme si on n'avait eu qu'elle » ; les autres ne sont que dans l'historique git. |
+| 8 oct. | ELM-PID : on garde `ELM_PID` (option B, retenue) et `ELM_PID_INCREMENTAL` (justification du choix au chapitre 4) ; `ELM_PID_B2` est abandonnée (historique git). |
+| 8 oct. | **Gel des méthodes** : Ziegler-Nichols, PSO-PID, Fuzzy-PID, ELM-PID option B, PINN-PID final. Plus aucun réglage. |
+| 8 oct. | **Scénarios du corps du mémoire : S1, S2, S3, S8a.** C'est un choix de l'auteur : la règle de comparaison, réappliquée, ne désigne plus aucun scénario (§4.3). |
+| 8 oct. | **Chiffres de référence = banc Python.** Simulink sert de validation. |
 
 ### 3.2 Décisions prises par Claude sans arbitrage explicite (Jean-Riche n'a pas objecté)
 
@@ -129,7 +145,7 @@ Ancien dossier `ELM_PID` renommé tel quel le 8 oct. (J = 0.728, validé SIMULIN
   - Conception de M1 (porte sur saturation, zone morte d'estimation de 0.1 V), M2 (ensemble admissible) et M3 (restauration de Rosen, 10 itérations).
   - Le modèle ELM n'est pas modifié (jacobien jugé non informatif).
   - T1 compare les gains au banc à 1 % près ; S3 ajouté au rejeu.
-- **PINN.**
+- **PINN** (version du 5 octobre, abandonnée le 8 oct. ; historique git).
   - Essai d'une variante (ensemble admissible), puis recommandation de garder la version du 5 octobre.
   - Cette recommandation **s'écarte de la règle que Claude avait écrite avant le calcul** (« garder la variante si J reste à 0.02 près »). Elle est justifiée par la simplicité et la validation Simulink existante, pas par J. C'est écrit dans `criteres_pinn_pid.txt` §6.
 - **Comparaison.**
@@ -143,34 +159,34 @@ Ancien dossier `ELM_PID` renommé tel quel le 8 oct. (J = 0.728, validé SIMULIN
 |---|---|---|---|
 | P1 (tranchée le 8 oct. : B pour l'ELM, PINN repoussé) | Corriger la loi des méthodes adaptatives : **A** dérivée sur la mesure seule ; **B** dérivée sur la mesure + PID parallèle du bloc (même PID pour les cinq méthodes, changements de gains sans à-coup) ; **C** rien changer et écrire le diagnostic | réponse du 8 oct., `COMPARAISON/diagnostic_lois/` | **B** |
 | P2 | Scénario « dynamique non linéaire » défini par la physique avant le calcul (excursions à travers la conduction discontinue, Vin 150–240 V, sauts de consigne), résultat publié quel qu'il soit | réponse du 7 oct. | à faire après P1 |
-| P3 | Présenter dans le mémoire J (tableau), S4 (figure + classement) et l'annexe essai par essai, plutôt qu'un seul scénario | `COMPARAISON/criteres_comparaison.txt` | oui |
-| P4 | Envoyer le PDF d'Ito & Wasa pour vérifier les écarts E6 (seuil 0.1 V) et E7 (boîte) | `criteres_pinn_pid.txt` §3 | oui |
+| P3 (tranchée le 8 oct. : S1, S2, S3, S8a) | Présenter dans le mémoire J (tableau), les scénarios du corps et l'annexe essai par essai, plutôt qu'un seul scénario | `COMPARAISON/criteres_comparaison.txt` | oui |
+| P4 (faite le 8 oct.) | Relire Ito & Wasa pour vérifier les écarts | `PINN_PID/criteres_pinn_pid.txt` §2–3 | texte relu ; écarts réécrits pour la version finale |
 | P5 | Garder ou retirer les lignes d'origine en tête des documents PSO, ELM, PINN | les trois `criteres_*.txt` | garder |
 
 ---
 
 ## 4. Chiffres obtenus, avec script et scénario
 
-Tous les chiffres viennent du banc Python, sauf mention SIMULINK. IAE en mV·s.
+Tous les chiffres viennent du banc Python (chiffres de référence), sauf mention SIMULINK. IAE en mV·s.
 
-### 4.1 Coût J sur les onze essais
+### 4.1 Coût J sur les onze essais (versions finales)
 
 | Méthode | J | Après 30 ms | Démarrage | Évén. non revenus | Script (dossier) |
 |---|---|---|---|---|---|
-| PINN-PID (5 oct.) | 0.684 | 0.694 | 0.651 | — | `banc_pinn_pid.py` (PINN_PID) |
 | PSO-PID | 0.714 | 0.672 | 0.855 | — | `banc_pso_pid.py` (PSO_PID) |
-| ELM-PID option B (M1–M4, retenu) | 0.746 | 0.680 | 0.967 | — | `banc_elm_pid.py` (ELM_PID) |
-| ELM-PID incrémental (M1–M3) | 0.728 | 0.747 | 0.664 | — | `banc_elm_pid.py` (ELM_PID_INCREMENTAL) |
 | meilleur PID figé (grille) | 0.738 | 0.710 | 0.831 | — | référence de la base commune |
+| ELM-PID option B (retenu) | 0.746 | 0.680 | 0.967 | — | `banc_elm_pid.py` (ELM_PID) |
+| PINN-PID final | 0.757 | 0.702 | 0.942 | — | `banc_pinn_pid.py` (PINN_PID) |
 | Fuzzy-PID | 0.877 | 0.827 | 1.041 | — | `banc_fuzzy_pid.py` (FUZZY_PID) |
-| R0 (loi de Lu, gains Z-N) | 0.917 | 0.986 | 0.687 | S8b, S9 | `banc_elm_pid.py` |
 | Ziegler-Nichols | 1.000 | 1.000 | 1.000 | S8b, S9 | — |
+
+Pour le chapitre 4 : ELM-PID incrémental (M1–M3) 0.728 (0.747 / 0.664), `ELM_PID_INCREMENTAL` ; R0 (loi de Lu, gains Z-N) 0.917.
 
 Historique (versions abandonnées, dans l'historique git) :
 - PSO selon Gaing : J = 5.03 (intégrateur préchargé), puis 1.692 (état nul).
-- ELM de départ : 0.784.
-- ELM avec M1–M2 seuls : 0.744.
-- Variante PINN « ensemble admissible » : 0.692, ou 0.689 sans restauration.
+- ELM de départ : 0.784 ; ELM avec M1–M2 seuls : 0.744.
+- PINN-PID du 5 octobre (loi de Lu) : 0.684 ; sa variante « ensemble admissible » : 0.692.
+- PINN-PID final sans zone morte (premier calcul) : 0.893.
 
 ### 4.2 Par méthode
 
@@ -179,41 +195,29 @@ Historique (versions abandonnées, dans l'historique git) :
 - Graine retenue : 3. Gains P = 0.239585, I = 412.0556, D = 1.913247e-5 (×ZN : 2.551, 1.369, 2.613).
 - Marge 30.0°, coupure 2175 Hz.
 
-**ELM-PID** (`banc_elm_pid.py`, 11 essais)
-- Gains changés sur 77 fenêtres au total : S1 2, S2 4, S3 6.
-- Ablations : jacobien constant 0.728 ; sans OS-ELM 0.728 ; M2 seule 0.744 ; sans glissement 0.760.
-- Sensibilité L ou C ±0.1 % : 0.722 à 0.731.
-- Jacobien du réseau sur les essais : 9.6 à 13.9 V par unité (vrai : 11.2 à 15.8 ; corrélation −0.04, `entrainement_elm.py`).
-- SIMULINK (7 oct.) : mêmes décisions d'adaptation sauf sur S7a ; IAE à 0.2 % près.
+**ELM-PID option B** (`banc_elm_pid.py`, 11 essais) : J = 0.746 ; prévisions Q1–Q8 justes (`ELM_PID/criteres_elm_pid.txt`). Un PID figé aux gains atteints à 4 ms sur S1 donne 0.754. Simulink : à faire.
 
-**PINN-PID** (`banc_pinn_pid.py`)
-- Ablations : sans seuil 0.745 ; sans Vin_eff 0.684 ; modèle physique faux 0.692 et 0.694 ; plafond 0.688.
-- Gains de S8b figés : 0.724.
-- Sensibilité : 0.678 à 0.687.
-- SIMULINK (5 oct.) : IAE à 0.1 % près (S7a 1.8 %) ; trois modèles 1.49 / 4.70 / 6.24 (banc 1.49 / 4.70 / 6.25).
+**PINN-PID final** (`banc_pinn_pid.py`, 11 essais ; `PINN_PID/criteres_pinn_pid.txt`)
+- J = 0.757116218 (0.702 / 0.942) ; tous les événements reviennent.
+- Ablations : sans zone morte 0.893 ; C1+C2 0.752 ; C1+C3 0.754 ; plafond (modèle physique) 0.757 ; PID figé aux gains finaux de S1 0.768.
+- Sensibilité L ou C ±0.1 % : 0.748 à 0.763.
+- Prévisions : 7 justes sur 10 (P1, P2, P7 connues d'avance), P6, P9, P10 fausses.
+- Simulink : à faire.
 
 **Fuzzy-PID** (`banc_fuzzy_pid.py`)
 - J = 0.877 ; SIMULINK (6 oct.) : IAE à 0.2 % près, J estimé sous Simulink 0.881.
 
-### 4.3 Comparaison (`COMPARAISON/comparaison_methodes.py`, `simulations_scenario.py`)
+### 4.3 Comparaison (`COMPARAISON/`, versions finales, 8 oct.)
 
-- **Scénario retenu par la règle : S4 (charge ±20 %).** C'est le seul qui passe C1 et C2.
-- Classement sur S4, IAE de 30 ms à la fin :
-
-| Rang | Méthode | IAE (mV·s) |
-|---|---|---|
-| 1 | PSO | 16.54 |
-| 2 | PINN | 17.64 |
-| 3 | ELM | 19.57 |
-| 4 | Fuzzy | 22.38 |
-| 5 | Z-N | 23.61 |
-
-- Classement identique pour L ou C ±0.1 % (`simulations_scenario.py`).
-- **Cas de base**, IAE de tout l'essai (S1, S2, S3) : PINN > ELM > PSO > Z-N > Fuzzy. Ce classement est dominé par le démarrage (80–111 mV·s contre 2–9 pour les perturbations).
-- **Perturbations seules** :
-  - S2 (F1) : PSO 2.04 > Fuzzy 2.43 > Z-N 2.84 > PINN 4.70 > ELM 5.61.
-  - S3 (F2) : PSO 5.46 > PINN 6.25 > ELM 7.79 > Fuzzy 7.94 > Z-N 8.67.
-- Recherche sur 99 combinaisons (11 essais × 9 grandeurs) : aucune ne donne PINN > ELM > Fuzzy > PSO > Z-N. Ce calcul a été fait en ligne de commande le 8 octobre ; il **n'est pas sauvegardé en script** (voir §6).
+- **La règle, réappliquée sans changement, ne désigne aucun scénario** : aucun candidat ne passe C1 (écart minimal entre voisins ≥ 5 %). ELM-PID et PINN-PID sont à 0.03 % (S3), 0.4 % (S8a), 2.4 % (S8b), 3.1 % (S4).
+- Scénarios du corps fixés par Jean-Riche : S1, S2, S3, S8a. « = » : moins de 5 % d'écart, lu comme une égalité.
+  - S1, IAE de démarrage : PSO 87.62 < PINN 92.06 = ELM 93.72 = Z-N 93.77 < Fuzzy 110.91 (PSO devant PINN de 5.1 %).
+  - S2, IAE après 30 ms : PSO 2.04 < ELM 2.41 = Fuzzy 2.43 = PINN 2.44 < Z-N 2.84.
+  - S3 : PSO 5.46 < PINN 6.40 = ELM 6.41 < Fuzzy 7.94 < Z-N 8.67.
+  - S8a : PSO 2.46 < PINN 2.95 = ELM 2.96 < Fuzzy 4.12 < Z-N 12.07 (même ordre à L ou C ±0.1 %, mais PINN/ELM à 0.1–1.2 %).
+- S4 pour mémoire : PSO 16.54 < PINN 18.30 = ELM 18.87 < Fuzzy 22.38 < Z-N 23.61.
+- Les deux méthodes adaptatives ne se séparent ni sur J (1.5 %) ni sur les quatre essais du corps.
+- La recherche sur 99 combinaisons du 7–8 oct. (anciennes versions) n'est pas sauvegardée en script ; elle n'a plus d'objet depuis le choix des scénarios.
 
 ### 4.4 Diagnostic de la loi de Lu (`COMPARAISON/diagnostic_lois/`, 8 oct.)
 
@@ -284,25 +288,16 @@ Points de la proposition de TFE à revoir plus tard avec Jean-Riche :
 | ELM, Simulink | S7a : 0 fenêtre adaptée sous Simulink contre 2 au banc. | Pas un bug : la quantification fait diverger les décisions ; documenté. |
 | PINN | Chiffres périmés dans l'ancien document d'étape 4 (0.722, 0.750, 0.681 au lieu de 0.724, 0.745, 0.684 du JSON). | Document réécrit avec les valeurs du JSON ; la réponse du 7 oct. citait encore 0.722, corrigé. |
 | PINN | `variante_ensemble_admissible_pinn.py` : f-string coupée par un heredoc (`\n` devenu un vrai saut de ligne). | Correction de la ligne. |
-| PINN | `arxiv.org` bloqué par le proxy : impossible de relire Ito & Wasa. | Non corrigé : P4. |
+| PINN | `arxiv.org` bloqué par le proxy : impossible de relire Ito & Wasa. | Texte de l'article fourni ensuite ; pages et équations citées dans `PINN_PID/criteres_pinn_pid.txt` vérifiées sur ce texte (P4). |
+| Comparaison | Avec les versions finales, aucun essai ne passe C1 : `comparaison_methodes.py` s'arrêtait sur une erreur (`max()` d'une liste vide). | Le script dit que la règle ne désigne aucun scénario ; règle inchangée (8 oct.). |
 | Comparaison | `NameError: PIDParallele` dans le premier script de diagnostic (classe définie après la marque d'exécution). | Classe définie dans le script. |
-| Documentation | Rappels « ELM-PID 0.784 » dans les sorties et copies des dossiers PSO et Fuzzy (ancienne version de l'ELM). | **Non corrigé** (§6, point 4). |
+| Documentation | Rappels « ELM-PID 0.784 » et « PINN-PID 0.684 » dans les copies et LISEZMOI des dossiers PSO et Fuzzy. | Corrigé le 8 oct. (copies et LISEZMOI ; les sorties console anciennes restent telles quelles). |
 
 ---
 
-## 4ter. Option B et comparaison refaite (8 octobre)
+## 6. Ce qui reste à faire
 
-- ELM-PID B : J = 0.746 ; Q1–Q8 justes. Pendant F1 et F2, aucune adaptation : la porte est fermée 1.5 ms (saturation) et |ebar| est déjà sous 0.1 V quand elle se rouvre. Analyse ajoutée après coup (étape 4c du banc) : un PID figé aux gains atteints à 4 ms sur S1 donne J = 0.754.
-- Règle de comparaison réappliquée sans changement : elle désigne **S8a** (PSO > ELM > PINN > Fuzzy > ZN, écart minimal 5.8 %, stable à L ou C ±0.1 %). S4 passe toujours (PSO > PINN > ELM > Fuzzy > ZN). **À trancher par Jean-Riche.**
-- Chapitre 4 (`COMPARAISON/elm_incremental_contre_B.py`) : S4 19.57 → 18.87 (−3.6 % seulement) ; S2 5.61 → 2.41 ; S1 démarrage 81.1 → 93.7 (prix de B).
-
-## 6. Ce qui reste ouvert, dans l'ordre de traitement prévu
-
-1. **ELM-PID B sous Simulink** (côté Jean-Riche) : `Tester_ELM_PID_Rejeu`, `Construction_ELM_PID`, `verifier_modele_elm_pid.py`, `Simuler_ELM_PID`, puis les trois scripts « Trois_Modeles ».
-2. **Choix S4 ou S8a** pour la comparaison des cinq méthodes (Jean-Riche).
-3. **PSO sous Simulink** (côté Jean-Riche) : seule méthode dont aucun fichier n'a tourné sous MATLAB.
-4. **Rafraîchir les copies et rappels périmés** : `banc_elm_pid_resultats.json` dans `PSO_PID/` et `FUZZY_PID/`, rappels ELM 0.784 dans `LISEZMOI_PSO.txt` → 0.746 (B).
-5. **Sauvegarder en script** la recherche sur 99 combinaisons (§4.3), pour qu'elle soit reproductible.
-6. **P4 : relire Ito & Wasa** (PDF à fournir) et confronter les écarts E6 et E7 du PINN.
-7. **P2 : scénario « dynamique non linéaire »**, défini et pré-enregistré, une fois les régulateurs figés.
-8. **Refaire la comparaison** (`COMPARAISON/`) avec les versions finales. Simuler S4 (et P2 s'il est retenu) sous Simulink pour les cinq méthodes. Préparer les figures du mémoire (P3).
+1. **ELM-PID option B sous Simulink** (Jean-Riche) : `Tester_ELM_PID_Rejeu`, `Construction_ELM_PID`, `verifier_modele_elm_pid.py`, `Simuler_ELM_PID`, puis les trois scripts « Trois_Modeles » (`ELM_PID/LISEZMOI_ELM.txt`).
+2. **PINN-PID final sous Simulink** (Jean-Riche) : même chaîne dans `PINN_PID/` (`LISEZMOI_PINN.txt`, étapes 1 à 7).
+3. **Rédaction** des chapitres avec Jean-Riche (corps : J, S1, S2, S3, S8a ; annexe : classement essai par essai ; chapitre 4 : ELM incrémental contre option B).
+4. Points ouverts non tranchés, à décider par Jean-Riche : PSO-PID jamais lancé sous MATLAB (les chiffres de référence restent ceux du banc) ; F1 appliqué à la consigne plutôt qu'à la commande (§4bis) ; scénario « dynamique non linéaire » (P2).

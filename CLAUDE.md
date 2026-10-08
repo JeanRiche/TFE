@@ -45,8 +45,9 @@ commune v2.1. État détaillé du travail : `ETAT_DE_REPRISE.md`.
 - ELM-PID : option B adoptée le 8 octobre 2026 (même bloc PID parallèle que les
   autres méthodes, l'ELM ajuste ses gains). La version à loi incrémentale de Lu
   est conservée comme référence pour justifier ce choix au chapitre 4.
-- PINN-PID : version du 5 octobre conservée pour l'instant ; elle sera reprise
-  en suivant entièrement l'article d'Ito et Wasa une fois l'ELM terminé.
+- PINN-PID : version finale (dossier PINN_PID) : bloc PID commun, coût et
+  optimisation d'Ito et Wasa en itération temps réel, zone morte commune avec
+  l'ELM-PID ; les autres versions ne sont gardées que dans l'historique git.
 
 ## Dépôt
 
