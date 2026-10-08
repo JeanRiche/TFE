@@ -290,7 +290,7 @@ Points de la proposition de TFE à revoir plus tard avec Jean-Riche :
 
 ## 6. Ce qui reste ouvert, dans l'ordre de traitement prévu
 
-1. **ELM-PID, option B (adoptée le 8 oct.).** Le premier point de cette liste. C'est bloquant pour l'ELM, le PINN et la comparaison. Si B : critères et prévisions écrits avant calcul, nouvelle sensibilité de l'ELM, nouveau gradient du PINN, nouvelles tables d'admissibilité, blocs MATLAB, rejeux, revalidation Simulink des deux méthodes.
+1. **ELM-PID, option B (adoptée le 8 oct.).** critères et prévisions écrits avant calcul, nouvelle sensibilité de l'ELM, nouveau gradient du PINN, nouvelles tables d'admissibilité, blocs MATLAB, rejeux, revalidation Simulink des deux méthodes.
 2. **PSO sous Simulink** (côté Jean-Riche, indépendant de P1) : `Construction_PSO_PID`, `verifier_pso_pid.py`, `Simuler_PSO_PID`, puis les trois scripts « Trois_Modeles ». Seule méthode dont aucun fichier n'a tourné sous MATLAB.
 3. **ELM, trois modèles sous Simulink** (côté Jean-Riche) : `Construction_ELM_PID_Trois_Modeles`, `verifier_modeles_elm_pid_trois.py`, `Simuler_ELM_PID_Trois_Modeles` (version 3 jamais lancée). À faire seulement si P1 ≠ B, sinon après la refonte.
 4. **Rafraîchir les copies et rappels périmés.** Copies `banc_elm_pid_resultats.json` dans `PSO_PID/` et `FUZZY_PID/`, rappels dans `LISEZMOI_PSO.txt` et dans les sorties console : ELM 0.784 → 0.728. À faire après P1, puisque l'ELM peut encore changer.
