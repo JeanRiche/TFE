@@ -25,6 +25,21 @@ commune v2.1. État détaillé du travail : `ETAT_DE_REPRISE.md`.
   et `doc-to-markdown` (convertir les .docx fournis en Markdown avant de les
   travailler).
 
+## Organisation du travail (consigne du 8 octobre 2026)
+
+- Claude ne fait pas le travail lui-même : il le délègue toujours à des
+  sous-agents et garde le rôle d'orchestrateur (cadrage, vérification,
+  synthèse).
+- Routage : un modèle rapide pour le code simple et les résumés ; le modèle
+  le plus puissant pour l'architecture et la refactorisation, avec
+  parcimonie. La correspondance exacte des modèles est dans les préférences
+  personnelles de Jean-Riche (pas de nom de modèle dans le dépôt).
+- Chaque sous-agent reçoit le contexte minimal utile, plus les règles de
+  méthode qui touchent sa tâche (critères écrits avant le calcul, aucun
+  réglage sur les onze essais, références vérifiées).
+- Chaque résultat de sous-agent est résumé en trois lignes pour Jean-Riche.
+- Vérification : relire le diff avant de conclure.
+
 ## Décisions en vigueur
 
 - ELM-PID : option B adoptée le 8 octobre 2026 (même bloc PID parallèle que les
