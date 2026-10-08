@@ -333,12 +333,78 @@ Aucun de ces reglages n'a ete revu pour M4.
   demarrage), quel que soit leur resultat.
 
 
-8. RESULTATS
-------------
-  (A ecrire apres le calcul : banc_elm_pid_sortie_console.txt.)
+8. RESULTATS (8 octobre 2026 ; banc_elm_pid_sortie_console.txt)
+---------------------------------------------------------------
+  Calcul fait apres le commit des previsions (1d16b45), sans rien changer.
+                          J      apres 30 ms   demarrage   non revenus
+    Ziegler-Nichols     1.000      1.000         1.000      S8b, S9
+      (= ELM-PID sans adaptation, ecart 0 sur d sur les onze essais)
+    meilleur PID fige   0.738      0.710         0.831      -
+      (sur grille, choisi sur les onze essais)
+    ELM-PID (B)         0.746      0.680         0.967      -
+    ELM-PID incremental 0.728      0.747         0.664      -
+      (version du 7 octobre, dossier ELM_PID_INCREMENTAL)
+  Fenetres ou les gains changent : S1 1, S2 1, S3 2, S4 2, S5 6, S6 1,
+  S7a 1, S7b 1, S8a 7, S8b 11, S9 7 (40 en tout, 77 pour la version
+  incrementale). Sur S1 a S3, le seul changement commun est a 4 ms (fin de
+  la montee) : x(1.469, 1.058, 1.152). Sur S3, un second a 72 ms (fin de
+  F2) : x(1.759, 1.308, 1.159). Gains finaux S8b x(3.47, 2.42, 1.50),
+  S9 x(3.36, 2.10, 1.36).
+  IAE apres 30 ms (mV.s), Ziegler-Nichols / ELM-PID B / incremental :
+    S2 2.84 / 2.41 / 5.61 ; S3 8.67 / 6.41 / 7.79 ; S4 23.61 / 18.87 / 19.57 ;
+    S5 3.87 / 2.46 / 2.97 ; S8a 12.07 / 2.96 / 3.24 ; S8b 77.19 / 3.03 / 3.33 ;
+    S9 531.8 / 294.9 / 307.0.
+  Ablations : jacobien constant 0.745 ; sans OS-ELM 0.746 ; M2 seule 0.747 ;
+  sans glissement 0.747. Sensibilite (L ou C a +-0.1 %) : J de 0.746 a
+  0.751.
+  Q1 a Q8 justes. Q4 dit le prix : M4 perd l'avantage de demarrage de la
+  loi incrementale (0.967 contre 0.664), et comme le demarrage pese 3
+  termes sur 13, J monte de 0.728 a 0.746 alors que tout ce qui suit 30 ms
+  s'ameliore (0.680 contre 0.747).
+
+  Ce que l'adaptation fait pendant une perturbation (constat apres calcul).
+  Sur S2 et S3, aucune adaptation n'a lieu pendant F1 et F2 : la fenetre de
+  l'evenement et les deux suivantes saturent ou suivent une saturation
+  (porte fermee, M1), et quand la porte se rouvre, 1.5 ms plus tard,
+  |ebar| est deja sous la zone morte de 0.1 V (S3 a 52 ms : -0.038 V).
+  Avec le bloc parallele, la perturbation est rattrapee avant que la
+  boucle lente puisse agir. Les gains utiles sur S2 a S4 sont donc ceux
+  trouves a la fin du demarrage.
+  Analyse ajoutee apres coup (etape 4c du banc, non prevue) : le PID fige
+  aux gains x(1.469, 1.058, 1.152) des le depart donne J = 0.754 (0.702
+  apres 30 ms, 0.928 au demarrage). L'adaptation au-dela de son premier
+  pas n'apporte rien sur S2 a S4 (S3 6.41 / 6.41 ; S4 18.94 / 18.87) ;
+  elle apporte aux charges legeres, ou elle continue a monter les gains
+  (S5 2.85 -> 2.46 ; S8a 3.87 -> 2.96 ; S8b 5.03 -> 3.03 mV.s).
 
 
-9. REFERENCES
+9. LECTURE (pour le memoire)
+----------------------------
+  1. M4 fait ce pour quoi elle a ete faite : a loi egale avec les autres
+     methodes, l'ELM-PID fait mieux que la loi incrementale sur toutes les
+     perturbations (apres 30 ms : 0.680 contre 0.747), et S2 n'est plus
+     degrade (2.41 contre 5.61 mV.s). Il ramene S8b et S9 dans la bande.
+  2. Il le paie au demarrage : sans adaptation pendant la montee (porte
+     fermee par la saturation), il demarre comme Ziegler-Nichols (14 % de
+     depassement sur S1). Sur J, la version B (0.746) est derriere la
+     version incrementale (0.728) et a egalite avec le meilleur PID fige
+     (0.738). Il faut le dire tel quel : B n'est pas "meilleure partout",
+     elle echange le demarrage contre les perturbations.
+  3. L'adaptation agit en deux temps, pas pendant les perturbations : un
+     reglage a la fin du demarrage, puis une derive lente des gains a
+     charge legere. Le constat "les gains ne changent pas pendant F1 et
+     F2" n'est pas un defaut de codage : c'est la consequence directe de
+     la boucle de Lu (fenetres de 0.5 ms, porte sur trois fenetres, zone
+     morte 0.1 V) face a une perturbation rattrapee en 1.5 ms. Pour une
+     adaptation pendant la perturbation, il faudrait une boucle plus
+     rapide que le regulateur qu'elle regle, ce que la methode de Lu
+     n'est pas.
+  4. Le jacobien du reseau, comme dans la version incrementale, ne change
+     pas le resultat (constante : 0.745). Ce qui fait le resultat, c'est
+     la boucle d'adaptation et la loi qu'elle regle.
+
+
+10. REFERENCES
 --------------
   [1] Y. Lu, W. Yu, J. Wang, D. Jiang, R. Li, "Design of PID controller
       based on ELM and its implementation for Buck converters",

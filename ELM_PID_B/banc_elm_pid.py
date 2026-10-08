@@ -521,6 +521,21 @@ for nom_p, fl, fc in (("nominal", 1.0, 1.0), ("L - 0.1 %", 0.999, 1.0), ("L + 0.
 L_BOB, C_CONV = L_NOM, C_NOM
 
 
+# %% ETAPE 4c : analyse ajoutee apres le calcul (non prevue dans criteres_elm_pid.txt)
+
+titre("ETAPE 4c (ajoutee apres coup) : PID fige aux gains atteints sur S1 apres la premiere adaptation")
+X_S1 = ELM["S1"]["reg"].journal[-1]["x"]
+FIGE_S1 = evaluer(lambda: PIDParallele(*(K_ZN * X_S1)))
+r_ = termes(FIGE_S1) / T_ZN
+APRES_COUP = {"x": X_S1.tolist(), "J": float(np.mean(r_)), "apres30": float(np.mean(r_[:10])),
+              "demarrage": float(np.mean(r_[10:])), "non_revenus": [c for c in CODES_IAE if not FIGE_S1[c]["revenus"]],
+              "IAE_mVs": {c: FIGE_S1[c]["o"]["IAE"] * 1e3 for c in FIGE_S1}}
+print(f"  gains x({X_S1[0]:.3f}, {X_S1[1]:.3f}, {X_S1[2]:.3f}) figes des le depart : J = {APRES_COUP['J']:.3f} "
+      f"(apres 30 ms {APRES_COUP['apres30']:.3f}, demarrage {APRES_COUP['demarrage']:.3f}) ; ELM-PID {J_ELM:.3f}")
+print("  IAE apres 30 ms (mV.s), fige / ELM-PID : " + " ; ".join(
+    f"{c} {FIGE_S1[c]['o']['IAE'] * 1e3:.2f} / {ELM[c]['o']['IAE'] * 1e3:.2f}" for c in ("S2", "S3", "S4", "S5", "S8a", "S8b", "S9")))
+
+
 # %% ETAPE 5 : comparaison et previsions
 
 titre("ETAPE 5 : ELM-PID face aux references, previsions Q1 a Q8 de criteres_elm_pid.txt")
@@ -628,7 +643,8 @@ def resume_essais(res):
     return {c: {"grandeurs": res[c]["o"], "IAE_dem": res[c]["IAE_dem"], "revenus": res[c]["revenus"]} for c in res}
 
 
-sortie = {"version": 2, "reglages": REGL_JSON, "J": J_TOUS, "decomposition": DECOMP, "J_ablations": J_ABL,
+sortie = {"version": 3, "reglages": REGL_JSON, "J": J_TOUS, "decomposition": DECOMP, "J_ablations": J_ABL,
+          "apres_coup_pid_fige_gains_S1": APRES_COUP,
           "J_regression": J_REGRESSION, "sensibilite": SENSIBILITE,
           "previsions": {k: {"juste": bool(P[k]), "detail": TEXTE[k]} for k in P},
           "references": {n: resume_essais(TOUS[n]) for n in TOUS},
