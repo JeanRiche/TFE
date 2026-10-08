@@ -1,0 +1,160 @@
+METRIQUES QUANTITATIVES DES CINQ METHODES (S1, S2, S3, S8a, S10)
+Definitions ecrites le 8 octobre 2026, AVANT tout calcul de ces metriques
+=============================================================================
+
+Statut
+  Ce sont des grandeurs DESCRIPTIVES, publiees a cote du classement. Elles
+  ne changent aucun ordre. Le classement de chaque scenario reste fonde sur
+  les grandeurs deja fixees (criteres_comparaison.txt, criteres_S10.txt) :
+    S1           IAE de demarrage, de 0 a 30 ms (k < 6600) ;
+    S2, S3, S8a  IAE de 30 ms a la fin (k >= 6600) ;
+    S10          IAE de 100 ms a la fin (k >= 22000), quatre methodes
+                 classees, Ziegler-Nichols en reference hors classement.
+  Regle de clarte inchangee : deux voisines dont l'IAE differe de moins de
+  5 % (b/a - 1 < 0.05) sont a egalite ("=").
+  Aucune methode n'est modifiee ni reglee ; aucun scenario ni aucune
+  metrique n'a ete choisi d'apres un classement (les cinq scenarios sont
+  ceux du memoire, fixes avant ; les metriques sont celles demandees par
+  Jean-Riche le 8 octobre, toutes calculees et toutes publiees).
+
+Notations communes
+  Te = Tc = 1/220000 s (periode du regulateur et des enregistrements).
+  k = 0, 1, ..., N-1 : numero de l'instant k Te (N = 44 001 pour 0.2 s).
+  En MATLAB, l'instant k est l'indice k + 1.
+  v(k) : Vout VRAIE (pas la mesure bruitee ou quantifiee).
+  consigne(k) = 100 + dvref(k) (V).
+  e(k) = consigne(k) - v(k) (V).
+  d(k) : rapport cyclique qui entre dans le PWM, dans [0.01 ; 0.99].
+  iL(k) : courant de la bobine (A).
+  Evenements : instants de scenario_<code>.mat, k_j = round(t_j / Te).
+  Une "fenetre [a ; b)" contient les instants k tels que a <= k < b.
+
+1. DEMARRAGE (memes definitions que banc_commun.py, fonction grandeurs)
+  k_dem = min(round(0.05/Te), k du premier evenement) (fin exclue).
+  1.1 Temps de montee 10-90 % (ms) : (k90 - k10) Te, k10 et k90 premiers
+      instants ou v >= 10 V et v >= 90 V (sur tout l'essai).
+  1.2 Depassement (%) : max(0, (max v sur [0 ; k_dem)) - 100) / 100 x 100.
+  1.3 Temps d'etablissement +-1 V (ms) : (k_h + 1) Te, k_h dernier instant
+      de [0 ; k_dem) ou |e| > 1 V ; 0 si aucun.
+  1.4 Courant crete de la bobine (A) : max iL sur [0 ; k_dem).
+
+2. FENETRE DE CLASSEMENT [k_a ; k_b)
+  S1 : [0 ; 6600) ; S2, S3, S8a : [6600 ; N) ; S10 : [22000 ; N).
+  tau(k) = (k - k_a) Te : temps mesure depuis le DEBUT de la fenetre.
+  2.1 IAE  = somme |e(k)| Te                (mV.s)
+  2.2 ISE  = somme e(k)^2 Te                (V^2.ms ; 1 V^2.ms = 1e-3 V^2.s)
+  2.3 ITAE = somme tau(k) |e(k)| Te         (mV.s^2)
+  2.4 Ecart maximal = max |e(k)|            (V)
+  2.5 Ecart efficace = sqrt(moyenne e(k)^2) (mV)
+  NB : l'ITAE du banc commun (grandeurs) compte t depuis 0 ; celle-ci
+  compte depuis le debut de la fenetre, comme demande. Les deux ne se
+  comparent pas.
+  Controle : 2.1 doit redonner a l'identique l'IAE des fichiers de
+  resultats (COMPARAISON/banc_*_resultats.json, IAE_dem pour S1 et
+  grandeurs.IAE pour S2, S3, S8a ; COMPARAISON/S10/resultats_S10.json,
+  IAE_100_fin_mVs pour S10). Ecart attendu : nul.
+
+3. ERREUR EN REGIME PERMANENT
+  Fenetres :
+    - avant chaque evenement j : [max(k_(j-1), k_j - 1100) ; k_j), soit les
+      5 ms (1 100 instants) qui precedent l'evenement, sans remonter avant
+      l'evenement precedent (k_0 = 0) ;
+    - fin d'essai : [N - 2200 ; N), les 10 dernieres ms (2 200 instants).
+  Sur chaque fenetre :
+  3.1 Erreur moyenne signee  = moyenne de e(k)            (mV)
+  3.2 Erreur moyenne absolue = | moyenne de e(k) |        (mV)
+      (valeur absolue de la moyenne signee, PAS moyenne de |e| : on mesure
+      un biais statique, l'ondulation est donnee a part en 3.3)
+  3.3 Ondulation de Vout = max v(k) - min v(k)            (mV, crete a crete)
+  Grandeur cle des tableaux : 3.2 sur la fin d'essai.
+  NB : sur S10, l'evenement de 50 ms est le changement du point de
+  fonctionnement ; la fenetre "avant 100 ms" est la fin du reajustement.
+
+4. PAR EVENEMENT (memes definitions que banc_commun.py)
+  Fenetre de l'evenement j : [k_j ; k_(j+1)) (la derniere va jusqu'a N).
+  4.1 IAE de la fenetre (mV.s) : somme |e| Te.
+  4.2 Ecart maximal (V) : max |e|.
+  4.3 Temps de retour dans +-1 V (ms) : (k_h - k_j + 1) Te, k_h dernier
+      instant de la fenetre ou |e| > 1 V ; 0 si la tension reste dans la
+      bande ; "pas revenu" (NaN) si |e| depasse encore 1 V sur les 10
+      dernieres ms de la fenetre [max(k_j, k_(j+1) - 2200) ; k_(j+1)).
+  Tous les evenements sont donnes, y compris ceux qui tombent hors de la
+  fenetre de classement (50 et 70 ms restent dans [30 ms ; fin) ; sur S10,
+  l'evenement de 50 ms est dans le reajustement, hors classement).
+
+5. ACTIVITE DE LA COMMANDE ET CONDUCTION (sur la fenetre de classement)
+  5.1 |Delta d| moyen (sans unite, par periode Tc) : moyenne de
+      |d(k) - d(k-1)| pour les paires (k-1, k) toutes deux dans la fenetre.
+  5.2 Temps en butee (%) : part des instants ou d <= 0.01 + 1e-12 ou
+      d >= 0.99 - 1e-12.
+  5.3 Conduction discontinue (%) : part des instants ou iL < 0.01 A.
+  NB : pour S2, S3, S8a, la fenetre est celle du banc commun (k >= 6600) :
+  5.1 a 5.3 doivent redonner dd_moyen, butee_pct et dcm_pct des fichiers.
+  Pour S1 (0 a 30 ms) elles decrivent le demarrage, pour S10 le nouveau
+  point de fonctionnement.
+
+6. TEMPS D'EXECUTION
+  6a. Cout de calcul du regulateur seul, banc Python (metriques_banc.py).
+      Chaque appel reg.pas(...) est chronometre (time.perf_counter_ns juste
+      avant et juste apres l'appel, dans une enveloppe qui ne change rien
+      au calcul : les signaux doivent rester identiques bit a bit, controle
+      par les IAE de 2.1). Les cinq methodes et les cinq scenarios tournent
+      l'un apres l'autre dans un seul processus (pas de calcul en parallele
+      pendant les mesures).
+      Publie, en microsecondes, par methode (cinq scenarios reunis) et par
+      scenario :
+        - temps moyen et temps maximal d'un appel ;
+        - ELM-PID et PINN-PID : separement, les appels ordinaires, les
+          appels qui ferment une fenetre (le journal de l'adaptateur gagne
+          une ligne pendant l'appel) et, parmi eux, ceux ou l'adaptation
+          des gains a tourne (ligne du journal marquee "adapte" : pas de
+          gradient de l'ELM, optimisation d'Adam du PINN) ; nombre de
+          chacun.
+      A lire comme un ORDRE DE GRANDEUR RELATIF entre methodes : Python
+      interprete sur la machine de calcul, pas un materiel embarque. Le
+      maximum inclut les aleas du systeme (ramasse-miettes, ordonnanceur) ;
+      il est donne tel quel.
+  6b. Temps de calcul Simulink par periode du regulateur (lu dans les
+      resultats Simulink : duree_calcul_s, us_par_pas = duree de sim()
+      divisee par le nombre de periodes Tc). Ce n'est PAS le cout du
+      regulateur : l'execution interpretee des blocs MATLAB System et le
+      circuit de puissance au pas du powergui (120 pas par periode Tc)
+      dominent. Publie tel quel, sans en tirer de classement.
+
+7. CLASSEMENT AFFICHE A COTE
+  Pour chaque scenario : IAE de la fenetre de classement (2.1), ordre
+  croissant, "=" entre voisines a moins de 5 %, "<" sinon ; les methodes
+  dont un evenement de la fenetre de classement n'est pas revenu sont
+  signalees ("*"). S10 : quatre methodes classees, Ziegler-Nichols donne a
+  part avec le rapport IAE / IAE de Ziegler-Nichols.
+
+8. SCRIPTS ET CONTROLES
+  metriques_banc.py : simule les cinq methodes sur les cinq scenarios
+    (chargement par espaces de noms, comme simulations_scenario.py), calcule
+    1 a 6a, controle 2.1 (et 5.1 a 5.3, 1.1 a 1.4, 4.1 a 4.3 contre la
+    fonction grandeurs du banc), ecrit console, CSV et Markdown.
+  Metriques_Simulink.m : memes metriques, memes definitions, sur les
+    resultats Simulink (resultats_Buck_Commun_<M>.mat et _S10.mat), plus 6b.
+  traduction_metriques_simulink.py : traduction Python ligne a ligne de la
+    fonction de calcul de Metriques_Simulink.m (indices MATLAB a partir de
+    1). Appliquee aux signaux du banc, elle doit redonner metriques_banc.py
+    a 1e-9 pres (relatif, ou absolu sous 1) sur toutes les metriques 1 a 5.
+
+9. ATTENDUS (ecrits avant le calcul ; ils ne changent rien au classement)
+  A1 IAE de 2.1 identiques aux fichiers de resultats (ecart nul) ; sinon le
+     script s'arrete.
+  A2 Erreur moyenne absolue en fin d'essai (3.2) sous 20 mV pour les quatre
+     methodes classees sur les cinq scenarios (action integrale) ; pour
+     Ziegler-Nichols sur S10, plus grande que celle de chacune des quatre
+     methodes classees (son oscillation vers 1.4 kHz s'eteint lentement,
+     criteres_S10.txt, resultats).
+  A3 Ondulation de Vout en fin d'essai (3.3) entre 5 et 40 mV a 200 V pour
+     les quatre methodes classees ; plus faible a 160 V (S10) qu'a 200 V
+     (rapport cyclique 0.625 contre 0.5) pour au moins trois des quatre.
+  A4 Cout par appel (6a) : Ziegler-Nichols et PSO-PID les moins chers et du
+     meme ordre ; Fuzzy-PID quelques fois plus cher ; ELM-PID et PINN-PID :
+     appels ordinaires du meme ordre que le Fuzzy-PID, fins de fenetre avec
+     adaptation au moins 10 fois plus cheres que leurs appels ordinaires ;
+     PINN-PID le plus cher en moyenne (5 iterations d'Adam sur un horizon).
+  Le verdict de A1 a A4 est donne par metriques_banc.py et publie tel
+  quel, juste ou faux.
