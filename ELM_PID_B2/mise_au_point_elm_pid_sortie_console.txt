@@ -1,0 +1,50 @@
+Dossier de travail : /home/user/TFE/ELM_PID_B2
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.2% admissibles ; jacobien constant des ablations 11.0687.
+Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
+
+==============================================================================
+ ETAPE 1 : projection depuis le depart (500 pas aleatoires)
+==============================================================================
+  g au depart : 0.00e+00 (0 : le depart est sur la frontiere de l'ensemble admissible)
+  M3 (restauration)        gains changes 499 / 500 ; resultats hors de l'ensemble 0 ; distance moyenne a la cible 0.0458
+  M2 seule (glissement)    gains changes 301 / 500 ; resultats hors de l'ensemble 0 ; distance moyenne a la cible 0.0752
+  sans glissement          gains changes 241 / 500 ; resultats hors de l'ensemble 0 ; distance moyenne a la cible 0.0857
+
+==============================================================================
+ ETAPE 2 : essais de mise au point E1 a E4 (IAE en mV.s)
+==============================================================================
+  B2 : ETA_PAS = 0.0002, ZONE_MORTE_PAS = 126.05 mV (regles R1 et R2 amendee de criteres_elm_pid.txt, M5 ; R2 d'origine : 54.41 mV, gardee en variante).
+  E1 (R = 7 ohms, Vin = 190 V)
+    Ziegler-Nichols             demarrage  87.02, apres 30 ms  35.69 ; revenu ;  0.2 s
+    B (par fenetre)             demarrage  86.93, apres 30 ms  32.80 ; gains changes sur     4 fenetres (premiere a  3.50 ms), finaux x(1.749, 1.559, 1.160) ; |dx| de 40 a 45 ms 0.2992 ; revenu ;  0.2 s
+    B2 (par pas)                demarrage  86.88, apres 30 ms  34.37 ; gains changes sur  1620 pas (premier a  1.50 ms ; projections    0), finaux x(1.160, 0.983, 0.985) ; |dx| de 40 a 45 ms 0.0347 ; revenu ;  0.3 s
+    B2 sans zone morte          demarrage  86.88, apres 30 ms  34.30 ; gains changes sur 19071 pas (premier a  1.50 ms ; projections    0), finaux x(1.168, 0.985, 0.997) ; |dx| de 40 a 45 ms 0.0364 ; revenu ;  0.7 s
+    B2 zone morte R2 d'origine  demarrage  86.88, apres 30 ms  34.35 ; gains changes sur  2005 pas (premier a  1.50 ms ; projections    0), finaux x(1.165, 0.985, 0.985) ; |dx| de 40 a 45 ms 0.0363 ; revenu ;  0.3 s
+    B2 jacobien const.          demarrage  86.88, apres 30 ms  34.36 ; gains changes sur  1618 pas (premier a  1.50 ms ; projections    0), finaux x(1.164, 0.983, 0.983) ; |dx| de 40 a 45 ms 0.0376 ; revenu ;  0.3 s
+  E2 (R = 15 ohms, Vin = 210 V)
+    Ziegler-Nichols             demarrage  92.63, apres 30 ms   3.12 ; revenu ;  0.2 s
+    B (par fenetre)             demarrage  91.97, apres 30 ms   1.21 ; gains changes sur     6 fenetres (premiere a  4.00 ms), finaux x(2.669, 2.030, 1.322) ; |dx| de 40 a 45 ms 0.3643 ; revenu ;  0.2 s
+    B2 (par pas)                demarrage  92.29, apres 30 ms   2.43 ; gains changes sur  1886 pas (premier a  1.70 ms ; projections    0), finaux x(1.148, 0.991, 0.997) ; |dx| de 40 a 45 ms 0.0232 ; revenu ;  0.3 s
+    B2 sans zone morte          demarrage  92.29, apres 30 ms   2.40 ; gains changes sur 19377 pas (premier a  1.70 ms ; projections    0), finaux x(1.155, 0.993, 1.006) ; |dx| de 40 a 45 ms 0.0239 ; revenu ;  0.7 s
+    B2 zone morte R2 d'origine  demarrage  92.29, apres 30 ms   2.42 ; gains changes sur  2556 pas (premier a  1.70 ms ; projections    0), finaux x(1.153, 0.993, 0.997) ; |dx| de 40 a 45 ms 0.0240 ; revenu ;  0.3 s
+    B2 jacobien const.          demarrage  92.27, apres 30 ms   2.42 ; gains changes sur  1881 pas (premier a  1.70 ms ; projections    0), finaux x(1.150, 0.992, 0.997) ; |dx| de 40 a 45 ms 0.0230 ; revenu ;  0.3 s
+  E3 (R = 60 ohms, Vin = 220 V)
+    Ziegler-Nichols             demarrage 166.05, apres 30 ms  28.58 ; revenu ;  0.2 s
+    B (par fenetre)             demarrage 161.57, apres 30 ms   9.97 ; gains changes sur     7 fenetres (premiere a  4.50 ms), finaux x(2.558, 1.999, 1.303) ; |dx| de 40 a 45 ms 0.1180 ; revenu ;  0.2 s
+    B2 (par pas)                demarrage 163.72, apres 30 ms  15.36 ; gains changes sur  3993 pas (premier a  2.53 ms ; projections    0), finaux x(1.364, 0.990, 0.997) ; |dx| de 40 a 45 ms 0.1082 ; revenu ;  0.3 s
+    B2 sans zone morte          demarrage 163.72, apres 30 ms  14.37 ; gains changes sur 19117 pas (premier a  2.53 ms ; projections    0), finaux x(1.450, 0.991, 1.055) ; |dx| de 40 a 45 ms 0.1082 ; revenu ;  0.7 s
+    B2 zone morte R2 d'origine  demarrage 163.72, apres 30 ms  14.95 ; gains changes sur  5097 pas (premier a  2.53 ms ; projections    0), finaux x(1.412, 0.990, 1.005) ; |dx| de 40 a 45 ms 0.1082 ; revenu ;  0.4 s
+    B2 jacobien const.          demarrage 163.61, apres 30 ms  14.99 ; gains changes sur  3899 pas (premier a  2.53 ms ; projections    0), finaux x(1.393, 0.989, 0.996) ; |dx| de 40 a 45 ms 0.1146 ; revenu ;  0.3 s
+  E4 (R = 9 ohms, Vin = 200 V)
+    Ziegler-Nichols             demarrage  84.05, apres 30 ms   1.43 ;  0.1 s
+    B (par fenetre)             demarrage  83.86, apres 30 ms   0.97 ; gains changes sur     3 fenetres (premiere a  3.50 ms), finaux x(1.945, 1.607, 1.147) ; derive apres 30 ms (max |x(t) - x(30 ms)|) 0.0000 ;  0.2 s
+    B2 (par pas)                demarrage  83.95, apres 30 ms   1.23 ; gains changes sur   903 pas (premier a  1.57 ms ; projections    0), finaux x(1.107, 0.993, 1.005) ; derive apres 30 ms (max |x(t) - x(30 ms)|) 0.0041 ;  0.2 s
+    B2 sans zone morte          demarrage  83.90, apres 30 ms   0.96 ; gains changes sur  7954 pas (premier a  1.57 ms ; projections    0), finaux x(1.575, 0.984, 1.178) ; derive apres 30 ms (max |x(t) - x(30 ms)|) 0.2528 ;  0.3 s
+    B2 zone morte R2 d'origine  demarrage  83.92, apres 30 ms   1.06 ; gains changes sur  2189 pas (premier a  1.57 ms ; projections    0), finaux x(1.234, 0.990, 1.057) ; derive apres 30 ms (max |x(t) - x(30 ms)|) 0.0800 ;  0.2 s
+    B2 jacobien const.          demarrage  84.08, apres 30 ms   0.99 ; gains changes sur   978 pas (premier a  1.57 ms ; projections    0), finaux x(1.120, 0.990, 1.002) ; derive apres 30 ms (max |x(t) - x(30 ms)|) 0.0011 ;  0.2 s
+
+==============================================================================
+ ETAPE 3 : controle, ELM-PID sans adaptation contre Ziegler-Nichols (E1 a E4)
+==============================================================================
+  ecart maximal sur d : 0.0e+00
