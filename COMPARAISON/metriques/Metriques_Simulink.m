@@ -28,11 +28,16 @@
 % FICHIERS LUS (aucun n'est modifie)
 % ---------------------------------
 % Ce script est dans Regulateurs/COMPARAISON/metriques. Il lit, a partir de
-% ce dossier :
+% ce dossier (noms des dossiers : reglages DOSSIER_* en tete du script,
+% ajoutes le 9 octobre 2026 ; ils sont affiches au lancement) :
 %   ../../PSO_PID/resultats_Buck_Commun_PSO_PID.mat      et ..._S10.mat
 %   ../../FUZZY_PID/resultats_Buck_Commun_Fuzzy_PID.mat  et ..._S10.mat
-%   ../../ELM_PID/resultats_Buck_Commun_ELM_PID.mat      et ..._S10.mat
+%   ../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat    et ..._S10.mat
 %   ../../PINN_PID/resultats_Buck_Commun_PINN_PID.mat    et ..._S10.mat
+%   (ELM_PID_B : dossier de l'ELM-PID retenu, option B, chez Jean-Riche ;
+%   l'ancien dossier ELM_PID y contient la version incrementale et n'est
+%   plus lu. Dans le depot git, le dossier retenu s'appelle ELM_PID :
+%   regler DOSSIER_ELM en consequence.)
 %   Ziegler-Nichols : resultats_Buck_Commun.mat et resultats_Buck_Commun_S10.mat,
 %   cherches dans les quatre dossiers (ecrits par Simuler_ZN.m, dossier
 %   PSO_PID). Le premier trouve est pris.
@@ -51,9 +56,30 @@
 %   calcul ne changent pas.
 % Un fichier absent est signale ; le script continue avec ce qu'il trouve.
 %
+% CONTROLE DE VERSION (ajoute le 9 octobre 2026)
+% ----------------------------------------------
+% Le 9 octobre, le script a lu sans prevenir un ancien dossier ELM_PID
+% (version incrementale de l'ELM-PID) au lieu du dossier retenu : IAE S1
+% 81.12 et S2 5.62 mV.s au lieu de 93.72 et 2.41 au banc. Les fichiers de
+% resultats ne contiennent pas de chaine de version du regulateur. Le
+% controle compare donc, pour chaque fichier, l'IAE de classement de
+% chaque scenario a celle du banc (metriques_banc.csv, version retenue de
+% chaque methode). Si un scenario s'en ecarte de plus de SEUIL_CONTROLE
+% (1 %), le fichier entier est REFUSE (aucune de ses valeurs n'est
+% utilisee) avec le message "ce fichier ne correspond pas a la version
+% retenue". Exceptions ecrites avant : S10, tolerance des LISEZMOI si elle
+% est plus large (3 % ELM-PID et PINN-PID) ; S7a (quantification, ecarts
+% de 1 a 6 % documentes) n'est pas controle. Ziegler-Nichols n'est pas
+% controle (une seule version, pas de tolerance ecrite). Pour la version
+% retenue, Simulink retrouve le banc a 0.13 % pres (Simuler_Modeles_
+% Comparaison.m, S1 a S10, 9 octobre) : le seuil de 1 % ne la refuse pas ;
+% la version incrementale s'en ecarte de -13 % (S1) et +134 % (S2).
+% metriques_banc.csv est donc obligatoire.
+%
 % CE QUE PRODUIT CE SCRIPT (dans ce dossier)
 % ------------------------------------------
-%   - dans la console : les memes tableaux que metriques_banc.py (format
+%   - dans la console : les dossiers lus, les fichiers refuses par le
+%     controle de version, les memes tableaux que metriques_banc.py (format
 %     Markdown) et, si metriques_banc.csv est la, l'ecart Simulink - banc
 %     sur l'IAE de classement (S10 : tolerance 1 % PSO-PID et Fuzzy-PID,
 %     3 % ELM-PID et PINN-PID, ecrite avant dans les LISEZMOI) ;
@@ -78,10 +104,27 @@ clear; clc;
 RESULTATS = 'Simuler';      % 'Simuler' : fichiers de Simuler_<M>.m (resultats_<modele>.mat et _S10.mat) ;
                             % 'comparaison' : fichiers de Simuler_Modeles_Comparaison.m
                             % (resultats_<modele>_comparaison.mat)
+% Dossiers de methode, relatifs a la racine Regulateurs/ (deux niveaux
+% au-dessus de ce dossier). A REGLER selon ton arborescence.
+% NOTE ELM-PID : DOSSIER_ELM doit etre le dossier de l'ELM-PID RETENU
+% (option B, decision du 8 octobre 2026). Chez toi : ELM_PID_B. L'ancien
+% dossier ELM_PID contient la version incrementale (loi de Lu, chapitre 4)
+% et ne doit pas etre lu ; le controle de version le refuserait de toute
+% facon. Dans le depot git, le dossier retenu s'appelle ELM_PID (et
+% l'incremental ELM_PID_INCREMENTAL) : y mettre DOSSIER_ELM = 'ELM_PID'.
+DOSSIER_PSO   = 'PSO_PID';
+DOSSIER_FUZZY = 'FUZZY_PID';
+DOSSIER_ELM   = 'ELM_PID_B';
+DOSSIER_PINN  = 'PINN_PID';
+% Controle de version (voir l'en-tete) : ecart relatif maximal entre l'IAE
+% de classement Simulink et celle du banc (metriques_banc.csv).
+SEUIL_CONTROLE = 0.01;
+SCENARIOS_SANS_CONTROLE = {'S7a'};                         % quantification : ecarts documentes de 1 a 6 %
+CONTROLE_METHODE = [false, true, true, true, true];        % Ziegler-Nichols : une seule version
 SCENARIOS = {'S1', 'S2', 'S3', 'S8a', 'S10'};
 METHODES  = {'Ziegler-Nichols', 'PSO-PID', 'Fuzzy-PID', 'ELM-PID', 'PINN-PID'};
-DOSSIERS  = {{'PSO_PID', 'FUZZY_PID', 'ELM_PID', 'PINN_PID'}, {'PSO_PID'}, {'FUZZY_PID'}, ...
-             {'ELM_PID'}, {'PINN_PID'}};                   % ou chercher les resultats
+DOSSIERS  = {{DOSSIER_PSO, DOSSIER_FUZZY, DOSSIER_ELM, DOSSIER_PINN}, {DOSSIER_PSO}, {DOSSIER_FUZZY}, ...
+             {DOSSIER_ELM}, {DOSSIER_PINN}};               % ou chercher les resultats
 MODELES   = {'Buck_Commun', 'Buck_Commun_PSO_PID', 'Buck_Commun_Fuzzy_PID', ...
              'Buck_Commun_ELM_PID', 'Buck_Commun_PINN_PID'};
 TOLERANCE_S10 = [NaN, 0.01, 0.01, 0.03, 0.03];             % IAE de 100 ms a la fin, Simulink / banc
@@ -103,12 +146,34 @@ switch RESULTATS
         error('RESULTATS = ''%s'' : choisir ''Simuler'' ou ''comparaison''.', RESULTATS);
 end
 fprintf('Resultats lus : %s (fichiers resultats_<modele>%s.mat).\n', RESULTATS, strjoin(SUFFIXES, '.mat ou '));
+fprintf('Dossiers lus (reglages DOSSIER_* en tete du script) :\n');
+for im = 1:numel(METHODES)
+    chemins = cellfun(@(x) fullfile(RACINE, x), DOSSIERS{im}, 'UniformOutput', false);
+    fprintf('  %-16s : %s\n', METHODES{im}, strjoin(chemins, ' ; '));
+    for q = 1:numel(chemins)
+        if ~isfolder(chemins{q})
+            fprintf('  ATTENTION : dossier introuvable : %s (regler DOSSIER_* en tete du script)\n', chemins{q});
+        end
+    end
+end
+fb = fullfile(ICI, 'metriques_banc.csv');
+if ~isfile(fb)
+    error(['metriques_banc.csv absent de %s : le controle de version (fichier de la version retenue ' ...
+           'de chaque methode) est impossible. Reprendre le fichier du depot.'], ICI);
+end
+BANC = lire_csv(fb);
 
 % --- Lecture des resultats et calcul des metriques ---
 LIGNES = cell(0, 7);                                       % scenario, methode, groupe, fenetre, metrique, valeur, unite
 ABSENTS = {};
+REFUSES = {};                                              % fichiers refuses par le controle de version
 for im = 1:numel(METHODES)
     E = lire_resultats(RACINE, DOSSIERS{im}, MODELES{im}, SUFFIXES);
+    if CONTROLE_METHODE(im)
+        [E, refus] = controler_version(E, METHODES{im}, BANC, SEUIL_CONTROLE, TOLERANCE_S10(im), ...
+                                       SCENARIOS_SANS_CONTROLE, TE);
+        REFUSES = [REFUSES, refus]; %#ok<AGROW>
+    end
     if isempty(E)
         fprintf('%-16s : aucun fichier resultats_%s*.mat dans %s.\n', METHODES{im}, MODELES{im}, ...
                 strjoin(DOSSIERS{im}, ', '));
@@ -140,8 +205,16 @@ for im = 1:numel(METHODES)
         fprintf('%-16s %-4s : lu dans %s\n', METHODES{im}, code, en.fichier);
     end
 end
+if ~isempty(REFUSES)
+    fprintf(['\nFICHIERS REFUSES (ne correspondent pas a la version retenue ; leurs scenarios sont absents) :' ...
+             '\n  %s\n'], strjoin(REFUSES, [newline '  ']));
+end
 if ~isempty(ABSENTS)
     fprintf('\nResultats Simulink ABSENTS (non calcules) :\n  %s\n', strjoin(ABSENTS, [newline '  ']));
+    if strcmp(RESULTATS, 'Simuler') && any(contains(ABSENTS, 'S10'))
+        fprintf(['  S10 : si S10 a ete simule avec les modeles de comparaison (<PREFIXE>_S10.slx, ' ...
+                 'Simuler_Modeles_Comparaison.m), relancer avec RESULTATS = ''comparaison''.\n']);
+    end
 end
 BASE = containers.Map('KeyType', 'char', 'ValueType', 'double');
 for i = 1:size(LIGNES, 1)
@@ -166,6 +239,11 @@ else
 end
 T{end + 1} = '';
 T{end + 1} = 'Definitions : definitions_metriques.txt. Grandeurs descriptives ; le classement reste celui des IAE deja fixees.';
+if ~isempty(REFUSES)
+    T{end + 1} = '';
+    T{end + 1} = ['Fichiers refuses par le controle de version (ne correspondent pas a la version retenue) : ' ...
+                  strjoin(REFUSES, ' ; ')];
+end
 if ~isempty(ABSENTS)
     T{end + 1} = '';
     T{end + 1} = ['Resultats absents (n.d.) : ' strjoin(ABSENTS, ', ') '.'];
@@ -194,15 +272,13 @@ for im = 1:numel(METHODES)
     T = ligne_md(T, c);
 end
 
-% Ecart Simulink - banc sur l'IAE de classement
-fb = fullfile(ICI, 'metriques_banc.csv');
+% Ecart Simulink - banc sur l'IAE de classement (BANC lu au debut)
 T{end + 1} = '';
 T{end + 1} = '## IAE de classement : Simulink / banc (ecart)';
 T{end + 1} = '';
 if ~isfile(fb)
     T{end + 1} = 'metriques_banc.csv absent de ce dossier : pas de comparaison au banc.';
 else
-    BANC = lire_csv(fb);
     T{end + 1} = 'S10 : tolerance ecrite avant (LISEZMOI de chaque dossier) 1 % pour PSO-PID et Fuzzy-PID, 3 % pour ELM-PID et PINN-PID ; pas de tolerance ecrite pour Ziegler-Nichols.';
     T{end + 1} = '';
     T = ligne_md(T, [{'Methode'}, SCENARIOS]);
@@ -379,6 +455,10 @@ function E = lire_resultats(racine, dossiers, modele, suffixes)
     % Simuler_<M>.m, {'_comparaison'} pour Simuler_Modeles_Comparaison.m.
     E = {};
     for i = 1:numel(dossiers)
+        if ~isfolder(fullfile(racine, dossiers{i}))
+            fprintf('  (dossier introuvable : %s)\n', fullfile(racine, dossiers{i}));
+            continue;
+        end
         for s = 1:numel(suffixes)
             f = fullfile(racine, dossiers{i}, ['resultats_' modele suffixes{s} '.mat']);
             if ~isfile(f)
@@ -404,6 +484,56 @@ function E = lire_resultats(racine, dossiers, modele, suffixes)
                 E{end + 1} = en; %#ok<AGROW>
             end
         end
+    end
+end
+
+function [E, refus] = controler_version(E, methode, BANC, seuil, tol_S10, sans_controle, Te)
+    % Refuse les fichiers dont un scenario s'ecarte du banc (IAE de
+    % classement, metriques_banc.csv) de plus du seuil : ce n'est pas la
+    % version retenue de la methode. S10 : seuil = max(seuil, tolerance S10
+    % ecrite avant). Scenarios de sans_controle et scenarios absents du banc :
+    % non controles. Rend E sans les entrees des fichiers refuses et la liste
+    % des refus (texte).
+    refus = {};
+    mauvais = {};
+    for i = 1:numel(E)
+        en = E{i};
+        if any(strcmp(en.code, sans_controle)) || any(strcmp(mauvais, en.fichier))
+            continue;
+        end
+        k = cle(en.code, methode, 'classement', 'classement', 'IAE');
+        if ~isKey(BANC, k)
+            continue;
+        end
+        s_ = seuil;
+        if strcmp(en.code, 'S10') && ~isnan(tol_S10)
+            s_ = max(seuil, tol_S10);
+        end
+        b = BANC(k);
+        r = en.r;
+        iae = NaN;
+        if isequal(numel(r.v), numel(r.d), numel(r.iL))
+            L = calculer_metriques(r.v, r.consigne, r.d, r.iL, lire_evenements(en), en.code, Te);
+            q = find(strcmp(L.groupe, 'classement') & strcmp(L.metrique, 'IAE'), 1);
+            iae = L.valeur(q);
+        end
+        if ~(abs(iae / b - 1) <= s_)
+            mauvais{end + 1} = en.fichier; %#ok<AGROW>
+            txt = sprintf(['%s : %s, ce fichier ne correspond pas a la version retenue (IAE de classement %s ' ...
+                           '%.2f mV.s contre %.2f au banc, %+.1f %%, seuil %.0f %%)'], methode, en.fichier, ...
+                          en.code, iae, b, (iae / b - 1) * 100, s_ * 100);
+            refus{end + 1} = txt; %#ok<AGROW>
+            fprintf('  REFUSE : %s\n', txt);
+        end
+    end
+    if ~isempty(mauvais)
+        garde = true(1, numel(E));
+        for i = 1:numel(E)
+            garde(i) = ~any(strcmp(mauvais, E{i}.fichier));
+        end
+        E = E(garde);
+        fprintf(['  -> %s : verifier le dossier lu (reglages DOSSIER_* en tete du script) ; ' ...
+                 'pour l''ELM-PID, DOSSIER_ELM doit etre le dossier de l''option B.\n'], methode);
     end
 end
 

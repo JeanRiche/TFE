@@ -1,0 +1,195 @@
+==============================================================================
+A. Simuler_Modeles_Comparaison.m : figures
+==============================================================================
+
+--- cas figures ---
+=== ELM_PID_S1 : ELM-PID, Nominal (200 ms) ===
+  figure : <dossier temporaire>/figures/figures_comparaison/ELM_PID_S1.png et <dossier temporaire>/figures/figures_comparaison/ELM_PID_S1.fig
+=== ELM_PID_S2 : ELM-PID, F1 a la consigne (200 ms) ===
+  figure : <dossier temporaire>/figures/figures_comparaison/ELM_PID_S2.png et <dossier temporaire>/figures/figures_comparaison/ELM_PID_S2.fig
+=== ELM_PID_S10 : ELM-PID, Changement durable du point (200 ms) ===
+  figure : <dossier temporaire>/figures/figures_comparaison/ELM_PID_S10.png et <dossier temporaire>/figures/figures_comparaison/ELM_PID_S10.fig
+=== PSO_PID_S3 : PSO-PID, F2 (article) (200 ms) ===
+  figure : <dossier temporaire>/figures/figures_comparaison/PSO_PID_S3.png et <dossier temporaire>/figures/figures_comparaison/PSO_PID_S3.fig
+=== ZN_S8a : Ziegler-Nichols, Charge legere 25 ohms (200 ms) ===
+  figure : <dossier temporaire>/figures/figures_comparaison/ZN_S8a.png et <dossier temporaire>/figures/figures_comparaison/ZN_S8a.fig
+==========================================================================================
+==========================================================================================
+TEST figures ouvertes : 5
+TEST ZN_S8a titre : ZN_S8a : Ziegler-Nichols, scenario S8a (Charge legere 25 ohms)
+TEST ZN_S8a tuile texte : Gains constants (pas d'adaptation) : P = 0.09391, I = 301.09, D = 7.3227e-06 | soit 1.000 / 1.000 / 1.000 fois ceux de Ziegler-Nichols
+TEST ZN_S8a iL (A)           donnees [1.524 ; 17.41] ylim [0.2538 ; 18.68] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ZN_S8a rapport cyclique donnees [0.54 ; 0.99] ylim [0.504 ; 1.026] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ZN_S8a Vout (V)         donnees [0 ; 101.2] ylim [-8.097 ; 109.3] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ZN_S8a : 3 tuiles a courbes, 1 tuile texte (attendu 3 et 1) OK
+TEST fichier figures_comparaison/ZN_S8a.png OK
+TEST fichier figures_comparaison/ZN_S8a.fig OK
+TEST PSO_PID_S3 titre : PSO_PID_S3 : PSO-PID, scenario S3 (F2 (article))
+TEST PSO_PID_S3 tuile texte : Gains constants (pas d'adaptation) : P = 0.0602, I = 412.5, D = 5.1e-06 | soit 0.641 / 1.370 / 0.696 fois ceux de Ziegler-Nichols
+TEST PSO_PID_S3 iL (A)           donnees [1.524 ; 17.41] ylim [0.2538 ; 18.68] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST PSO_PID_S3 rapport cyclique donnees [0.54 ; 0.99] ylim [0.504 ; 1.026] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST PSO_PID_S3 Vout (V)         donnees [0 ; 101.2] ylim [-8.097 ; 109.3] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST PSO_PID_S3 : 3 tuiles a courbes, 1 tuile texte (attendu 3 et 1) OK
+TEST fichier figures_comparaison/PSO_PID_S3.png OK
+TEST fichier figures_comparaison/PSO_PID_S3.fig OK
+TEST ELM_PID_S10 titre : ELM_PID_S10 : ELM-PID, scenario S10 (Changement durable du point)
+TEST ELM_PID_S10 gains / ZN       donnees [0.8 ; 1.3] ylim [0.76 ; 1.34] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S10 iL (A)           donnees [1.524 ; 17.41] ylim [0.2538 ; 18.68] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S10 rapport cyclique donnees [0.54 ; 0.99] ylim [0.504 ; 1.026] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S10 Vout (V)         donnees [0 ; 101.2] ylim [-8.097 ; 109.3] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S10 : 4 tuiles a courbes, 0 tuile texte (attendu 4 et 0) OK
+TEST fichier figures_comparaison/ELM_PID_S10.png OK
+TEST fichier figures_comparaison/ELM_PID_S10.fig OK
+TEST ELM_PID_S2 titre : ELM_PID_S2 : ELM-PID, scenario S2 (F1 a la consigne)
+TEST ELM_PID_S2 gains / ZN       donnees [0.8 ; 1.3] ylim [0.76 ; 1.34] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S2 iL (A)           donnees [1.524 ; 17.41] ylim [0.2538 ; 18.68] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S2 rapport cyclique donnees [0.54 ; 0.99] ylim [0.504 ; 1.026] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S2 Vout (V)         donnees [0 ; 102] ylim [-8.16 ; 110.2] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S2 : 4 tuiles a courbes, 0 tuile texte (attendu 4 et 0) OK
+TEST fichier figures_comparaison/ELM_PID_S2.png OK
+TEST fichier figures_comparaison/ELM_PID_S2.fig OK
+TEST ELM_PID_S1 titre : ELM_PID_S1 : ELM-PID, scenario S1 (Nominal)
+TEST ELM_PID_S1 gains / ZN       donnees [0.8 ; 1.3] ylim [0.76 ; 1.34] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S1 iL (A)           donnees [1.524 ; 17.41] ylim [0.2538 ; 18.68] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S1 rapport cyclique donnees [0.54 ; 0.99] ylim [0.504 ; 1.026] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S1 Vout (V)         donnees [0 ; 101.2] ylim [-8.097 ; 109.3] marges 0.080 / 0.080 xlim [0 ; 200] OK
+TEST ELM_PID_S1 : 4 tuiles a courbes, 0 tuile texte (attendu 4 et 0) OK
+TEST fichier figures_comparaison/ELM_PID_S1.png OK
+TEST fichier figures_comparaison/ELM_PID_S1.fig OK
+TEST courbe plate a 5 : ylim [4.96 ; 5.04] OK
+TEST donnees avec NaN et Inf : ylim [0.84 ; 3.16] OK
+TEST BILAN FIGURES : OK
+
+--- cas fermer ---
+=== ELM_PID_S1 : ELM-PID, Nominal (200 ms) ===
+  figure : <dossier temporaire>/fermer/figures_comparaison/ELM_PID_S1.png et <dossier temporaire>/fermer/figures_comparaison/ELM_PID_S1.fig
+=== ELM_PID_S2 : ELM-PID, F1 a la consigne (200 ms) ===
+  figure : <dossier temporaire>/fermer/figures_comparaison/ELM_PID_S2.png et <dossier temporaire>/fermer/figures_comparaison/ELM_PID_S2.fig
+=== ELM_PID_S10 : ELM-PID, Changement durable du point (200 ms) ===
+  figure : <dossier temporaire>/fermer/figures_comparaison/ELM_PID_S10.png et <dossier temporaire>/fermer/figures_comparaison/ELM_PID_S10.fig
+=== PSO_PID_S3 : PSO-PID, F2 (article) (200 ms) ===
+  figure : <dossier temporaire>/fermer/figures_comparaison/PSO_PID_S3.png et <dossier temporaire>/fermer/figures_comparaison/PSO_PID_S3.fig
+=== ZN_S8a : Ziegler-Nichols, Charge legere 25 ohms (200 ms) ===
+  figure : <dossier temporaire>/fermer/figures_comparaison/ZN_S8a.png et <dossier temporaire>/fermer/figures_comparaison/ZN_S8a.fig
+==========================================================================================
+==========================================================================================
+TEST FERMER_FIGURES = true : 0 figure(s) ouverte(s), 5 PNG, 5 .fig OK
+TEST BILAN FERMER : OK
+
+--- cas sans_figures ---
+=== ELM_PID_S1 : ELM-PID, Nominal (200 ms) ===
+=== ELM_PID_S2 : ELM-PID, F1 a la consigne (200 ms) ===
+=== ELM_PID_S10 : ELM-PID, Changement durable du point (200 ms) ===
+=== PSO_PID_S3 : PSO-PID, F2 (article) (200 ms) ===
+=== ZN_S8a : Ziegler-Nichols, Charge legere 25 ohms (200 ms) ===
+==========================================================================================
+==========================================================================================
+TEST FIGURES = false : aucune figure, pas de dossier figures_comparaison OK
+TEST BILAN SANS FIGURES : OK
+
+--- resultats avec et sans figures ---
+TEST resultats_Buck_Commun_ELM_PID_comparaison.mat identique avec et sans figures (hors temps de calcul) : 1
+TEST resultats_Buck_Commun_PSO_PID_comparaison.mat identique avec et sans figures (hors temps de calcul) : 1
+TEST resultats_Buck_Commun_comparaison.mat identique avec et sans figures (hors temps de calcul) : 1
+TEST BILAN RESULTATS INCHANGES : OK
+
+==============================================================================
+B. Metriques_Simulink.m : noms des dossiers et controle de version
+==============================================================================
+
+--- cas DOSSIER_ELM = 'ELM_PID_B' (defaut) ---
+Dossiers lus (reglages DOSSIER_* en tete du script) :
+  ELM-PID          : <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B
+ELM-PID          S1   : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+ELM-PID          S2   : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+ELM-PID          S3   : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+ELM-PID          S8a  : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+ELM-PID          S10  : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+| ELM-PID | 93.81 ; 60.00 | 2.41 ; 14.17 | 6.41 ; 37.72 | 2.97 ; 17.46 | 8.64 ; 86.40 |
+| ELM-PID | 0.85 | 0.00 | 30.00 | 3.00 | 93.81 | 412.7 | 1.102 | 14.07 | 3709.1 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 0.00 | 0.00 | 0.00 | 3.00 | 2.41 | 0.03412 | 0.2047 | 0.01 | 14.2 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 0.00 | 0.00 | 0.00 | 3.00 | 6.41 | 0.2418 | 0.545 | 0.04 | 37.7 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 0.00 | 0.00 | 0.00 | 3.00 | 2.97 | 0.05181 | 0.2523 | 0.02 | 17.5 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 0.00 | 0.00 | 0.00 | 3.00 | 8.64 | 0.7466 | 0.432 | 0.09 | 86.4 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 227.0 (10 s) | 227.0 (10 s) | 227.0 (10 s) | 227.0 (10 s) | 227.0 (10 s) |
+| ELM-PID | 93.81 / 93.72 (+0.10 %) | 2.41 / 2.41 (+0.10 %) | 6.41 / 6.41 (+0.10 %) | 2.97 / 2.96 (+0.10 %) | 8.64 / 8.63 (+0.10 %) conforme |
+TEST attendu present : 'ELM-PID          S1   : lu dans' : OK
+TEST attendu present : 'ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat' : OK
+TEST fichiers refuses : 0 (attendu 0) OK
+
+--- cas DOSSIER_ELM = 'ELM_PID' (ancien dossier, version incrementale) ---
+Dossiers lus (reglages DOSSIER_* en tete du script) :
+  ELM-PID          : <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID
+  REFUSE : ELM-PID : <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID/resultats_Buck_Commun_ELM_PID.mat, ce fichier ne correspond pas a la version retenue (IAE de classement S1 81.12 mV.s contre 93.72 au banc, -13.4 %, seuil 1 %)
+FICHIERS REFUSES (ne correspondent pas a la version retenue ; leurs scenarios sont absents) :
+  ELM-PID : <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID/resultats_Buck_Commun_ELM_PID.mat, ce fichier ne correspond pas a la version retenue (IAE de classement S1 81.12 mV.s contre 93.72 au banc, -13.4 %, seuil 1 %)
+Resultats Simulink ABSENTS (non calcules) :
+  ELM-PID S1
+  ELM-PID S2
+  ELM-PID S3
+  ELM-PID S8a
+  ELM-PID S10
+| ELM-PID | n.d. ; n.d. | n.d. ; n.d. | n.d. ; n.d. | n.d. ; n.d. | n.d. ; n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. |
+TEST attendu present : 'ce fichier ne correspond pas a la version retenue' : OK
+TEST attendu present : 'IAE de classement S1 81.12' : OK
+TEST attendu present : 'ELM-PID S1' : OK
+TEST attendu present : 'FICHIERS REFUSES' : OK
+TEST fichiers refuses : 1 (attendu 1) OK
+
+--- cas ELM-PID S10 a +2 % ---
+Dossiers lus (reglages DOSSIER_* en tete du script) :
+  ELM-PID          : <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B
+ELM-PID          S1   : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+ELM-PID          S2   : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+ELM-PID          S3   : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+ELM-PID          S8a  : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+ELM-PID          S10  : lu dans <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat
+| ELM-PID | 93.81 ; 60.00 | 2.41 ; 14.17 | 6.41 ; 37.72 | 2.97 ; 17.46 | 8.80 ; 88.04 |
+| ELM-PID | 0.85 | 0.00 | 30.00 | 3.00 | 93.81 | 412.7 | 1.102 | 14.07 | 3709.1 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 0.00 | 0.00 | 0.00 | 3.00 | 2.41 | 0.03412 | 0.2047 | 0.01 | 14.2 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 0.00 | 0.00 | 0.00 | 3.00 | 6.41 | 0.2418 | 0.545 | 0.04 | 37.7 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 0.00 | 0.00 | 0.00 | 3.00 | 2.97 | 0.05181 | 0.2523 | 0.02 | 17.5 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 0.00 | 0.00 | 0.00 | 3.00 | 8.80 | 0.7752 | 0.4402 | 0.09 | 88.0 | 0.0000 | 0.0 | 0.0 |
+| ELM-PID | 227.0 (10 s) | 227.0 (10 s) | 227.0 (10 s) | 227.0 (10 s) | 227.0 (10 s) |
+| ELM-PID | 93.81 / 93.72 (+0.10 %) | 2.41 / 2.41 (+0.10 %) | 6.41 / 6.41 (+0.10 %) | 2.97 / 2.96 (+0.10 %) | 8.80 / 8.63 (+2.00 %) conforme |
+TEST fichiers refuses : 0 (attendu 0) OK
+
+--- cas ELM-PID S10 a +4 % ---
+Dossiers lus (reglages DOSSIER_* en tete du script) :
+  ELM-PID          : <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B
+  REFUSE : ELM-PID : <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat, ce fichier ne correspond pas a la version retenue (IAE de classement S10 8.98 mV.s contre 8.63 au banc, +4.0 %, seuil 3 %)
+FICHIERS REFUSES (ne correspondent pas a la version retenue ; leurs scenarios sont absents) :
+  ELM-PID : <dossier temporaire>/Regulateurs/COMPARAISON/metriques/../../ELM_PID_B/resultats_Buck_Commun_ELM_PID.mat, ce fichier ne correspond pas a la version retenue (IAE de classement S10 8.98 mV.s contre 8.63 au banc, +4.0 %, seuil 3 %)
+Resultats Simulink ABSENTS (non calcules) :
+  ELM-PID S1
+  ELM-PID S2
+  ELM-PID S3
+  ELM-PID S8a
+  ELM-PID S10
+| ELM-PID | n.d. ; n.d. | n.d. ; n.d. | n.d. ; n.d. | n.d. ; n.d. | n.d. ; n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. |
+| ELM-PID | n.d. | n.d. | n.d. | n.d. | n.d. |
+TEST fichiers refuses : 1 (attendu 1) OK
+
+==============================================================================
+BILAN
+==============================================================================
+TEST BILAN FIGURES : OK
+TEST BILAN FERMER : OK
+TEST BILAN SANS FIGURES : OK
+TEST BILAN RESULTATS INCHANGES : OK
+TEST BILAN CONTROLE (ELM_PID_B accepte) : OK
+TEST BILAN CONTROLE (version incrementale refusee) : OK
+TEST BILAN CONTROLE (S10 : +2 % accepte, +4 % refuse) : OK

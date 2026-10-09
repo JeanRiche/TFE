@@ -50,6 +50,36 @@
 %     scenarios simules y sont remplaces et les autres gardes : on peut
 %     simuler un scenario a la fois. Les fichiers de Simuler_<Methode>.m
 %     (resultats_Buck_Commun_<M>.mat et _S10.mat) ne sont jamais touches.
+%   - une figure par modele simule (ajout du 9 octobre 2026, reglage
+%     FIGURES), sur le modele de Simuler_<Methode>_Trois_Modeles.m : quatre
+%     tuiles empilees, abscisses en ms sur toute la duree, liees entre
+%     elles ; lignes verticales pointillees aux evenements du scenario ;
+%       1. Vout et consigne ; 2. rapport cyclique (signal qui entre dans le
+%       PWM) ; 3. courant iL ; 4. gains P, I, D divises par ceux de
+%       Ziegler-Nichols (methodes adaptatives, enregistrement cmp_K). Le
+%       PSO-PID et Ziegler-Nichols n'ont pas de gains variables : la tuile 4
+%       est alors un texte qui donne les gains constants lus dans le bloc
+%       "PID Controller" (et leur rapport a ceux de ZN).
+%     Titre : modele, methode, scenario. Echelle des ordonnees de chaque
+%     tuile : du minimum au maximum des donnees tracees dans la tuile,
+%     elargi de MARGE_ORDONNEES (8 %) de l'etendue de chaque cote ; aucune
+%     courbe ne touche les bornes. Legendes au-dessus des tuiles, hors de la
+%     zone des courbes.
+%     Chaque figure est enregistree dans le sous-dossier figures_comparaison
+%     du dossier courant : <modele>.png (exportgraphics, 200 dpi) et
+%     <modele>.fig. FERMER_FIGURES = true ferme chaque figure apres
+%     l'enregistrement (utile quand on simule beaucoup de modeles).
+%     La figure est tracee APRES la mesure du temps de sim() : elle ne
+%     change ni le temps de calcul, ni les grandeurs, ni la comparaison au
+%     banc. Si le trace echoue, un avertissement est affiche et le script
+%     continue (les resultats .mat sont ecrits quand meme).
+% Ziegler-Nichols : les modeles ZN_<code>.slx (Construire_Modeles_Comparaison.m
+% avec AVEC_ZIEGLER_NICHOLS = true, dans un seul dossier, par exemple
+% PSO_PID) se simulent avec ce meme script, figures comprises :
+%   AVEC_ZIEGLER_NICHOLS = true   -> modeles de la methode du dossier ET ZN ;
+%   MODELES_A_SIMULER = {'ZN_S1', 'ZN_S2', 'ZN_S3', 'ZN_S8a', 'ZN_S10'}
+%                                 -> Ziegler-Nichols seul.
+% Resultats : resultats_Buck_Commun_comparaison.mat, figures ZN_<code>.png.
 % Ensuite, quand les cinq methodes sont simulees : dossier courant
 % COMPARAISON/metriques, Metriques_Simulink.m avec RESULTATS =
 % 'comparaison' (metriques_simulink_comparaison.csv et .md).
@@ -72,6 +102,11 @@ MODELES_A_SIMULER = {};                          % {} : tous les <PREFIXE>_<code
 AVEC_ZIEGLER_NICHOLS = false;                    % liste vide : true pour simuler aussi les ZN_<code>.slx
 NEUTRALISER_TO_WORKSPACE_DU_MODELE = true;       % To Workspace d'origine (x, y) en commentaire, en memoire
 TC = 1/(22000*10);                               % periode du regulateur et des enregistrements (s)
+FIGURES = true;                                  % une figure par modele simule (PNG et .fig enregistres)
+FERMER_FIGURES = false;                          % true : fermer chaque figure une fois enregistree
+DOSSIER_FIGURES = 'figures_comparaison';         % sous-dossier du dossier courant
+MARGE_ORDONNEES = 0.08;                          % marge en ordonnee de chaque cote (part de l'etendue, >= 0.05)
+K_ZN = [0.093910, 301.089, 7.3227e-06];          % P, I, D de Ziegler-Nichols (tuile des gains)
 
 % Prefixes : prefixe des modeles, modele source (nom des fichiers de
 % resultats, comme Simuler_<Methode>.m), methode, resultats attendus du banc.
@@ -173,6 +208,10 @@ for i = 1:numel(liste)
             end
         end
         avec_gains = any(strcmp(variables, 'cmp_K'));
+        gains_fixes = NaN(1, 3);                     % gains constants (PSO-PID, ZN), pour la figure
+        if FIGURES && ~avec_gains
+            gains_fixes = lire_gains_pid(MDL);
+        end
         if NEUTRALISER_TO_WORKSPACE_DU_MODELE
             for j = 1:numel(tw)
                 if ~startsWith(get_param(tw{j}, 'VariableName'), 'cmp_')
@@ -275,6 +314,19 @@ for i = 1:numel(liste)
             fprintf('    evenement a %6.1f ms : IAE %7.2f / %7.2f mV.s ; retour : %s / %s (Simulink / banc)\n', ...
                     g.evenements(j).t_ms, g.evenements(j).IAE * 1e3, evb(j).IAE * 1e3, ...
                     texte_retour(g.evenements(j)), texte_retour(evb(j)));
+        end
+    end
+    % Figure (apres la mesure du temps ; n'entre dans aucune grandeur)
+    if FIGURES
+        try
+            fig = tracer_figure(MDL, L.methode, sc, t, v, consigne, d, iL, K, gains_fixes, K_ZN, MARGE_ORDONNEES);
+            fichiers_fig = enregistrer_figure(fig, fullfile(pwd, DOSSIER_FIGURES), MDL);
+            fprintf('  figure : %s\n', strjoin(fichiers_fig, ' et '));
+            if FERMER_FIGURES
+                close(fig);
+            end
+        catch ME
+            warning('%s : figure non produite (%s). Les resultats ne sont pas touches.', MDL, ME.message);
         end
     end
 end
@@ -455,4 +507,135 @@ function [t, v] = extraire_enregistrement(sortie, nom)
     end
     t = t(:);
     v = double(v(:));
+end
+
+function fig = tracer_figure(mdl, methode, sc, t, v, consigne, d, iL, K, gains_fixes, K_ZN, marge)
+    % Une figure par modele, sur le modele de Simuler_<Methode>_Trois_Modeles.m :
+    % Vout et consigne, rapport cyclique, iL, gains / ZN (ou texte des gains
+    % constants). Abscisses en ms sur toute la duree ; ordonnees de chaque
+    % tuile fixees par fixer_ordonnees (marge de chaque cote).
+    t_ms = t(:) * 1e3;
+    evts_ms = reshape(sc.evenements, 1, []) * 1e3;
+    avec_courbes_gains = ~isempty(K);
+    fig = figure('Name', mdl, 'Color', 'w', 'Position', [60 40 1100 820]);
+    tl = tiledlayout(fig, 4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+    title(tl, sprintf('%s : %s, scenario %s (%s)', mdl, methode, sc.code, sc.nom), 'Interpreter', 'none');
+    ax = gobjects(1, 4);
+    for p = 1:4
+        ax(p) = nexttile(tl);
+        if p <= 3 || avec_courbes_gains
+            hold(ax(p), 'on');
+            grid(ax(p), 'on');
+            box(ax(p), 'on');
+            for k = 1:numel(evts_ms)
+                xline(ax(p), evts_ms(k), ':', 'Color', [0.5 0.5 0.5], 'LineWidth', 0.8, 'HandleVisibility', 'off');
+            end
+        end
+    end
+    % 1. Vout et consigne
+    plot(ax(1), t_ms, v, 'LineWidth', 0.8, 'DisplayName', 'Vout');
+    plot(ax(1), t_ms, consigne, 'k--', 'LineWidth', 0.8, 'DisplayName', 'consigne');
+    legend(ax(1), 'Location', 'northoutside', 'Orientation', 'horizontal');
+    ylabel(ax(1), 'Vout (V)');
+    fixer_ordonnees(ax(1), [v(:); consigne(:)], marge);
+    % 2. Rapport cyclique
+    plot(ax(2), t_ms, d, 'LineWidth', 0.6);
+    ylabel(ax(2), 'rapport cyclique');
+    fixer_ordonnees(ax(2), d, marge);
+    % 3. Courant de la bobine
+    plot(ax(3), t_ms, iL, 'LineWidth', 0.6);
+    ylabel(ax(3), 'iL (A)');
+    fixer_ordonnees(ax(3), iL, marge);
+    % 4. Gains rapportes a ceux de Ziegler-Nichols
+    if avec_courbes_gains
+        Kr = K ./ reshape(K_ZN, 1, []);
+        plot(ax(4), t_ms, Kr(:, 1), '-', 'LineWidth', 1.0, 'DisplayName', 'P');
+        plot(ax(4), t_ms, Kr(:, 2), '--', 'LineWidth', 1.0, 'DisplayName', 'I');
+        plot(ax(4), t_ms, Kr(:, 3), ':', 'LineWidth', 1.0, 'DisplayName', 'D');
+        legend(ax(4), 'Location', 'northoutside', 'Orientation', 'horizontal');
+        ylabel(ax(4), 'gains / ZN');
+        fixer_ordonnees(ax(4), Kr(:), marge);
+        xlabel(ax(4), 'temps (ms)');
+        lies = ax;
+    else
+        axis(ax(4), 'off');
+        text(ax(4), 0.5, 0.5, texte_gains_fixes(gains_fixes, K_ZN), 'Units', 'normalized', ...
+             'HorizontalAlignment', 'center', 'VerticalAlignment', 'middle', 'FontSize', 11, ...
+             'Interpreter', 'none');
+        xlabel(ax(3), 'temps (ms)');
+        lies = ax(1:3);
+    end
+    linkaxes(lies, 'x');
+    xlim(ax(1), [t_ms(1), t_ms(end)]);                    % toute la duree de l'essai
+end
+
+function fixer_ordonnees(ax, y, marge)
+    % Ordonnees de la tuile : [min - m ; max + m] des donnees tracees, avec
+    % m = marge x etendue. Courbe plate (etendue nulle) : etendue prise a
+    % 10 % de la valeur (1 si la valeur est nulle), pour que la courbe soit
+    % au milieu de la tuile et loin des bornes.
+    y = double(y(:));
+    y = y(isfinite(y));
+    if isempty(y)
+        return;
+    end
+    bas = min(y);
+    haut = max(y);
+    etendue = haut - bas;
+    if etendue <= 0
+        etendue = 0.1 * max(abs(haut), 1);
+    end
+    ylim(ax, [bas - marge * etendue, haut + marge * etendue]);
+end
+
+function txt = texte_gains_fixes(g, K_ZN)
+    % Texte de la tuile 4 quand la methode n'a pas de gains variables (deux
+    % lignes, en cellule).
+    if all(isfinite(g))
+        txt = {sprintf('Gains constants (pas d''adaptation) : P = %.5g, I = %.5g, D = %.5g', g), ...
+               sprintf('soit %.3f / %.3f / %.3f fois ceux de Ziegler-Nichols', g ./ reshape(K_ZN, 1, []))};
+    else
+        txt = {'Gains constants (pas d''adaptation) : pas de courbe de gains.', ...
+               '(valeurs non lues dans le bloc "PID Controller")'};
+    end
+end
+
+function g = lire_gains_pid(mdl)
+    % Gains P, I, D du bloc "PID Controller" (modeles a gains constants :
+    % PSO-PID, Ziegler-Nichols). NaN si le bloc ou une valeur ne se lit pas ;
+    % sans consequence sur la simulation.
+    g = NaN(1, 3);
+    bloc = [mdl '/PID Controller'];
+    noms = {'P', 'I', 'D'};
+    try
+        if getSimulinkBlockHandle(bloc) == -1
+            return;
+        end
+        for q = 1:3
+            s = get_param(bloc, noms{q});
+            x = str2double(s);
+            if isnan(x)
+                try
+                    x = evalin('base', s);               % gain donne par une variable
+                catch
+                    x = NaN;
+                end
+            end
+            if isnumeric(x) && isscalar(x)
+                g(q) = double(x);
+            end
+        end
+    catch
+        g = NaN(1, 3);
+    end
+end
+
+function fichiers = enregistrer_figure(fig, dossier, nom)
+    % <nom>.png (200 dpi) et <nom>.fig dans le dossier (cree s'il manque).
+    if ~isfolder(dossier)
+        mkdir(dossier);
+    end
+    fichiers = {fullfile(dossier, [nom '.png']), fullfile(dossier, [nom '.fig'])};
+    exportgraphics(fig, fichiers{1}, 'Resolution', 200);
+    savefig(fig, fichiers{2});
 end

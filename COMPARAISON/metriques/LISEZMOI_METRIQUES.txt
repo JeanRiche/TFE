@@ -56,18 +56,54 @@ Ordre d'execution
      COMPARAISON/S10/MODE_EMPLOI_S10.txt).
   3. Sous MATLAB, dossier courant COMPARAISON/metriques : Metriques_Simulink.
 
+S10 : quel reglage RESULTATS ?
+  Avec RESULTATS = 'Simuler' (defaut), S10 n'est lu que dans les fichiers
+  resultats_<modele>_S10.mat (ou dans le fichier principal s'il contient
+  S10), ecrits par Simuler_<M>.m avec ESSAIS_A_SIMULER = {'S10'}. Si tu as
+  simule S10 avec les modeles de comparaison (<PREFIXE>_S10.slx, lances
+  par Simuler_Modeles_Comparaison.m), ces fichiers n'existent pas et S10
+  sort "absent" (n.d. dans les tableaux). Il faut alors mettre
+  RESULTATS = 'comparaison' en tete de Metriques_Simulink.m : le script lit
+  resultats_<modele>_comparaison.mat (S1, S2, S3, S8a et S10) et ecrit
+  metriques_simulink_comparaison.csv et .md. Le script le rappelle dans la
+  console quand S10 manque en mode 'Simuler'.
+
+Noms des dossiers et controle de version (9 octobre 2026)
+  Le 9 octobre, Metriques_Simulink.m a lu sans prevenir un ancien dossier
+  ELM_PID qui contenait la version incrementale de l'ELM-PID (IAE S1 81.12
+  et S2 5.62 mV.s, au lieu de 93.72 et 2.41 au banc pour l'option B
+  retenue). Deux corrections :
+  - Reglages en tete du script : DOSSIER_PSO, DOSSIER_FUZZY, DOSSIER_ELM,
+    DOSSIER_PINN. Par defaut DOSSIER_ELM = 'ELM_PID_B', le nom du dossier
+    de l'option B chez toi. Dans le depot git, ce dossier s'appelle ELM_PID
+    (l'incremental : ELM_PID_INCREMENTAL) ; y mettre DOSSIER_ELM = 'ELM_PID'.
+    Les dossiers lus sont affiches au lancement ; un dossier introuvable
+    est signale.
+  - Controle de version : les fichiers de resultats ne portent pas de
+    chaine de version du regulateur. Le script compare donc l'IAE de
+    classement de chaque scenario a celle du banc (metriques_banc.csv,
+    calcule avec la version retenue de chaque methode). Ecart de plus de
+    1 % sur un scenario (S10 : 3 % pour l'ELM-PID et le PINN-PID, tolerance
+    ecrite avant ; S7a non controle) : le fichier entier est refuse, avec
+    le message "ce fichier ne correspond pas a la version retenue", et ses
+    scenarios sont comptes absents. Ziegler-Nichols n'est pas controle (une
+    seule version). metriques_banc.csv devient obligatoire : sans lui, le
+    script s'arrete.
+
 Ou placer les fichiers
   Regulateurs/
     PSO_PID/    resultats_Buck_Commun_PSO_PID.mat, ..._S10.mat,
                 resultats_Buck_Commun.mat (et/ou _S10.mat) de Ziegler-Nichols
     FUZZY_PID/  resultats_Buck_Commun_Fuzzy_PID.mat, ..._S10.mat
-    ELM_PID/    resultats_Buck_Commun_ELM_PID.mat, ..._S10.mat
+    ELM_PID_B/  resultats_Buck_Commun_ELM_PID.mat, ..._S10.mat
+                (dossier de l'option B ; reglage DOSSIER_ELM)
     PINN_PID/   resultats_Buck_Commun_PINN_PID.mat, ..._S10.mat
     COMPARAISON/metriques/  Metriques_Simulink.m, metriques_banc.csv
   Metriques_Simulink.m lit ../../<DOSSIER>/ a partir de son propre dossier
   et prend les instants des evenements dans scenario_<code>.mat du dossier
   de la methode. Les resultats de Ziegler-Nichols sont cherches dans les
-  quatre dossiers (le premier trouve est pris).
+  quatre dossiers (le premier trouve est pris). Avec RESULTATS =
+  'comparaison', memes dossiers, fichiers resultats_<modele>_comparaison.mat.
 
 Controles faits le 8 octobre 2026 (metriques_banc_sortie_console.txt)
   - IAE de classement identiques aux fichiers de resultats
