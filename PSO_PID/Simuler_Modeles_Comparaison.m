@@ -592,8 +592,8 @@ function fig = tracer_figure(mdl, methode, sc, t, v, consigne, d, iL, K, gains_f
         % egaux a 5e-4 pres en relatif, la moitie du dernier chiffre du
         % rapport affiche en %.3f (ZN : tous valent 1, meme si les gains du
         % bloc sont arrondis) : une seule droite et une seule etiquette pour
-        % le groupe. Etiquettes a 15, 45
-        % et 75 % de la duree (de la plus basse a la plus haute droite) :
+        % le groupe. Etiquettes a 15, 45 et 75 % de la duree (de la plus
+        % basse a la plus haute droite) :
         % au-dessus de la droite la plus haute, au-dessous de la plus basse,
         % et pour celle du milieu du cote oppose a sa plus proche voisine ;
         % deux droites proches n'ont donc jamais leurs etiquettes du meme
