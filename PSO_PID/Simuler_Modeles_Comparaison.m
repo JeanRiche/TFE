@@ -58,13 +58,24 @@
 %       PWM) ; 3. courant iL ; 4. gains P, I, D divises par ceux de
 %       Ziegler-Nichols (methodes adaptatives, enregistrement cmp_K). Le
 %       PSO-PID et Ziegler-Nichols n'ont pas de gains variables : la tuile 4
-%       trace alors trois droites horizontales, les gains constants lus dans
-%       le bloc "PID Controller" divises par ceux de ZN (memes couleurs,
-%       styles et legende ; marqueurs espaces pour distinguer les droites
-%       superposees de ZN, qui valent toutes 1), et le texte des gains et
-%       de leur rapport a ceux de ZN est ecrit sous la tuile, avec l'axe des
-%       temps (modification du 9 octobre 2026). Si les gains ne se lisent
-%       pas, la tuile 4 reste un texte seul.
+%       trace alors les gains constants lus dans le bloc "PID Controller"
+%       divises par ceux de ZN, en droites horizontales pleines sans
+%       marqueur (couleurs par defaut, P, I, D dans le meme ordre que les
+%       methodes adaptatives, legende au-dessus). Chaque droite porte sa
+%       valeur ecrite dans la tuile, par exemple "P = 0.23958 (2.551 x ZN)",
+%       a 15, 45 ou 75 % de la duree, au-dessus ou au-dessous de la droite
+%       de facon que les etiquettes de deux droites proches ne se
+%       recouvrent pas. Rapports egaux a 5e-4 pres en relatif (ZN : tous
+%       valent 1, meme avec des gains arrondis dans le bloc) : une seule
+%       droite et une seule etiquette, "P, I, D = 1.000 x ZN (P = ...,
+%       I = ..., D = ...)". Ordonnees elargies (marge de 35 % au moins)
+%       pour que les etiquettes tiennent dans la tuile sans toucher les
+%       bornes ; graduations aux valeurs des droites quand elles sont assez
+%       espacees. Le texte des gains et de leur rapport a ceux de ZN reste
+%       ecrit sous la tuile, avec l'axe des temps ; la figure est alors plus
+%       haute (900 pixels au plus) et posee plus haut sur l'ecran pour que
+%       ce texte ne soit pas cache (modification du 9 octobre 2026). Si les
+%       gains ne se lisent pas, la tuile 4 reste un texte seul.
 %     Titre : modele, methode, scenario. Echelle des ordonnees de chaque
 %     tuile : du minimum au maximum des donnees tracees dans la tuile,
 %     elargi de MARGE_ORDONNEES (8 %) de l'etendue de chaque cote ; aucune
@@ -517,14 +528,22 @@ end
 function fig = tracer_figure(mdl, methode, sc, t, v, consigne, d, iL, K, gains_fixes, K_ZN, marge)
     % Une figure par modele, sur le modele de Simuler_<Methode>_Trois_Modeles.m :
     % Vout et consigne, rapport cyclique, iL, gains / ZN (gains constants :
-    % trois droites et, sous la tuile, le texte des gains ; texte seul si les
-    % gains ne se lisent pas). Abscisses en ms sur toute la duree ; ordonnees
-    % de chaque tuile fixees par fixer_ordonnees (marge de chaque cote).
+    % droites portant leur valeur et, sous la tuile, le texte des gains ;
+    % texte seul si les gains ne se lisent pas). Abscisses en ms sur toute
+    % la duree ; ordonnees de chaque tuile fixees par fixer_ordonnees (marge
+    % de chaque cote).
     t_ms = t(:) * 1e3;
     evts_ms = reshape(sc.evenements, 1, []) * 1e3;
     avec_courbes_gains = ~isempty(K);
     gains_lus = ~avec_courbes_gains && all(isfinite(gains_fixes));   % gains constants lus dans le bloc
-    fig = figure('Name', mdl, 'Color', 'w', 'Position', [60 40 1100 820]);
+    position = [60 40 1100 820];
+    if gains_lus
+        % Deux lignes de texte sous la tuile 4 : figure plus haute, posee
+        % au-dessus d'une barre des taches et sans depasser le haut de l'ecran.
+        ecran = get(groot, 'ScreenSize');
+        position = [60 70 1100 max(650, min(900, ecran(4) - 140))];
+    end
+    fig = figure('Name', mdl, 'Color', 'w', 'Position', position);
     tl = tiledlayout(fig, 4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
     title(tl, sprintf('%s : %s, scenario %s (%s)', mdl, methode, sc.code, sc.nom), 'Interpreter', 'none');
     ax = gobjects(1, 4);
@@ -565,26 +584,105 @@ function fig = tracer_figure(mdl, methode, sc, t, v, consigne, d, iL, K, gains_f
         xlabel(ax(4), 'temps (ms)');
         lies = ax;
     elseif gains_lus
-        % Gains constants : trois droites sur toute la duree, memes couleurs,
-        % styles, legende et ordonnee que les courbes des methodes
-        % adaptatives. Pour ZN les trois rapports valent 1 et les droites se
-        % superposent : des marqueurs espaces et decales (o, carre,
-        % triangle) les distinguent. Le texte des gains reste sous la tuile.
-        Kr = reshape(gains_fixes, 1, []) ./ reshape(K_ZN, 1, []);
-        styles = {'-', '--', ':'};
-        marqueurs = {'o', 's', '^'};
+        % Gains constants (modification du 9 octobre 2026) : une droite
+        % pleine par valeur distincte des rapports P, I, D a ZN, sans
+        % marqueur, couleurs par defaut dans l'ordre P, I, D comme pour les
+        % methodes adaptatives. La valeur est ecrite sur chaque droite (gain
+        % lu et rapport a ZN, memes formats que texte_gains_fixes). Rapports
+        % egaux a 5e-4 pres en relatif, la moitie du dernier chiffre du
+        % rapport affiche en %.3f (ZN : tous valent 1, meme si les gains du
+        % bloc sont arrondis) : une seule droite et une seule etiquette pour
+        % le groupe. Etiquettes a 15, 45
+        % et 75 % de la duree (de la plus basse a la plus haute droite) :
+        % au-dessus de la droite la plus haute, au-dessous de la plus basse,
+        % et pour celle du milieu du cote oppose a sa plus proche voisine ;
+        % deux droites proches n'ont donc jamais leurs etiquettes du meme
+        % cote. Ordonnees : marge de 35 % de chaque cote, elargie si besoin
+        % jusqu'a ce que les etiquettes tiennent dans la tuile sans toucher
+        % les bornes. Graduations aux valeurs des droites si elles sont
+        % assez espacees (10 % de l'echelle), sinon graduations ordinaires.
+        % Le texte des gains reste sous la tuile.
+        g = reshape(gains_fixes, 1, []);
+        Kr = g ./ reshape(K_ZN, 1, []);
         noms = {'P', 'I', 'D'};
-        n_marq = 8;                                       % marqueurs par droite
+        couleurs = get(ax(4), 'ColorOrder');
+        groupe = zeros(1, 3);                             % groupes de rapports egaux
+        n_gr = 0;
         for q = 1:3
-            xm = t_ms(1) + (t_ms(end) - t_ms(1)) * ((0:n_marq - 1) + q / 4) / n_marq;
-            x = [t_ms(1), xm, t_ms(end)];
-            plot(ax(4), x, Kr(q) * ones(size(x)), styles{q}, 'LineWidth', 1.0, 'Marker', marqueurs{q}, ...
-                 'MarkerIndices', 2:n_marq + 1, 'MarkerSize', 5, 'DisplayName', noms{q});
+            if groupe(q) == 0
+                n_gr = n_gr + 1;
+                egaux = groupe == 0 & abs(Kr - Kr(q)) <= 5e-4 * max(abs(Kr), abs(Kr(q)));
+                groupe(egaux) = n_gr;
+            end
+        end
+        val = zeros(1, n_gr);
+        etiq = cell(1, n_gr);
+        coul = zeros(n_gr, 3);
+        for k = 1:n_gr
+            m = find(groupe == k);
+            val(k) = Kr(m(1));
+            coul(k, :) = couleurs(m(1), :);
+            if isscalar(m)
+                etiq{k} = sprintf('%s = %.5g (%.3f x ZN)', noms{m}, g(m), val(k));
+            else
+                detail = arrayfun(@(j) sprintf('%s = %.5g', noms{j}, g(j)), m, 'UniformOutput', false);
+                etiq{k} = sprintf('%s = %.3f x ZN (%s)', strjoin(noms(m), ', '), val(k), strjoin(detail, ', '));
+            end
+            plot(ax(4), [t_ms(1), t_ms(end)], [val(k), val(k)], '-', 'LineWidth', 2, ...
+                 'Color', coul(k, :), 'DisplayName', strjoin(noms(m), ' = '));
         end
         legend(ax(4), 'Location', 'northoutside', 'Orientation', 'horizontal');
         ylabel(ax(4), 'gains / ZN');
-        fixer_ordonnees(ax(4), Kr(:), marge);
         xlabel(ax(4), [{'temps (ms)'}, texte_gains_fixes(gains_fixes, K_ZN)], 'Interpreter', 'none');
+        fixer_ordonnees(ax(4), val, max(marge, 0.35));
+        % Cote et abscisse de chaque etiquette
+        [vs, ordre] = sort(val);
+        dessus = true(1, n_gr);
+        frac_x = [0.15, 0.45, 0.75];                      % part de la duree
+        x_et = zeros(1, n_gr);
+        for r = 1:n_gr
+            k = ordre(r);
+            x_et(k) = t_ms(1) + frac_x(r) * (t_ms(end) - t_ms(1));
+            if r == 1 && n_gr > 1
+                dessus(k) = false;                        % plus basse : au-dessous
+            elseif r > 1 && r < n_gr                      % milieu : loin de la plus proche voisine
+                dessus(k) = vs(r + 1) - vs(r) >= vs(r) - vs(r - 1);
+            end
+        end
+        h_et = gobjects(1, n_gr);
+        for k = 1:n_gr
+            if dessus(k)
+                alignement = 'bottom';
+            else
+                alignement = 'top';
+            end
+            h_et(k) = text(ax(4), x_et(k), val(k), etiq{k}, 'Color', coul(k, :), 'FontSize', 9, ...
+                           'HorizontalAlignment', 'left', 'VerticalAlignment', alignement, ...
+                           'BackgroundColor', 'w', 'Margin', 1, 'Interpreter', 'none');
+        end
+        % Ecart droite-etiquette de 4 % de l'echelle ; ordonnees elargies
+        % tant qu'une etiquette approche une borne a moins de 3 %.
+        for iter = 1:5
+            yl = ylim(ax(4));
+            for k = 1:n_gr
+                set(h_et(k), 'Position', [x_et(k), val(k) + (2 * dessus(k) - 1) * 0.04 * diff(yl), 0]);
+            end
+            drawnow;
+            ext = zeros(n_gr, 4);
+            for k = 1:n_gr
+                ext(k, :) = get(h_et(k), 'Extent');
+            end
+            bas = min(ext(:, 2));
+            haut = max(ext(:, 2) + ext(:, 4));
+            garde = 0.03 * diff(yl);
+            if bas >= yl(1) + garde && haut <= yl(2) - garde
+                break;
+            end
+            ylim(ax(4), [min(yl(1), bas - 2 * garde), max(yl(2), haut + 2 * garde)]);
+        end
+        if n_gr == 1 || min(diff(vs)) >= 0.1 * diff(ylim(ax(4)))
+            set(ax(4), 'YTick', vs, 'YTickLabel', arrayfun(@(y) sprintf('%.3f', y), vs, 'UniformOutput', false));
+        end
         lies = ax;
     else
         axis(ax(4), 'off');
