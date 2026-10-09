@@ -58,8 +58,13 @@
 %       PWM) ; 3. courant iL ; 4. gains P, I, D divises par ceux de
 %       Ziegler-Nichols (methodes adaptatives, enregistrement cmp_K). Le
 %       PSO-PID et Ziegler-Nichols n'ont pas de gains variables : la tuile 4
-%       est alors un texte qui donne les gains constants lus dans le bloc
-%       "PID Controller" (et leur rapport a ceux de ZN).
+%       trace alors trois droites horizontales, les gains constants lus dans
+%       le bloc "PID Controller" divises par ceux de ZN (memes couleurs,
+%       styles et legende ; marqueurs espaces pour distinguer les droites
+%       superposees de ZN, qui valent toutes 1), et le texte des gains et
+%       de leur rapport a ceux de ZN est ecrit sous la tuile, avec l'axe des
+%       temps (modification du 9 octobre 2026). Si les gains ne se lisent
+%       pas, la tuile 4 reste un texte seul.
 %     Titre : modele, methode, scenario. Echelle des ordonnees de chaque
 %     tuile : du minimum au maximum des donnees tracees dans la tuile,
 %     elargi de MARGE_ORDONNEES (8 %) de l'etendue de chaque cote ; aucune
@@ -511,19 +516,21 @@ end
 
 function fig = tracer_figure(mdl, methode, sc, t, v, consigne, d, iL, K, gains_fixes, K_ZN, marge)
     % Une figure par modele, sur le modele de Simuler_<Methode>_Trois_Modeles.m :
-    % Vout et consigne, rapport cyclique, iL, gains / ZN (ou texte des gains
-    % constants). Abscisses en ms sur toute la duree ; ordonnees de chaque
-    % tuile fixees par fixer_ordonnees (marge de chaque cote).
+    % Vout et consigne, rapport cyclique, iL, gains / ZN (gains constants :
+    % trois droites et, sous la tuile, le texte des gains ; texte seul si les
+    % gains ne se lisent pas). Abscisses en ms sur toute la duree ; ordonnees
+    % de chaque tuile fixees par fixer_ordonnees (marge de chaque cote).
     t_ms = t(:) * 1e3;
     evts_ms = reshape(sc.evenements, 1, []) * 1e3;
     avec_courbes_gains = ~isempty(K);
+    gains_lus = ~avec_courbes_gains && all(isfinite(gains_fixes));   % gains constants lus dans le bloc
     fig = figure('Name', mdl, 'Color', 'w', 'Position', [60 40 1100 820]);
     tl = tiledlayout(fig, 4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
     title(tl, sprintf('%s : %s, scenario %s (%s)', mdl, methode, sc.code, sc.nom), 'Interpreter', 'none');
     ax = gobjects(1, 4);
     for p = 1:4
         ax(p) = nexttile(tl);
-        if p <= 3 || avec_courbes_gains
+        if p <= 3 || avec_courbes_gains || gains_lus
             hold(ax(p), 'on');
             grid(ax(p), 'on');
             box(ax(p), 'on');
@@ -556,6 +563,28 @@ function fig = tracer_figure(mdl, methode, sc, t, v, consigne, d, iL, K, gains_f
         ylabel(ax(4), 'gains / ZN');
         fixer_ordonnees(ax(4), Kr(:), marge);
         xlabel(ax(4), 'temps (ms)');
+        lies = ax;
+    elseif gains_lus
+        % Gains constants : trois droites sur toute la duree, memes couleurs,
+        % styles, legende et ordonnee que les courbes des methodes
+        % adaptatives. Pour ZN les trois rapports valent 1 et les droites se
+        % superposent : des marqueurs espaces et decales (o, carre,
+        % triangle) les distinguent. Le texte des gains reste sous la tuile.
+        Kr = reshape(gains_fixes, 1, []) ./ reshape(K_ZN, 1, []);
+        styles = {'-', '--', ':'};
+        marqueurs = {'o', 's', '^'};
+        noms = {'P', 'I', 'D'};
+        n_marq = 8;                                       % marqueurs par droite
+        for q = 1:3
+            xm = t_ms(1) + (t_ms(end) - t_ms(1)) * ((0:n_marq - 1) + q / 4) / n_marq;
+            x = [t_ms(1), xm, t_ms(end)];
+            plot(ax(4), x, Kr(q) * ones(size(x)), styles{q}, 'LineWidth', 1.0, 'Marker', marqueurs{q}, ...
+                 'MarkerIndices', 2:n_marq + 1, 'MarkerSize', 5, 'DisplayName', noms{q});
+        end
+        legend(ax(4), 'Location', 'northoutside', 'Orientation', 'horizontal');
+        ylabel(ax(4), 'gains / ZN');
+        fixer_ordonnees(ax(4), Kr(:), marge);
+        xlabel(ax(4), [{'temps (ms)'}, texte_gains_fixes(gains_fixes, K_ZN)], 'Interpreter', 'none');
         lies = ax;
     else
         axis(ax(4), 'off');
