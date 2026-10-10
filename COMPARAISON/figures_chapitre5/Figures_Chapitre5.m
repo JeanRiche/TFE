@@ -69,26 +69,37 @@
 % fixer_ordonnees de Simuler_Modeles_Comparaison.m : aucune courbe ne
 % touche le cadre.
 %
-% STYLES (les memes dans toutes les figures)
-% ------------------------------------------
-%   Ziegler-Nichols : noir [0 0 0], tirets '--', 1.2 pt ;
-%   ELM-PID         : rouge [0.84 0.15 0.16], trait plein, 1.5 pt ;
-%   PSO-PID         : bleu [0.12 0.47 0.71], tiret-point '-.', 1.2 pt ;
-%   Fuzzy-PID       : vert [0.17 0.63 0.17], tirets '--', 1.2 pt ;
-%   PINN-PID        : orange [1.0 0.5 0.05], pointilles ':', 1.8 pt ;
+% STYLES (les memes dans toutes les figures ; modification du 10 octobre
+% 2026 a la demande de Jean-Riche : traits pleins seulement, epaisseurs
+% etagees, sans marqueur)
+% ------------------------------------------------------------------------
+%   Ziegler-Nichols : gris clair [0.65 0.65 0.65], 2.6 pt ;
+%   Fuzzy-PID       : vert clair [0.55 0.85 0.45], 3.0 pt ;
+%   PSO-PID         : bleu clair [0.35 0.60 0.95], 2.2 pt ;
+%   PINN-PID        : noir [0 0 0], 1.5 pt ;
+%   ELM-PID         : rouge [0.80 0.10 0.10], 0.9 pt ;
 %   consigne        : gris [0.5 0.5 0.5], pointilles ':', 0.8 pt.
-% Couleur ET style de trait distinguent chaque methode (lecture en noir et
-% blanc ou par un lecteur daltonien). L'ondulation de decoupage (22 kHz)
-% raccourcit les tirets et les pointilles sur Vout : chaque methode sauf
-% l'ELM-PID porte aussi un marqueur creux (ZN carre, PSO-PID cercle,
-% Fuzzy-PID triangle, PINN-PID losange), NB_MARQUEURS = 10 par courbe et
-% par panneau, a intervalles reguliers de la fenetre du panneau, decales
-% d'une methode a l'autre ; leur position ne depend que de la fenetre,
-% jamais des donnees. Les marqueurs figurent dans la legende avec le
-% trait. Ordre de trace : traits pleins
-% d'abord, tirets et pointilles par-dessus, pour qu'une courbe pleine ne
-% cache pas une courbe discontinue confondue avec elle. Legende au-dessus
-% des panneaux, hors de la zone des courbes.
+% Toutes les courbes des methodes sont en trait plein. Regle de trace : la
+% plus epaisse d'abord, la plus fine en dernier (par-dessus). Deux courbes
+% confondues se lisent donc comme un trait fin dans une bande plus large
+% d'une autre couleur ; la plus fine n'est jamais cachee. Ordre de trace
+% dans la figure B : Fuzzy-PID, PSO-PID, PINN-PID, ELM-PID ; figure A :
+% ZN puis ELM-PID ; figure des gains : ZN (droite y = 1), PSO-PID
+% (droites), PINN-PID, ELM-PID. Couleur et epaisseur d'une methode sont
+% les memes dans toutes les figures (ELM-PID 0.9 pt partout).
+% Couleurs : les bandes larges sont claires (vert, bleu, gris), les traits
+% fins sont sombres (noir, rouge) ; les deux methodes adaptatives (ELM-PID
+% rouge, PINN-PID noir) sont eloignees en teinte et en clarte. Controle
+% deuteranopie (matrice de Machado et al., 2009, severite 1, sur RGB
+% lineaire ; ecart de couleur dans l'espace OKLab x 100) : ELM-PID vu
+% brun-olive [0.51 0.46 0.04], PINN-PID noir, PSO-PID bleu, Fuzzy-PID
+% jaune pale, ZN gris. Ecarts des paires d'une meme figure : ELM / PINN
+% 57, ELM / PSO 28, ELM / Fuzzy 26, ELM / ZN 20, PINN / PSO 68,
+% PINN / Fuzzy 82, PSO / Fuzzy 29 (vision normale : 58, 36, 41, 28, 70,
+% 83, 29) ; tous au-dessus de 15, l'epaisseur s'y ajoute.
+% Legende : une seule ligne au-dessus de la grille, ordre ELM-PID, PSO-PID,
+% Fuzzy-PID, PINN-PID, consigne (figure A : ZN, ELM-PID, consigne),
+% echantillons de trait allonges pour montrer l'epaisseur.
 % Mise en page : 16 cm de large (bloc de texte de 15.5 cm), hauteur selon
 % le nombre de rangees ; Times New Roman, etiquettes 11 pt, graduations
 % 10 pt ; pas de titre (la legende de la figure est dans le memoire) ;
@@ -151,8 +162,7 @@ ZOOM_AVANT_MS = 1;                           % fenetre [te - 1 ; te + 9] ms
 ZOOM_APRES_MS = 9;
 NB_ZOOMS_MAX  = 4;                           % au plus 4 zooms (grille 2 x 2)
 MARGE_ORDONNEES = 0.08;                      % 8 % de l'etendue de chaque cote
-NB_MARQUEURS = 10;                           % marqueurs espaces par courbe et par panneau (0 : aucun)
-TAILLE_MARQUEURS = 4;                        % pt
+LONGUEUR_ECHANTILLON = 40;                   % longueur des traits de la legende (points)
 
 % Evenements de reference (scenarios_communs.json, criteres_S10.txt), en s
 EVENEMENTS_REF = struct('S1', zeros(1, 0), 'S2', [0.05, 0.07], 'S3', [0.05, 0.07], ...
@@ -173,7 +183,7 @@ K_ZN = [0.093910, 301.089, 7.3227e-06];      % P, I, D de Ziegler-Nichols
 SEUIL_CONTROLE = 0.01;
 
 % Methodes : nom, dossier, modele source (nom du fichier de resultats),
-% prefixe des modeles, couleur, style, epaisseur (pt), marqueur, tolerance S10.
+% prefixe des modeles, couleur, epaisseur (pt, trait plein), tolerance S10.
 METH = struct( ...
     'nom',     {'Ziegler-Nichols', 'ELM-PID', 'PSO-PID', 'Fuzzy-PID', 'PINN-PID'}, ...
     'cle',     {'ZN', 'ELM', 'PSO', 'FUZZY', 'PINN'}, ...
@@ -181,10 +191,8 @@ METH = struct( ...
     'source',  {'Buck_Commun', 'Buck_Commun_ELM_PID', 'Buck_Commun_PSO_PID', 'Buck_Commun_Fuzzy_PID', ...
                 'Buck_Commun_PINN_PID'}, ...
     'prefixe', {'ZN', 'ELM_PID', 'PSO_PID', 'Fuzzy_PID', 'PINN_PID'}, ...
-    'couleur', {[0 0 0], [0.84 0.15 0.16], [0.12 0.47 0.71], [0.17 0.63 0.17], [1.0 0.5 0.05]}, ...
-    'style',   {'--', '-', '-.', '--', ':'}, ...
-    'epaisseur', {1.2, 1.5, 1.2, 1.2, 1.8}, ...
-    'marqueur', {'s', 'none', 'o', '^', 'd'}, ...
+    'couleur', {[0.65 0.65 0.65], [0.80 0.10 0.10], [0.35 0.60 0.95], [0.55 0.85 0.45], [0 0 0]}, ...
+    'epaisseur', {2.6, 0.9, 2.2, 3.0, 1.5}, ...
     'tol_S10', {0.01, 0.03, 0.01, 0.01, 0.03}, ...
     'controle', {false, true, true, true, true});
 FIG_A = {'ZN', 'ELM'};                       % ordre de la legende
@@ -278,7 +286,7 @@ end
 FORME = struct('police', POLICE, 'etiq', TAILLE_ETIQUETTES, 'grad', TAILLE_GRADUATIONS, ...
                'largeur', LARGEUR_CM, 'gris_consigne', GRIS_CONSIGNE, 'gris_fenetre', GRIS_FENETRE, ...
                'marge', MARGE_ORDONNEES, 'dpi', RESOLUTION_DPI, 'visible', FIGURES_VISIBLES, ...
-               'nb_marq', NB_MARQUEURS, 'taille_marq', TAILLE_MARQUEURS);
+               'echantillon', LONGUEUR_ECHANTILLON);
 fprintf('\nFenetres de zoom (regle de l''en-tete) :\n');
 for s = 1:numel(SCENARIOS)
     code = SCENARIOS{s};
@@ -528,9 +536,9 @@ function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom)
         'PaperPosition', [0, 0, F.largeur, hauteur]);
     tl = tiledlayout(fig, nr, nc, 'TileSpacing', 'compact', 'Padding', 'compact');
     idx = cellfun(@(c) find(strcmp({METH.cle}, c)), cles);
-    % Ordre de trace : traits pleins d'abord, discontinus par-dessus
-    plein = arrayfun(@(i) strcmp(METH(i).style, '-'), idx);
-    ordre_trace = [idx(plein), idx(~plein)];
+    % Ordre de trace : la plus epaisse d'abord, la plus fine par-dessus
+    [~, o_] = sort([METH(idx).epaisseur], 'descend');
+    ordre_trace = idx(o_);
     lettres = 'abcdefgh';
     ref = Dc.(METH(idx(1)).cle);
     t_ms = ref.t * 1e3;
@@ -563,14 +571,14 @@ function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom)
             r = Dc.(METH(i).cle);
             tm = r.t * 1e3;
             k = tm >= a - 1e-9 & tm <= b + 1e-9;
-            h_leg(idx == i) = tracer(ax(p), tm(k), r.v(k), METH(i), find(idx == i) - 1, numel(idx), F);
+            h_leg(idx == i) = tracer(ax(p), tm(k), r.v(k), METH(i));
             y_tout = [y_tout; r.v(k)]; %#ok<AGROW>
         end
         xlim(ax(p), [a, b]);
         fixer_ordonnees(ax(p), y_tout, F.marge);
         grid(ax(p), 'on');
         box(ax(p), 'on');
-        set(ax(p), 'Layer', 'top', 'FontName', F.police, 'FontSize', F.grad);
+        set(ax(p), 'Layer', 'bottom', 'FontName', F.police, 'FontSize', F.grad);
         if p == 1
             txt = sprintf('(%s) essai complet', lettres(p));
         else
@@ -587,11 +595,7 @@ function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom)
     noms = [{METH(idx).nom}, {'consigne'}];
     lg = legend(ax(1), h_leg, noms, 'Orientation', 'horizontal', 'Location', 'northoutside', ...
                 'FontName', F.police, 'FontSize', F.grad, 'Box', 'off');
-    try
-        lg.NumColumns = numel(noms);
-        lg.Layout.Tile = 'north';                  % au-dessus de toute la grille
-    catch
-    end
+    reglages_legende(lg, numel(noms), F);
 end
 
 function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
@@ -619,7 +623,8 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
         y_tout = [];
         t0 = [];
         t1 = [];
-        hs = gobjects(1, 4);
+        hs = gobjects(1, 4);                       % ordre de la legende : ELM, PSO, PINN, ZN
+        courbes = struct('i', {}, 'pos', {}, 't', {}, 'y', {});
         for q = 1:numel(ia)
             i = ia(q);
             r = Dc.(METH(i).cle);
@@ -628,9 +633,7 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
                 continue;
             end
             tm = r.t * 1e3;
-            y = r.K(:, g) / K_ZN(g);
-            hs(q) = tracer(ax, tm, y, METH(i), q - 1, 4, F);
-            y_tout = [y_tout; y]; %#ok<AGROW>
+            courbes(end + 1) = struct('i', i, 'pos', 1 + 2 * (q - 1), 't', tm, 'y', r.K(:, g) / K_ZN(g)); %#ok<AGROW>
             t0 = min([t0, tm(1)]);
             t1 = max([t1, tm(end)]);
         end
@@ -639,18 +642,22 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
         end
         if all(isfinite(g_pso))
             y = g_pso(g) / K_ZN(g);
-            hs(3) = tracer(ax, [t0; t1], [y; y], METH(ip), 2, 4, F);
-            y_tout = [y_tout; y]; %#ok<AGROW>
+            courbes(end + 1) = struct('i', ip, 'pos', 2, 't', [t0; t1], 'y', [y; y]); %#ok<AGROW>
         end
         if avec_zn
-            hs(4) = tracer(ax, [t0; t1], [1; 1], METH(iz), 3, 4, F);
-            y_tout = [y_tout; 1]; %#ok<AGROW>
+            courbes(end + 1) = struct('i', iz, 'pos', 4, 't', [t0; t1], 'y', [1; 1]); %#ok<AGROW>
+        end
+        % la plus epaisse d'abord, la plus fine par-dessus
+        [~, o_] = sort(arrayfun(@(c) METH(c.i).epaisseur, courbes), 'descend');
+        for c = courbes(o_)
+            hs(c.pos) = tracer(ax, c.t, c.y, METH(c.i));
+            y_tout = [y_tout; c.y(:)]; %#ok<AGROW>
         end
         xlim(ax, [t0, t1]);
         fixer_ordonnees(ax, y_tout, F.marge);
         grid(ax, 'on');
         box(ax, 'on');
-        set(ax, 'Layer', 'top', 'FontName', F.police, 'FontSize', F.grad);
+        set(ax, 'Layer', 'bottom', 'FontName', F.police, 'FontSize', F.grad);
         ylabel(ax, sprintf('K_%s / K_{%s,ZN}', noms_g{g}, noms_g{g}), 'FontName', F.police, 'FontSize', F.etiq);
         title(ax, sprintf('(%s) gain %s', lettres(g), noms_g{g}), 'FontName', F.police, 'FontSize', F.grad, ...
               'FontWeight', 'normal');
@@ -658,7 +665,7 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
             xlabel(ax, 'temps (ms)', 'FontName', F.police, 'FontSize', F.etiq);
         end
         if g == 1
-            noms4 = {METH(ia(1)).nom, METH(ia(2)).nom, [METH(ip).nom ' (constant)'], ...
+            noms4 = {METH(ia(1)).nom, [METH(ip).nom ' (constant)'], METH(ia(2)).nom, ...
                      [METH(iz).nom ' (r' lettre(233) 'f' lettre(233) 'rence)']};
             ok = arrayfun(@(h) isgraphics(h), hs);
             h_leg = hs(ok);
@@ -668,35 +675,30 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
     end
     lg = legend(ax1, h_leg, noms_leg, 'Orientation', 'horizontal', 'Location', 'northoutside', ...
                 'FontName', F.police, 'FontSize', F.grad, 'Box', 'off');
-    try
-        lg.NumColumns = numel(noms_leg);
-        lg.Layout.Tile = 'north';
-    catch
-    end
+    reglages_legende(lg, numel(noms_leg), F);
 end
 
-function h = tracer(ax, t, y, M, rang, n_courbes, F)
-    % Courbe d'une methode (couleur, style, epaisseur) et, si la methode en
-    % a un, F.nb_marq marqueurs espaces regulierement sur la fenetre du
-    % panneau, decales d'une methode a l'autre (rang / n_courbes d'un
-    % intervalle) pour ne pas s'empiler. Les marqueurs restent lisibles la
-    % ou l'ondulation de decoupage raccourcit les tirets. Positions fixees
-    % par la fenetre seule, jamais par les donnees. Rend un objet de legende
-    % (trait et marqueur ensemble).
-    t = t(:);
-    y = y(:);
-    plot(ax, t, y, M.style, 'Color', M.couleur, 'LineWidth', M.epaisseur, 'HandleVisibility', 'off');
-    avec_marq = ~strcmp(M.marqueur, 'none') && F.nb_marq > 0 && numel(t) >= 2;
-    if avec_marq
-        pas_m = (t(end) - t(1)) / F.nb_marq;
-        xm = t(1) + ((0:F.nb_marq - 1)' + (rang + 0.5) / n_courbes) * pas_m;
-        ym = interp1(t, y, xm, 'linear');
-        plot(ax, xm, ym, 'LineStyle', 'none', 'Marker', M.marqueur, 'MarkerSize', F.taille_marq, ...
-             'Color', M.couleur, 'MarkerFaceColor', 'w', 'LineWidth', 0.8, 'HandleVisibility', 'off');
-        h = plot(ax, NaN, NaN, M.style, 'Color', M.couleur, 'LineWidth', M.epaisseur, 'Marker', M.marqueur, ...
-                 'MarkerSize', F.taille_marq, 'MarkerFaceColor', 'w');
-    else
-        h = plot(ax, NaN, NaN, M.style, 'Color', M.couleur, 'LineWidth', M.epaisseur);
+function h = tracer(ax, t, y, M)
+    % Courbe d'une methode : trait plein, couleur et epaisseur de la
+    % methode. Rend l'objet trace (pour la legende).
+    h = plot(ax, t(:), y(:), '-', 'Color', M.couleur, 'LineWidth', M.epaisseur);
+end
+
+function reglages_legende(lg, n, F)
+    % Une seule ligne de n entrees, au-dessus de toute la grille, traits
+    % d'echantillon allonges (F.echantillon points) pour montrer
+    % l'epaisseur. Proprietes absentes (Octave) : ignorees.
+    try
+        lg.NumColumns = n;
+    catch
+    end
+    try
+        lg.ItemTokenSize = [F.echantillon, 18];
+    catch
+    end
+    try
+        lg.Layout.Tile = 'north';
+    catch
     end
 end
 

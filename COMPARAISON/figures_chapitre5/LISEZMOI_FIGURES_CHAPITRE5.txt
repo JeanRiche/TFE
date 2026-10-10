@@ -71,14 +71,29 @@ Regle des zooms (fixee avant tout trace, la meme pour toutes les methodes)
   (ou de S10 a 50 ms) a 0 V : les evenements s'y lisent mal, c'est le
   role des zooms.
 
-Styles (identiques dans toutes les figures)
-  Ziegler-Nichols noir, tirets, carres ; ELM-PID rouge, trait plein
-  epais, sans marqueur ; PSO-PID bleu, tiret-point, cercles ; Fuzzy-PID
-  vert, tirets, triangles ; PINN-PID orange, pointilles, losanges ;
-  consigne grise, pointilles fins. Dix marqueurs par courbe et par
-  panneau, a intervalles reguliers de la fenetre. Times New Roman, 16 cm
-  de large, pas de titre dans la figure : la legende est dans le memoire.
-  Panneaux reperes (a), (b), ... pour la citer.
+Styles (identiques dans toutes les figures ; regle du 10 octobre 2026)
+  Toutes les courbes des methodes en trait plein, sans marqueur, avec des
+  epaisseurs etagees :
+    Fuzzy-PID       vert clair  [0.55 0.85 0.45]  3.0 pt
+    Ziegler-Nichols gris clair  [0.65 0.65 0.65]  2.6 pt
+    PSO-PID         bleu clair  [0.35 0.60 0.95]  2.2 pt
+    PINN-PID        noir        [0 0 0]           1.5 pt
+    ELM-PID         rouge       [0.80 0.10 0.10]  0.9 pt
+    consigne        gris        pointilles fins   0.8 pt
+  La plus epaisse est tracee d'abord, la plus fine en dernier, par-dessus.
+  Deux courbes confondues se lisent donc comme un trait fin dans une bande
+  plus large d'une autre couleur : aucune n'est cachee. Les bandes larges
+  sont claires, les traits fins sombres ; l'ELM-PID (rouge) et le PINN-PID
+  (noir) sont tres eloignes en teinte et en clarte. Controle deuteranopie
+  (simulation de Machado et al., 2009) : les paires d'une meme figure
+  restent separees (ecart OKLab x 100 de 20 a 82, voir l'en-tete du
+  script).
+  Legende : une seule ligne au-dessus de la grille, ordre ELM-PID,
+  PSO-PID, Fuzzy-PID, PINN-PID, consigne (figure A : ZN, ELM-PID,
+  consigne), traits d'echantillon allonges pour montrer l'epaisseur.
+  Times New Roman, 16 cm de large, pas de titre dans la figure : la
+  legende est dans le memoire. Panneaux reperes (a), (b), ... pour la
+  citer.
 
 Controle (ne pas sauter)
   Le script recalcule l'IAE de classement sur les donnees tracees, avec
