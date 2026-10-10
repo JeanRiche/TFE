@@ -61,3 +61,30 @@ COMPARAISON/criteres_comparaison.txt). Decision prise avec Jean-Riche le
 4. PRODUITS
   separation_methodes.py, separation_resultats.json,
   separation_sortie_console.txt (dans ce dossier).
+
+5. ISSUE (ajoute APRES le calcul du 10 octobre 2026 ; sections 1 a 4
+   inchangees)
+  Controle prealable : IAE nominales = metriques_banc.csv (ecart relatif
+  maximal 2.7e-10). 125 simulations, 34 s.
+  S1  : {PSO} < {PINN} < {ELM} < {ZN} < {Fuzzy} ; toutes les paires
+        separees, ELM/ZN comprise (+0.053 % a +0.055 %).
+  S2  : non transitive : ELM~PINN (-0.22 a +1.90 %) et Fuzzy~PINN
+        (-1.14 a +0.51 %) non separees, ELM/Fuzzy separee (+0.76 a
+        +1.38 %) ; PSO et ZN separes de tous.
+  S3  : {PSO} < {PINN, ELM} < {Fuzzy} < {ZN}.
+  S8a : {PSO} < {PINN} < {ELM} < {Fuzzy} < {ZN} ; PINN/ELM separee
+        (+0.13 a +1.24 %).
+  S10 : {PSO} < {PINN} < {ELM} < {Fuzzy} < {ZN} ; ELM/Fuzzy separee
+        (+6.30 a +16.69 %).
+  Previsions :
+    justes : S1 (PSO et Fuzzy separes de tous) ; S2 (PSO et ZN separes,
+      ELM~PINN, Fuzzy~PINN) ; S3 (entiere) ; S10 (PSO, PINN, ZN separes ;
+      ELM/Fuzzy separee, annonce "plutot separes").
+    fausses : S1 ELM/ZN (prevu non separes, separes) ; S1 PINN contre
+      ELM et ZN (prevu "probablement non separe", separes) ; S2 ELM/Fuzzy
+      (prevu non separes, separes) ; S8a PINN/ELM (prevu non separes,
+      separes : la "non-separation" du 7 octobre venait du seuil de 5 %,
+      robustesse_S8a.json ne montrait deja aucune inversion).
+  Lecture : la regle dit si l'ORDRE est reproductible ; elle ne dit pas si
+  l'ecart compte. Un ecart separe de 0.05 % (S1, ELM/ZN) reste sans portee
+  pratique ; le chapitre 5 donne toujours l'ecart chiffre a cote du verdict.
