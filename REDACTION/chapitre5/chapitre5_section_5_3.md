@@ -1,6 +1,6 @@
 ## 5.3. L'ELM-PID face au PID de Ziegler-Nichols
 
-L'ELM-PID part des gains de Ziegler-Nichols et les modifie ensuite en ligne. La comparaison entre ces deux régulateurs isole donc ce qu'apporte l'adaptation, sur le même bloc PID et le même convertisseur. Nous la menons scénario par scénario, du démarrage nominal au changement durable du point de fonctionnement, puis nous en faisons la synthèse au tableau 5.4.
+L'ELM-PID part des gains de Ziegler-Nichols et les modifie ensuite en ligne. La comparaison entre ces deux régulateurs isole donc ce qu'apporte l'adaptation, sur le même bloc PID et le même convertisseur. Nous la menons scénario par scénario, du démarrage nominal au changement durable du point de fonctionnement, puis nous en faisons la synthèse (section 5.3.4).
 
 ### 5.3.1. Démarrage nominal (S1)
 

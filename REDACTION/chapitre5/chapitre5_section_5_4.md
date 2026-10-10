@@ -69,11 +69,11 @@ Figés à 50 ms, le PINN-PID ferait moins bien que l'ELM-PID (17,19 contre 14,60
 
 Le PSO-PID, à gains fixes, reste pourtant devant les deux. Ses gains valent 2,55, 1,37 et 2,61 fois ceux de Ziegler-Nichols, sur tout l'essai. Ils ont été réglés hors ligne [Gaing, 2004] sur quatre essais de réglage distincts des essais de jugement : un échelon de charge à 7 Ω, des échelons de tension d'entrée (175 puis 235 V) à 15 Ω, un échelon de consigne à charge légère (60 Ω) et un essai avec bruit de mesure et quantification. Le réglage imposait en outre une marge de phase d'au moins 30° à douze points de fonctionnement, de 4 à 98 Ω et de 160 à 240 V, ce qui inclut le point de S10. Aucun de ces essais ne contient d'échelon de charge à 25 Ω sous 160 V. Les méthodes adaptatives, elles, partent des gains de Ziegler-Nichols et les font monter en ligne ; à 50 ms, leurs gains dérivés n'atteignent pas la moitié de celui du PSO-PID.
 
+Sur la commande (figure 5.16), le dernier passage du rapport cyclique en butée a lieu à 175,45 ms pour l'ELM-PID, à 160,2 ms pour le PSO-PID, à 160,1 ms pour le PINN-PID, et dès 53,5 et 52,3 ms pour Ziegler-Nichols et le Fuzzy-PID.
+
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S10_B_d_ELM_PSO_Fuzzy_PINN.png]
 
 Figure 5.16 : Rapport cyclique dans le scénario S10 : ELM-PID, PSO-PID, Fuzzy-PID et PINN-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 100, 115 et 130 ms.
-
-Sur la commande (figure 5.16), le dernier passage du rapport cyclique en butée a lieu à 175,45 ms pour l'ELM-PID, à 160,2 ms pour le PSO-PID, à 160,1 ms pour le PINN-PID, et dès 53,5 et 52,3 ms pour Ziegler-Nichols et le Fuzzy-PID.
 
 ### 5.4.2. Précision et coût de calcul
 
