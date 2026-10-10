@@ -1,0 +1,70 @@
+SCHEMAS DU CHAPITRE 4 (CONCEPTION DE L'ELM-PID)
+================================================
+
+Regenerer
+---------
+  python schemas_chapitre4.py
+  (Python 3, numpy, matplotlib ; police Times New Roman si installee, sinon
+  Liberation Serif, de memes metriques ; formules en STIX.) Le script ecrit,
+  dans ce dossier, chaque figure en PNG 300 dpi et en PDF vectoriel (polices
+  incorporees), largeur 15 cm. Ce sont des schemas : aucune donnee simulee.
+
+Sources de chaque element dessine
+---------------------------------
+  ELM_PID/banc_elm_pid.py (classes BlocPID, AdaptateurELM, ELMPID),
+  ELM_PID/elm_pid_adaptatif.m (copie MATLAB du meme adaptateur),
+  ELM_PID/banc_commun.py (fonction simuler : mesure bruitee et quantifiee,
+  MLI a 22 kHz, saturation [0,01 ; 0,99]), ELM_PID/entrainement_elm.py
+  (fonctions apprendre, h_de, predire), ELM_PID/criteres_elm_pid.txt
+  (sections 2 et 4, M1 a M4). Notations reprises de l'equation (5.4) du
+  chapitre 5 (x, e barre, phi, J, s, eta, epsilon).
+
+Fig4_1_boucle_ELM_PID
+---------------------
+  Ce qu'elle montre : en bas, la boucle a la cadence Tc = 1/220 000 s
+  (consigne, erreur e, bloc PID parallele commun, saturation, MLI,
+  convertisseur, mesure y bruitee et quantifiee) ; a cette meme cadence,
+  l'adaptateur cumule e, y, d et la sensibilite s de d aux gains, et note
+  si d touche une butee. En haut, ce qui se passe en fin de chaque fenetre
+  de 0,5 ms : prediction et jacobien du reseau ELM, porte et zones mortes,
+  gradient normalise avec inertie, projection sur l'ensemble admissible,
+  nouveaux gains K = K_ZN (.) x renvoyes au bloc PID. La fleche de la porte
+  vers le reseau indique que la mise a jour OS-ELM n'a lieu que porte
+  ouverte. Rouge : chemin d'adaptation ; noir : boucle commune aux methodes.
+  Legende proposee :
+  "Figure 4.1 : Structure de l'ELM-PID : boucle de regulation commune,
+  cadencee a Tc = 1/220 000 s (bas), et boucle d'adaptation des gains,
+  executee en fin de chaque fenetre de 0,5 ms (haut)."
+
+Fig4_2_reseau_ELM
+-----------------
+  Ce qu'elle montre : le modele interne, un ELM a liaisons directes
+  (RVFL) : cinq entrees centrees reduites (ybar(n-1), ybar(n-2), dbar(n),
+  dbar(n-1), dbar(n-2)), douze neurones logistiques aux poids et biais
+  d'entree tires au hasard puis fixes, sortie lineaire qui somme les
+  sorties des neurones, les liaisons directes des entrees et un biais. Les
+  poids de sortie sont appris hors ligne par moindres carres regularises
+  (C = 0,1), puis mis a jour en ligne par OS-ELM. Le jacobien J(n) est la
+  derivee exacte de la sortie par rapport a dbar(n). La remise a l'echelle
+  de la sortie (moyenne et ecart type des donnees d'apprentissage) n'est
+  pas dessinee.
+  Legende proposee :
+  "Figure 4.2 : Reseau ELM a liaisons directes utilise comme modele interne
+  de l'ELM-PID (12 neurones logistiques, C = 0,1) et calcul de son jacobien
+  J(n)."
+
+Fig4_3_chronogramme_fenetres
+----------------------------
+  Ce qu'elle montre (schema, pas une simulation) : six fenetres de 0,5 ms ;
+  les pas du PID (un trait pour 10 pas de Tc, 110 pas par fenetre) ;
+  l'erreur e(k) et sa moyenne ebar(n), avec la bande de zone morte
+  |ebar| < 0,1 V ; une butee de d dans la fenetre m, qui rend m suspecte ;
+  la porte, fermee pour les decisions de fin de m, m+1 et m+2, rouverte a
+  la fin de m+3, soit 1,5 ms apres la fin de m ; la decision prise en fin
+  de chaque fenetre (gains modifies ou non, et pourquoi). Les gains
+  calcules en fin de fenetre servent des le pas Tc suivant.
+  Legende proposee :
+  "Figure 4.3 : Chronogramme de l'adaptation : moyennes par fenetre de
+  0,5 ms, porte fermee pendant trois fenetres apres une butee du rapport
+  cyclique et zone morte de 0,1 V sur l'erreur moyenne (un trait pour
+  10 pas de Tc)."
