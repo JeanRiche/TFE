@@ -1,6 +1,6 @@
 ## 5.3. L'ELM-PID face au PID de Ziegler-Nichols
 
-L'ELM-PID part des gains de Ziegler-Nichols et les modifie ensuite en ligne. La comparaison entre ces deux régulateurs isole donc ce qu'apporte l'adaptation, sur le même bloc PID et le même convertisseur. Nous la menons scénario par scénario, du démarrage nominal au changement durable du point de fonctionnement, puis nous en faisons la synthèse au tableau 5.3.
+L'ELM-PID part des gains de Ziegler-Nichols et les modifie ensuite en ligne. La comparaison entre ces deux régulateurs isole donc ce qu'apporte l'adaptation, sur le même bloc PID et le même convertisseur. Nous la menons scénario par scénario, du démarrage nominal au changement durable du point de fonctionnement, puis nous en faisons la synthèse au tableau 5.4.
 
 ### 5.3.1. Démarrage nominal (S1)
 
@@ -46,9 +46,9 @@ S10 accentue cet écart (figure 5.7). Au nouveau point de fonctionnement (160 V,
 
 Figure 5.7 : Tension de sortie dans le scénario S10 (changement durable du point de fonctionnement) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 100, 115 et 130 ms. Les événements à 145, 160 et 175 ms ne figurent que dans le panneau (a).
 
-Une part de cet écart ne doit rien à l'adaptation au nouveau point. S10 a été conçu pour la mesurer : la même simulation est refaite en figeant les gains de l'ELM-PID à 50 ms, juste avant le changement de point de fonctionnement. Le tableau 5.4 compare les deux versions.
+Une part de cet écart ne doit rien à l'adaptation au nouveau point. S10 a été conçu pour la mesurer : la même simulation est refaite en figeant les gains de l'ELM-PID à 50 ms, juste avant le changement de point de fonctionnement. Le tableau 5.3 compare les deux versions.
 
-Tableau 5.4 : ELM-PID adaptatif et ELM-PID à gains figés à 50 ms dans le scénario S10.
+Tableau 5.3 : ELM-PID adaptatif et ELM-PID à gains figés à 50 ms dans le scénario S10.
 
 | **Grandeur** | **Gains figés à 50 ms** | **Adaptatif** |
 | --- | --- | --- |
@@ -60,23 +60,23 @@ Tableau 5.4 : ELM-PID adaptatif et ELM-PID à gains figés à 50 ms dans le scé
 
 Figés à 50 ms, les gains de l'ELM-PID donnent déjà 14,60 mV·s, contre 70,48 mV·s pour Ziegler-Nichols : la plus grande part de l'écart vient du réglage trouvé à la fin du démarrage. L'adaptation poursuivie après 50 ms réduit encore l'IAE de 41 %, de 14,60 à 8,63 mV·s. Elle n'agit pas pendant le réajustement de 50 à 100 ms (129,89 contre 129,97 mV·s), dominé par la surtension qui suit la chute du courant de charge, mais ensuite, d'un échelon de charge à l'autre. Sur S8a, une analyse faite après le calcul, et non prévue, donne un résultat de même sens : un PID aux gains fixes de 1,47, 1,06 et 1,15 fois ceux de Ziegler-Nichols obtient 3,87 mV·s, contre 2,96 mV·s pour l'ELM-PID adaptatif.
 
-La figure 5.9 montre comment les gains évoluent. Ceux de l'ELM-PID passent de 1,47, 1,06 et 1,15 fois ceux de Ziegler-Nichols à 50 ms, à 2,48, 1,83 et 1,22 fois à 100 ms, puis à 3,37, 2,07 et 1,35 fois en fin d'essai. L'ELM-PID monte surtout les gains proportionnel et intégral, et presque pas le gain dérivé. La figure donne aussi les gains des autres méthodes, discutés à la section 5.4.
-
-L'adaptation a un coût sur la commande (figure 5.8). Sur la fenêtre de classement de S10, l'ELM-PID est la méthode qui passe le plus de temps avec le rapport cyclique en butée (0,6 % des instants), et la seule qui y touche encore à 175 ms (dernier instant à 175,45 ms, contre environ 160 ms pour le PSO-PID et le PINN-PID, et 53,5 et 52,3 ms pour Ziegler-Nichols et le Fuzzy-PID). Sa variation moyenne du rapport cyclique d'une période à l'autre (0,0041) reste en revanche inférieure à celle du PSO-PID (0,0062). Son résultat est enfin sensible à de très petits écarts du circuit : avec *L* augmentée de 0,1 %, son IAE sur S10 passe de 8,63 à 7,88 mV·s, alors que celle des autres méthodes bouge de moins de 2 %. Cette sensibilité ne change pas le verdict face à Ziegler-Nichols, dont l'IAE reste de 709 à 802 % plus élevée selon la version du circuit.
-
-[FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S10_A_d_ZN_ELM.png]
-
-Figure 5.8 : Rapport cyclique dans le scénario S10 : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 100, 115 et 130 ms.
+La figure 5.8 montre comment les gains évoluent. Ceux de l'ELM-PID passent de 1,47, 1,06 et 1,15 fois ceux de Ziegler-Nichols à 50 ms, à 2,48, 1,83 et 1,22 fois à 100 ms, puis à 3,37, 2,07 et 1,35 fois en fin d'essai. L'ELM-PID monte surtout les gains proportionnel et intégral, et presque pas le gain dérivé. La figure donne aussi les gains des autres méthodes, discutés à la section 5.4.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S10_gains.png]
 
-Figure 5.9 : Gains *P* (a), *I* (b) et *D* (c) rapportés à ceux de Ziegler-Nichols dans le scénario S10, pour les cinq méthodes.
+Figure 5.8 : Gains *P* (a), *I* (b) et *D* (c) rapportés à ceux de Ziegler-Nichols dans le scénario S10, pour les cinq méthodes.
+
+L'adaptation a un coût sur la commande (figure 5.9). Sur la fenêtre de classement de S10, l'ELM-PID est la méthode qui passe le plus de temps avec le rapport cyclique en butée (0,6 % des instants), et la seule qui y touche encore à 175 ms (dernier instant à 175,45 ms, contre environ 160 ms pour le PSO-PID et le PINN-PID, et 53,5 et 52,3 ms pour Ziegler-Nichols et le Fuzzy-PID). Sa variation moyenne du rapport cyclique d'une période à l'autre (0,0041) reste en revanche inférieure à celle du PSO-PID (0,0062). Son résultat est enfin sensible à de très petits écarts du circuit : avec *L* augmentée de 0,1 %, son IAE sur S10 passe de 8,63 à 7,88 mV·s, alors que celle des autres méthodes bouge de moins de 2 %. Cette sensibilité ne change pas le verdict face à Ziegler-Nichols, dont l'IAE reste de 709 à 802 % plus élevée selon la version du circuit.
+
+[FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S10_A_d_ZN_ELM.png]
+
+Figure 5.9 : Rapport cyclique dans le scénario S10 : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 100, 115 et 130 ms.
 
 ### 5.3.4. Synthèse
 
-Le tableau 5.3 rassemble les résultats des cinq scénarios.
+Le tableau 5.4 rassemble les résultats des cinq scénarios.
 
-Tableau 5.3 : Comparaison de l'ELM-PID et du PID de Ziegler-Nichols (ZN) sur les cinq scénarios.
+Tableau 5.4 : Comparaison de l'ELM-PID et du PID de Ziegler-Nichols (ZN) sur les cinq scénarios.
 
 | **Scénario** | **IAE ZN (mV·s)** | **IAE ELM-PID (mV·s)** | **ELM-PID/ZN** | **Séparation (écart de ZN sur l'ELM-PID)** | **Écart maximal ZN / ELM-PID (V)** | **Erreur statique ZN / ELM-PID (mV)** |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -113,11 +113,11 @@ La section 5.4 compare l'ELM-PID aux trois méthodes avancées, dont le PSO-PID,
 | S8a : ondulation 252,4 / 22,7 mV (5 ms avant 70 ms) ; retours ZN et ELM | `metriques_banc.md`, tableaux S8a |
 | S10 : ZN 70,48, 4 échelons non revenus (100, 115, 130, 160 ms), erreur finale 9,23 mV ; ELM 8,63, retours 0,16 à 1,22 ms | `metriques_banc.md`, tableaux S10 |
 | Oscillation de ZN vers 1,4 kHz | `criteres_S10.txt`, résultats (« Par échelon ») |
-| Tableau 5.4 (14,60 / 8,63 ; 2,29 / 1,91 ; retours 0,76 à 1,62 / 0,16 à 1,22 ms ; 129,97 / 129,89) | `COMPARAISON/S10/resultats_S10.json` (« ELM-PID fige », « ELM-PID ») ; `scenario_S10_sortie_console.txt`, lignes 48 à 62 et 90-91 |
+| Tableau 5.3 (14,60 / 8,63 ; 2,29 / 1,91 ; retours 0,76 à 1,62 / 0,16 à 1,22 ms ; 129,97 / 129,89) | `COMPARAISON/S10/resultats_S10.json` (« ELM-PID fige », « ELM-PID ») ; `scenario_S10_sortie_console.txt`, lignes 48 à 62 et 90-91 |
 | Gains (1,469 ; 1,058 ; 1,152), (2,476 ; 1,828 ; 1,218), (3,372 ; 2,067 ; 1,352) ; gain de l'adaptation 40,9 % | `scenario_S10_sortie_console.txt`, lignes 37 et 90 ; `resultats_S10.json` (`multiplicateurs_ZN`, `gain_adaptation`) |
 | Butée sur la fenêtre de S10 : ELM 0,6 %, PSO 0,4 %, PINN 0,1 %, ZN et Fuzzy 0,0 % ; variation moyenne de *d* : ELM 0,0041, PSO 0,0062 | `metriques_banc.md`, tableau S10 (colonnes « butee (%) » et « |dd| moyen ») |
 | ELM avec *L* + 0,1 % : 7,88 ; autres méthodes : moins de 2 % | `criteres_S10.txt`, résultats (« Robustesse ») ; `scenario_S10_sortie_console.txt`, ligne 83 |
-| Erreur statique (fin d'essai) et écart maximal du tableau 5.3 | `metriques_banc.md`, résumé et tableaux par scénario |
+| Erreur statique (fin d'essai) et écart maximal du tableau 5.4 | `metriques_banc.md`, résumé et tableaux par scénario |
 
 ### Citations
 
@@ -127,7 +127,7 @@ La section 5.4 compare l'ELM-PID aux trois méthodes avancées, dont le PSO-PID,
 
 - « Le rapport cyclique le plus agité des cinq » (S10) n'est pas exact : la variation moyenne de *d* du PSO-PID (0,0062) dépasse celle de l'ELM-PID (0,0041). Ce qui est exact : le plus de temps en butée (0,6 %) et le dernier passage en butée (175,45 ms). Le texte dit cela.
 - Premier changement des gains sur S1 : il est enregistré, à 4 ms (`criteres_elm_pid.txt` §8). C'est le seul changement sur S1 ; le texte donne ce chiffre.
-- Écart maximal de S1 : remplacé par « – » dans le tableau 5.3 (erreur initiale de 100 V à *t* = 0, identique pour toutes les méthodes ; `metriques_banc.md`, tableau S1), avec une ligne d'explication sous le tableau.
+- Écart maximal de S1 : remplacé par « – » dans le tableau 5.4 (erreur initiale de 100 V à *t* = 0, identique pour toutes les méthodes ; `metriques_banc.md`, tableau S1), avec une ligne d'explication sous le tableau.
 - La part de l'adaptation poursuivie n'a été mesurée par un essai prévu que sur S10, mais une analyse non prévue existe sur S8a (3,87 contre 2,96 mV·s, soit 24 % de moins). Elle est citée comme telle dans 5.3.3. Sans elle, la synthèse laisserait croire que l'adaptation n'apporte rien sur S8a.
 - « Le reste de l'écart vient d'un seul ajustement des gains, fait à 4 ms » : sur S10, figés à 50 ms, les gains de l'ELM-PID (ceux de 4 ms) donnent déjà 14,60 contre 70,48 mV·s.
 

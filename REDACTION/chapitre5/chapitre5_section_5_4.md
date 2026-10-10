@@ -16,7 +16,9 @@ Tableau 5.5 : IAE de la fenêtre de classement (mV·s) des cinq méthodes et gro
 | S8a | 12,07 | 2,46 | 4,12 | 2,96 | 2,95 | {PSO} < {PINN} < {ELM} < {Fuzzy} < {ZN} |
 | S10 | 70,48 | 3,98 | 9,18 | 8,63 | 6,63 | {PSO} < {PINN} < {ELM} < {Fuzzy} < {ZN} |
 
-Le PSO-PID a la plus petite IAE sur les cinq scénarios, et il est séparé de toutes les autres méthodes partout. Les sous-sections qui suivent reprennent chaque scénario.
+Le PSO-PID a la plus petite IAE sur les cinq scénarios, et il est séparé de toutes les autres méthodes partout. Les paragraphes qui suivent reprennent chaque scénario.
+
+Sur S1 (figures 5.10 et 5.11), le PSO-PID a le plus petit dépassement (7,06 %) et l'établissement le plus rapide (2,64 ms). Suivent le PINN-PID (13,20 % ; 2,70 ms) et l'ELM-PID (13,99 % ; 3,40 ms). Le Fuzzy-PID dépasse de 27,34 % et s'établit en 3,35 ms ; c'est aussi lui dont le rapport cyclique reste le plus longtemps en butée pendant la montée (2,250 ms au total, la dernière fois à 2,605 ms, contre 1,6 à 1,8 ms pour les trois autres).
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S1_B_ELM_PSO_Fuzzy_PINN.png]
 
@@ -26,31 +28,29 @@ Figure 5.10 : Tension de sortie dans le scénario S1 : ELM-PID, PSO-PID, Fuzzy-P
 
 Figure 5.11 : Rapport cyclique dans le scénario S1 : ELM-PID, PSO-PID, Fuzzy-PID et PINN-PID. (a) Essai complet ; (b) agrandissement de 0 à 10 ms.
 
-Sur S1 (figures 5.10 et 5.11), le PSO-PID a le plus petit dépassement (7,06 %) et l'établissement le plus rapide (2,64 ms). Suivent le PINN-PID (13,20 % ; 2,70 ms) et l'ELM-PID (13,99 % ; 3,40 ms). Le Fuzzy-PID dépasse de 27,34 % et s'établit en 3,35 ms ; c'est aussi lui dont le rapport cyclique reste le plus longtemps en butée pendant la montée (2,250 ms au total, la dernière fois à 2,605 ms, contre 1,6 à 1,8 ms pour les trois autres).
+Sur S2 (figure 5.12), l'ELM-PID, le Fuzzy-PID et le PINN-PID sont à moins de 1,4 % l'un de l'autre. La règle ne sépare ni l'ELM-PID du PINN-PID (écart de −0,22 à +1,90 % selon la version du circuit) ni le Fuzzy-PID du PINN-PID (−1,14 à +0,51 %), mais elle sépare l'ELM-PID du Fuzzy-PID (+0,76 à +1,38 %). La relation n'est donc pas transitive, et aucun groupe ne peut être formé ; en pratique, les trois méthodes sont au même niveau. Le PSO-PID fait 15 % de moins que l'ELM-PID (2,04 contre 2,41 mV·s).
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S2_B_ELM_PSO_Fuzzy_PINN.png]
 
 Figure 5.12 : Tension de sortie dans le scénario S2 : ELM-PID, PSO-PID, Fuzzy-PID et PINN-PID. (a) Essai complet ; (b) agrandissement autour de 50 ms ; (c) agrandissement autour de 70 ms.
 
-Sur S2 (figure 5.12), l'ELM-PID, le Fuzzy-PID et le PINN-PID sont à moins de 1,4 % l'un de l'autre. La règle ne sépare ni l'ELM-PID du PINN-PID (écart de −0,22 à +1,90 % selon la version du circuit) ni le Fuzzy-PID du PINN-PID (−1,14 à +0,51 %), mais elle sépare l'ELM-PID du Fuzzy-PID (+0,76 à +1,38 %). La relation n'est donc pas transitive, et aucun groupe ne peut être formé ; en pratique, les trois méthodes sont au même niveau. Le PSO-PID fait 15 % de moins que l'ELM-PID (2,04 contre 2,41 mV·s).
+Sur S3 (figure 5.13), l'ELM-PID et le PINN-PID ne sont pas séparés (6,41 et 6,40 mV·s). Le PSO-PID obtient 5,46 mV·s. Au premier échelon de charge, l'écart maximal est le même pour toutes les méthodes (5,52 V) ; au retour de la charge à 70 ms, il vaut 5,43 V pour le PSO-PID contre 5,66 V pour l'ELM-PID, le Fuzzy-PID et le PINN-PID.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S3_B_ELM_PSO_Fuzzy_PINN.png]
 
 Figure 5.13 : Tension de sortie dans le scénario S3 : ELM-PID, PSO-PID, Fuzzy-PID et PINN-PID. (a) Essai complet ; (b) agrandissement autour de 50 ms ; (c) agrandissement autour de 70 ms.
 
-Sur S3 (figure 5.13), l'ELM-PID et le PINN-PID ne sont pas séparés (6,41 et 6,40 mV·s). Le PSO-PID obtient 5,46 mV·s. Au premier échelon de charge, l'écart maximal est le même pour toutes les méthodes (5,52 V) ; au retour de la charge à 70 ms, il vaut 5,43 V pour le PSO-PID contre 5,66 V pour l'ELM-PID, le Fuzzy-PID et le PINN-PID.
+Sur S8a (figure 5.14), le PINN-PID devance l'ELM-PID de 0,4 %. L'ordre est le même dans les cinq versions du circuit (écart de 0,13 à 1,24 %), mais un tel écart n'a pas de poids pratique. Le PSO-PID garde la tension plus près de la consigne : écart maximal de 0,60 V, contre 0,94 V pour le PINN-PID et 0,97 V pour l'ELM-PID.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S8a_B_ELM_PSO_Fuzzy_PINN.png]
 
 Figure 5.14 : Tension de sortie dans le scénario S8a : ELM-PID, PSO-PID, Fuzzy-PID et PINN-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 70, 100 et 120 ms.
 
-Sur S8a (figure 5.14), le PINN-PID devance l'ELM-PID de 0,4 %. L'ordre est le même dans les cinq versions du circuit (écart de 0,13 à 1,24 %), mais un tel écart n'a pas de poids pratique. Le PSO-PID garde la tension plus près de la consigne : écart maximal de 0,60 V, contre 0,94 V pour le PINN-PID et 0,97 V pour l'ELM-PID.
+S10 écarte nettement les quatre méthodes avancées, toutes séparées (figure 5.15) : PSO-PID 3,98 mV·s, PINN-PID 6,63, ELM-PID 8,63 et Fuzzy-PID 9,18. Le PINN-PID dépasse le PSO-PID de 66,5 à 69,9 % selon la version du circuit, l'ELM-PID dépasse le PINN-PID de 16,7 à 30,3 %, et le Fuzzy-PID dépasse l'ELM-PID de 6,3 à 16,7 %.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S10_B_ELM_PSO_Fuzzy_PINN.png]
 
 Figure 5.15 : Tension de sortie dans le scénario S10 : ELM-PID, PSO-PID, Fuzzy-PID et PINN-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 100, 115 et 130 ms. Les événements à 145, 160 et 175 ms ne figurent que dans le panneau (a).
-
-S10 écarte nettement les quatre méthodes avancées, toutes séparées (figure 5.15) : PSO-PID 3,98 mV·s, PINN-PID 6,63, ELM-PID 8,63 et Fuzzy-PID 9,18. Le PINN-PID dépasse le PSO-PID de 66,5 à 69,9 % selon la version du circuit, l'ELM-PID dépasse le PINN-PID de 16,7 à 30,3 %, et le Fuzzy-PID dépasse l'ELM-PID de 6,3 à 16,7 %.
 
 Le tableau 5.6 mesure, pour les deux méthodes adaptatives, ce qu'apporte l'adaptation poursuivie après le changement de point de fonctionnement, par la même comparaison qu'à la section 5.3.3 : gains figés à 50 ms contre adaptation continue.
 
@@ -65,7 +65,7 @@ Tableau 5.6 : IAE de 100 ms à la fin (mV·s) et gains rapportés à ceux de Zie
 | Gains à 100 ms | 2,48 ; 1,83 ; 1,22 | 1,65 ; 0,75 ; 1,53 |
 | Gains en fin d'essai | 3,37 ; 2,07 ; 1,35 | 1,70 ; 0,30 ; 1,26 |
 
-Figés à 50 ms, le PINN-PID ferait moins bien que l'ELM-PID (17,19 contre 14,60 mV·s) ; c'est son adaptation qui le fait passer devant. Les deux méthodes montent le gain proportionnel, mais elles traitent l'action intégrale en sens opposés (figure 5.9) : l'ELM-PID la porte à 2,07 fois celle de Ziegler-Nichols en fin d'essai, tandis que le PINN-PID la réduit à 0,30 fois sur le banc, et jusqu'à 0,25 fois sous Simulink, borne basse de son ensemble de gains admissibles. Le PINN-PID obtient la plus petite IAE des deux. Nous constatons cette différence sans pouvoir l'expliquer : aucun essai de ce travail n'isole l'effet de l'action intégrale de celui des autres gains.
+Figés à 50 ms, le PINN-PID ferait moins bien que l'ELM-PID (17,19 contre 14,60 mV·s) ; c'est son adaptation qui le fait passer devant. Les deux méthodes montent le gain proportionnel, mais elles traitent l'action intégrale en sens opposés (figure 5.8) : l'ELM-PID la porte à 2,07 fois celle de Ziegler-Nichols en fin d'essai, tandis que le PINN-PID la réduit à 0,30 fois sur le banc, et jusqu'à 0,25 fois sous Simulink, borne basse de son ensemble de gains admissibles. Le PINN-PID obtient la plus petite IAE des deux. Nous constatons cette différence sans pouvoir l'expliquer : aucun essai de ce travail n'isole l'effet de l'action intégrale de celui des autres gains.
 
 Le PSO-PID, à gains fixes, reste pourtant devant les deux. Ses gains valent 2,55, 1,37 et 2,61 fois ceux de Ziegler-Nichols, sur tout l'essai. Ils ont été réglés hors ligne [Gaing, 2004] sur quatre essais de réglage distincts des essais de jugement : un échelon de charge à 7 Ω, des échelons de tension d'entrée (175 puis 235 V) à 15 Ω, un échelon de consigne à charge légère (60 Ω) et un essai avec bruit de mesure et quantification. Le réglage imposait en outre une marge de phase d'au moins 30° à douze points de fonctionnement, de 4 à 98 Ω et de 160 à 240 V, ce qui inclut le point de S10. Aucun de ces essais ne contient d'échelon de charge à 25 Ω sous 160 V. Les méthodes adaptatives, elles, partent des gains de Ziegler-Nichols et les font monter en ligne ; à 50 ms, leurs gains dérivés n'atteignent pas la moitié de celui du PSO-PID.
 

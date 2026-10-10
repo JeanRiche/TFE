@@ -81,11 +81,11 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 | S8a : ondulation 252,4 / 22,7 mV (5 ms avant 70 ms) ; retours ZN et ELM | `metriques_banc.md`, tableaux S8a |
 | S10 : ZN 70,48, 4 échelons non revenus (100, 115, 130, 160 ms), erreur finale 9,23 mV ; ELM 8,63, retours 0,16 à 1,22 ms | `metriques_banc.md`, tableaux S10 |
 | Oscillation de ZN vers 1,4 kHz | `criteres_S10.txt`, résultats (« Par échelon ») |
-| Tableau 5.4 (14,60 / 8,63 ; 2,29 / 1,91 ; retours 0,76 à 1,62 / 0,16 à 1,22 ms ; 129,97 / 129,89) | `COMPARAISON/S10/resultats_S10.json` (« ELM-PID fige », « ELM-PID ») ; `scenario_S10_sortie_console.txt`, lignes 48 à 62 et 90-91 |
+| Tableau 5.3 (14,60 / 8,63 ; 2,29 / 1,91 ; retours 0,76 à 1,62 / 0,16 à 1,22 ms ; 129,97 / 129,89) | `COMPARAISON/S10/resultats_S10.json` (« ELM-PID fige », « ELM-PID ») ; `scenario_S10_sortie_console.txt`, lignes 48 à 62 et 90-91 |
 | Gains (1,469 ; 1,058 ; 1,152), (2,476 ; 1,828 ; 1,218), (3,372 ; 2,067 ; 1,352) ; gain de l'adaptation 40,9 % | `scenario_S10_sortie_console.txt`, lignes 37 et 90 ; `resultats_S10.json` (`multiplicateurs_ZN`, `gain_adaptation`) |
 | Butée sur la fenêtre de S10 : ELM 0,6 %, PSO 0,4 %, PINN 0,1 %, ZN et Fuzzy 0,0 % ; variation moyenne de *d* : ELM 0,0041, PSO 0,0062 | `metriques_banc.md`, tableau S10 (colonnes « butee (%) » et « |dd| moyen ») |
 | ELM avec *L* + 0,1 % : 7,88 ; autres méthodes : moins de 2 % | `criteres_S10.txt`, résultats (« Robustesse ») ; `scenario_S10_sortie_console.txt`, ligne 83 |
-| Erreur statique (fin d'essai) et écart maximal du tableau 5.3 | `metriques_banc.md`, résumé et tableaux par scénario |
+| Erreur statique (fin d'essai) et écart maximal du tableau 5.4 | `metriques_banc.md`, résumé et tableaux par scénario |
 
 ### Citations
 
@@ -95,7 +95,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 
 - « Le rapport cyclique le plus agité des cinq » (S10) n'est pas exact : la variation moyenne de *d* du PSO-PID (0,0062) dépasse celle de l'ELM-PID (0,0041). Ce qui est exact : le plus de temps en butée (0,6 %) et le dernier passage en butée (175,45 ms). Le texte dit cela.
 - Premier changement des gains sur S1 : il est enregistré, à 4 ms (`criteres_elm_pid.txt` §8). C'est le seul changement sur S1 ; le texte donne ce chiffre.
-- Écart maximal de S1 : remplacé par « – » dans le tableau 5.3 (erreur initiale de 100 V à *t* = 0, identique pour toutes les méthodes ; `metriques_banc.md`, tableau S1), avec une ligne d'explication sous le tableau.
+- Écart maximal de S1 : remplacé par « – » dans le tableau 5.4 (erreur initiale de 100 V à *t* = 0, identique pour toutes les méthodes ; `metriques_banc.md`, tableau S1), avec une ligne d'explication sous le tableau.
 - La part de l'adaptation poursuivie n'a été mesurée par un essai prévu que sur S10, mais une analyse non prévue existe sur S8a (3,87 contre 2,96 mV·s, soit 24 % de moins). Elle est citée comme telle dans 5.3.3. Sans elle, la synthèse laisserait croire que l'adaptation n'apporte rien sur S8a.
 - « Le reste de l'écart vient d'un seul ajustement des gains, fait à 4 ms » : sur S10, figés à 50 ms, les gains de l'ELM-PID (ceux de 4 ms) donnent déjà 14,60 contre 70,48 mV·s.
 
