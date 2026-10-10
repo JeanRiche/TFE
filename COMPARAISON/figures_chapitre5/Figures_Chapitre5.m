@@ -78,7 +78,14 @@
 %   PINN-PID        : orange [1.0 0.5 0.05], pointilles ':', 1.8 pt ;
 %   consigne        : gris [0.5 0.5 0.5], pointilles ':', 0.8 pt.
 % Couleur ET style de trait distinguent chaque methode (lecture en noir et
-% blanc ou par un lecteur daltonien). Ordre de trace : traits pleins
+% blanc ou par un lecteur daltonien). L'ondulation de decoupage (22 kHz)
+% raccourcit les tirets et les pointilles sur Vout : chaque methode sauf
+% l'ELM-PID porte aussi un marqueur creux (ZN carre, PSO-PID cercle,
+% Fuzzy-PID triangle, PINN-PID losange), NB_MARQUEURS = 10 par courbe et
+% par panneau, a intervalles reguliers de la fenetre du panneau, decales
+% d'une methode a l'autre ; leur position ne depend que de la fenetre,
+% jamais des donnees. Les marqueurs figurent dans la legende avec le
+% trait. Ordre de trace : traits pleins
 % d'abord, tirets et pointilles par-dessus, pour qu'une courbe pleine ne
 % cache pas une courbe discontinue confondue avec elle. Legende au-dessus
 % des panneaux, hors de la zone des courbes.
@@ -144,6 +151,8 @@ ZOOM_AVANT_MS = 1;                           % fenetre [te - 1 ; te + 9] ms
 ZOOM_APRES_MS = 9;
 NB_ZOOMS_MAX  = 4;                           % au plus 4 zooms (grille 2 x 2)
 MARGE_ORDONNEES = 0.08;                      % 8 % de l'etendue de chaque cote
+NB_MARQUEURS = 10;                           % marqueurs espaces par courbe et par panneau (0 : aucun)
+TAILLE_MARQUEURS = 4;                        % pt
 
 % Evenements de reference (scenarios_communs.json, criteres_S10.txt), en s
 EVENEMENTS_REF = struct('S1', zeros(1, 0), 'S2', [0.05, 0.07], 'S3', [0.05, 0.07], ...
@@ -164,7 +173,7 @@ K_ZN = [0.093910, 301.089, 7.3227e-06];      % P, I, D de Ziegler-Nichols
 SEUIL_CONTROLE = 0.01;
 
 % Methodes : nom, dossier, modele source (nom du fichier de resultats),
-% prefixe des modeles, couleur, style, epaisseur (pt), tolerance S10.
+% prefixe des modeles, couleur, style, epaisseur (pt), marqueur, tolerance S10.
 METH = struct( ...
     'nom',     {'Ziegler-Nichols', 'ELM-PID', 'PSO-PID', 'Fuzzy-PID', 'PINN-PID'}, ...
     'cle',     {'ZN', 'ELM', 'PSO', 'FUZZY', 'PINN'}, ...
@@ -175,6 +184,7 @@ METH = struct( ...
     'couleur', {[0 0 0], [0.84 0.15 0.16], [0.12 0.47 0.71], [0.17 0.63 0.17], [1.0 0.5 0.05]}, ...
     'style',   {'--', '-', '-.', '--', ':'}, ...
     'epaisseur', {1.2, 1.5, 1.2, 1.2, 1.8}, ...
+    'marqueur', {'s', 'none', 'o', '^', 'd'}, ...
     'tol_S10', {0.01, 0.03, 0.01, 0.01, 0.03}, ...
     'controle', {false, true, true, true, true});
 FIG_A = {'ZN', 'ELM'};                       % ordre de la legende
@@ -267,7 +277,8 @@ if ~isfolder(DOSSIER_SORTIE)
 end
 FORME = struct('police', POLICE, 'etiq', TAILLE_ETIQUETTES, 'grad', TAILLE_GRADUATIONS, ...
                'largeur', LARGEUR_CM, 'gris_consigne', GRIS_CONSIGNE, 'gris_fenetre', GRIS_FENETRE, ...
-               'marge', MARGE_ORDONNEES, 'dpi', RESOLUTION_DPI, 'visible', FIGURES_VISIBLES);
+               'marge', MARGE_ORDONNEES, 'dpi', RESOLUTION_DPI, 'visible', FIGURES_VISIBLES, ...
+               'nb_marq', NB_MARQUEURS, 'taille_marq', TAILLE_MARQUEURS);
 fprintf('\nFenetres de zoom (regle de l''en-tete) :\n');
 for s = 1:numel(SCENARIOS)
     code = SCENARIOS{s};
@@ -552,9 +563,7 @@ function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom)
             r = Dc.(METH(i).cle);
             tm = r.t * 1e3;
             k = tm >= a - 1e-9 & tm <= b + 1e-9;
-            h = plot(ax(p), tm(k), r.v(k), METH(i).style, 'Color', METH(i).couleur, ...
-                     'LineWidth', METH(i).epaisseur);
-            h_leg(idx == i) = h;
+            h_leg(idx == i) = tracer(ax(p), tm(k), r.v(k), METH(i), find(idx == i) - 1, numel(idx), F);
             y_tout = [y_tout; r.v(k)]; %#ok<AGROW>
         end
         xlim(ax(p), [a, b]);
@@ -620,7 +629,7 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
             end
             tm = r.t * 1e3;
             y = r.K(:, g) / K_ZN(g);
-            hs(q) = plot(ax, tm, y, METH(i).style, 'Color', METH(i).couleur, 'LineWidth', METH(i).epaisseur);
+            hs(q) = tracer(ax, tm, y, METH(i), q - 1, 4, F);
             y_tout = [y_tout; y]; %#ok<AGROW>
             t0 = min([t0, tm(1)]);
             t1 = max([t1, tm(end)]);
@@ -630,13 +639,11 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
         end
         if all(isfinite(g_pso))
             y = g_pso(g) / K_ZN(g);
-            hs(3) = plot(ax, [t0, t1], [y, y], METH(ip).style, 'Color', METH(ip).couleur, ...
-                         'LineWidth', METH(ip).epaisseur);
+            hs(3) = tracer(ax, [t0; t1], [y; y], METH(ip), 2, 4, F);
             y_tout = [y_tout; y]; %#ok<AGROW>
         end
         if avec_zn
-            hs(4) = plot(ax, [t0, t1], [1, 1], METH(iz).style, 'Color', METH(iz).couleur, ...
-                         'LineWidth', METH(iz).epaisseur);
+            hs(4) = tracer(ax, [t0; t1], [1; 1], METH(iz), 3, 4, F);
             y_tout = [y_tout; 1]; %#ok<AGROW>
         end
         xlim(ax, [t0, t1]);
@@ -665,6 +672,31 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
         lg.NumColumns = numel(noms_leg);
         lg.Layout.Tile = 'north';
     catch
+    end
+end
+
+function h = tracer(ax, t, y, M, rang, n_courbes, F)
+    % Courbe d'une methode (couleur, style, epaisseur) et, si la methode en
+    % a un, F.nb_marq marqueurs espaces regulierement sur la fenetre du
+    % panneau, decales d'une methode a l'autre (rang / n_courbes d'un
+    % intervalle) pour ne pas s'empiler. Les marqueurs restent lisibles la
+    % ou l'ondulation de decoupage raccourcit les tirets. Positions fixees
+    % par la fenetre seule, jamais par les donnees. Rend un objet de legende
+    % (trait et marqueur ensemble).
+    t = t(:);
+    y = y(:);
+    plot(ax, t, y, M.style, 'Color', M.couleur, 'LineWidth', M.epaisseur, 'HandleVisibility', 'off');
+    avec_marq = ~strcmp(M.marqueur, 'none') && F.nb_marq > 0 && numel(t) >= 2;
+    if avec_marq
+        pas_m = (t(end) - t(1)) / F.nb_marq;
+        xm = t(1) + ((0:F.nb_marq - 1)' + (rang + 0.5) / n_courbes) * pas_m;
+        ym = interp1(t, y, xm, 'linear');
+        plot(ax, xm, ym, 'LineStyle', 'none', 'Marker', M.marqueur, 'MarkerSize', F.taille_marq, ...
+             'Color', M.couleur, 'MarkerFaceColor', 'w', 'LineWidth', 0.8, 'HandleVisibility', 'off');
+        h = plot(ax, NaN, NaN, M.style, 'Color', M.couleur, 'LineWidth', M.epaisseur, 'Marker', M.marqueur, ...
+                 'MarkerSize', F.taille_marq, 'MarkerFaceColor', 'w');
+    else
+        h = plot(ax, NaN, NaN, M.style, 'Color', M.couleur, 'LineWidth', M.epaisseur);
     end
 end
 

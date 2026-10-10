@@ -1,0 +1,100 @@
+FIGURES DU CHAPITRE 5 : Figures_Chapitre5.m
+==========================================
+
+Ce que fait le script
+  Il trace les figures de comparaison du chapitre 5 (S1, S2, S3, S8a,
+  S10) a partir des resultats des modeles Simulink de comparaison
+  (<M>_<code>.slx et ZN_<code>.slx). Il ne simule rien par defaut : il lit
+  les fichiers que Simuler_Modeles_Comparaison.m a deja ecrits dans chaque
+  dossier de methode (quelques secondes au lieu de 15 a 25 minutes de
+  simulation). Il ne modifie aucun fichier existant.
+
+Ou le mettre sur ton PC
+  Regulateurs/
+    ELM_PID_B/   PINN_PID/   PSO_PID/   FUZZY_PID/
+    COMPARAISON/
+      metriques/metriques_banc.csv          (deja la, sert au controle)
+      figures_chapitre5/
+        Figures_Chapitre5.m                 <- ici
+        LISEZMOI_FIGURES_CHAPITRE5.txt
+  Le script trouve seul la racine Regulateurs/ (deux niveaux au-dessus de
+  lui). Sinon, mettre le chemin dans RACINE en tete du script.
+
+Avant de le lancer
+  1. Dans chaque dossier de methode (ELM_PID_B, PINN_PID, PSO_PID,
+     FUZZY_PID) : Simuler_Modeles_Comparaison.m deja lance pour S1, S2,
+     S3, S8a et S10. Il ecrit resultats_Buck_Commun_<M>_comparaison.mat.
+  2. Dans PSO_PID : le meme script avec AVEC_ZIEGLER_NICHOLS = true (ou
+     MODELES_A_SIMULER = {'ZN_S1', 'ZN_S2', 'ZN_S3', 'ZN_S8a', 'ZN_S10'}).
+     Il ecrit resultats_Buck_Commun_comparaison.mat.
+  3. En tete de Figures_Chapitre5.m, verifier DOSSIER_ELM = 'ELM_PID_B'
+     (dossier de l'option B ; jamais l'ancien dossier incremental) et les
+     autres DOSSIER_*.
+  Un resultat manque : le script s'arrete et dit quoi lancer. Avec
+  SIMULER_SI_ABSENT = true, il simule lui-meme le modele manquant (sans
+  enregistrer le .slx ni ecrire de fichier de resultats).
+
+Lancer
+  Ouvrir Figures_Chapitre5.m dans MATLAB, Run. Le dossier courant n'a pas
+  d'importance.
+
+Ce qui sort
+  Dans COMPARAISON/figures_chapitre5 (reglage DOSSIER_SORTIE), PNG a
+  300 dpi et .fig :
+    Fig5_<code>_A_ZN_ELM.png               Ziegler-Nichols et ELM-PID
+    Fig5_<code>_B_ELM_PSO_Fuzzy_PINN.png   ELM-PID, PSO-PID, Fuzzy-PID,
+                                           PINN-PID
+    Fig5_S10_gains.png                     gains P, I, D de l'ELM-PID et
+                                           du PINN-PID divises par ceux de
+                                           ZN ; PSO-PID (constant) et
+                                           ZN (= 1) en droites
+  pour <code> = S1, S2, S3, S8a, S10 (11 figures).
+  Dans la console : l'IAE de la fenetre de classement recalculee sur les
+  donnees tracees, comparee a metriques_banc.csv (voir "Controle").
+
+Regle des zooms (fixee avant tout trace, la meme pour toutes les methodes)
+  Panneau (a) : toute la duree de l'essai. Dessous, un panneau par
+  evenement :
+    S1           : demarrage, de 0 a 10 ms ;
+    autres essais: [te - 1 ms ; te + 9 ms] pour chaque evenement te du
+                   scenario (lu dans scenario_<code>.mat) :
+                   S2, S3 : 50 et 70 ms ; S8a : 50, 70, 100, 120 ms ;
+                   S10 : 50, 100, 115, 130 ms.
+  Au plus quatre zooms (grille 2 x 2), pour garder les quatre evenements
+  de S8a. S10 en a sept : les quatre premiers sont zoomes ; ceux de 145,
+  160 et 175 ms ne se voient que dans le panneau (a). A ecrire dans la
+  legende de la figure S10 du memoire.
+  Les fenetres de zoom sont grisees dans le panneau (a).
+  Ordonnees de chaque panneau : du minimum au maximum des courbes tracees
+  dans ce panneau, plus 8 % de l'etendue de chaque cote (aucune courbe ne
+  touche le cadre). Le panneau (a) va donc du depassement de demarrage
+  (ou de S10 a 50 ms) a 0 V : les evenements s'y lisent mal, c'est le
+  role des zooms.
+
+Styles (identiques dans toutes les figures)
+  Ziegler-Nichols noir, tirets, carres ; ELM-PID rouge, trait plein
+  epais, sans marqueur ; PSO-PID bleu, tiret-point, cercles ; Fuzzy-PID
+  vert, tirets, triangles ; PINN-PID orange, pointilles, losanges ;
+  consigne grise, pointilles fins. Dix marqueurs par courbe et par
+  panneau, a intervalles reguliers de la fenetre. Times New Roman, 16 cm
+  de large, pas de titre dans la figure : la legende est dans le memoire.
+  Panneaux reperes (a), (b), ... pour la citer.
+
+Controle (ne pas sauter)
+  Le script recalcule l'IAE de classement sur les donnees tracees, avec
+  la definition de Metriques_Simulink.m :
+    S1 de 0 a 30 ms (demarrage ; aucun evenement apres 30 ms) ;
+    S2, S3, S8a de 30 ms a la fin ; S10 de 100 ms a la fin.
+  Il la compare a metriques_banc.csv : tolerance 1 %, 3 % sur S10 pour
+  l'ELM-PID et le PINN-PID. Hors tolerance (sauf ZN, indicatif) : arret
+  avant tout trace (ARRETER_SI_ECART = true) avec le fichier en cause.
+  C'est le signe d'un dossier perime ou mal regle (cas du 9 octobre :
+  ancien dossier ELM_PID lu a la place de l'option B).
+  Le script previent aussi si un modele .slx est plus recent que son
+  fichier de resultats (resultats a refaire).
+
+Limites
+  Les figures montrent Vout seulement (gains en plus pour S10). Le
+  rapport cyclique et iL sont dans les figures de
+  Simuler_Modeles_Comparaison.m (dossier figures_comparaison de chaque
+  methode), qui restent en annexe.
