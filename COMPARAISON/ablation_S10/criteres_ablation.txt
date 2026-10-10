@@ -1,0 +1,47 @@
+CRITERES ET PREVISIONS : ROLE DU RESEAU ELM (ablations sur S2, S3, S8a, S10)
+=============================================================================
+Ecrit et commite le 10 octobre 2026, AVANT tout calcul de ce dossier.
+Decision prise avec Jean-Riche le 10 octobre 2026 (section 5.5.3 du
+chapitre 5).
+
+1. POURQUOI
+  Les ablations du 8 octobre (ELM_PID/banc_elm_pid_resultats.json, cle
+  "ablations") ne couvrent que les onze essais ; S10, le seul scenario ou
+  l'adaptation poursuivie compte (-41 % contre les gains figes a 50 ms),
+  n'a pas ete teste. Sur S2, S3, S8a, les IAE nominales connues sont :
+    ELM-PID 2.406 / 6.406 / 2.965 ; jacobien constant 2.432 / 6.522 /
+    3.043 ; sans OS-ELM 2.406 / 6.406 / 2.964 (mV.s).
+  Leur separation (variantes du circuit) n'a jamais ete mesuree.
+
+2. REGLE (fixee avant calcul)
+  - Versions : ELM-PID (option B, reglages finaux) ; "jacobien constant" et
+    "sans OS-ELM", exactement les ablations deja implementees dans
+    ELM_PID/banc_elm_pid.py (aucune nouvelle definition, aucun reglage).
+  - Scenarios : S2, S3, S8a (fenetre de 30 ms a la fin) et S10 (de 100 ms
+    a la fin, construit comme COMPARAISON/S10/scenario_S10.py).
+  - Variantes du circuit : nominal, L -0.1 %, L +0.1 %, C -0.1 %,
+    C +0.1 % (comme COMPARAISON/separation/criteres_separation.txt).
+  - Controles prealables (sinon arret) : ELM-PID nominal = metriques_banc.csv
+    a 1e-9 pres ; ablations nominales sur S2, S3, S8a = valeurs du 8 octobre
+    ci-dessus (cle "ablations") a 1e-9 pres.
+  - Verdict par paire (ELM-PID contre chaque ablation, par scenario) :
+    SEPAREE si le signe de la difference d'IAE est le meme dans les cinq
+    variantes, sinon NON SEPAREE ; publier ecart nominal, min et max.
+  - On publie aussi, sur S10, les multiplicateurs de gains en fin d'essai
+    de chaque version.
+
+3. PREVISIONS
+  - Sans OS-ELM : S2, S3, S8a : ecart nul ou presque, non separe (ou
+    separe avec un ecart inferieur a 0.1 %). S10 : ecart inferieur a 2 %,
+    signe non prevu.
+  - Jacobien constant : S2, S3, S8a : IAE plus grande (+1 a +3 %),
+    separation incertaine (la sensibilite de l'ELM-PID aux variantes
+    atteint 0.8 a 1.2 % sur S8a). S10 : IAE plus grande, de 0 a +15 %,
+    separation incertaine.
+  - Si le jacobien constant fait MIEUX que le reseau sur S10, ou plus de
+    15 % moins bien, la prevision est fausse et le resultat est publie tel
+    quel.
+
+4. PRODUITS (dans ce dossier)
+  ablation_reseau_elm.py, ablation_resultats.json,
+  ablation_sortie_console.txt.
