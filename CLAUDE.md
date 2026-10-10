@@ -26,8 +26,12 @@ commune v2.1. État détaillé du travail : `ETAT_DE_REPRISE.md`.
   travailler).
 - Ordre de rédaction (consigne du 10 octobre 2026) : chapitre 5 (simulation
   et analyse des performances), puis chapitre 6 (perspectives et extension),
-  puis les chapitres 1 à 4. Les chapitres 1 à 4 sont écrits pour aboutir
-  aux chapitres 5 et 6 : s'y référer pour éviter toute incohérence.
+  puis, à rebours, les chapitres 4, 3, 2 et 1 (consigne du 10 octobre 2026).
+  Les chapitres 1 à 4 sont écrits pour aboutir aux chapitres 5 et 6 : s'y
+  référer pour éviter toute incohérence. Un registre
+  `REDACTION/dependances_chapitres.md` liste ce que chaque chapitre écrit
+  suppose des chapitres antérieurs (notations, définitions, équations) ;
+  chaque chapitre antérieur doit le fournir, et rien de plus.
 - Avant de rédiger un chapitre, soumettre d'abord son plan à Jean-Riche et
   attendre son accord.
 - Forme : `REDACTION/guide_de_forme.md` (thèse de référence). Le travail doit
