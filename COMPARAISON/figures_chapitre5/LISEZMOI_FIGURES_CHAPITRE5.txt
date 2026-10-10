@@ -49,7 +49,20 @@ Ce qui sort
                                            divises par ceux de ZN ;
                                            PSO-PID (constant) et ZN (= 1)
                                            en droites
-  pour <code> = S1, S2, S3, S8a, S10 (11 figures).
+    Fig5_<code>_A_d_ZN_ELM.png             rapport cyclique d, ZN et
+                                           ELM-PID
+    Fig5_<code>_B_d_ELM_PSO_Fuzzy_PINN.png rapport cyclique d, ELM-PID,
+                                           PSO-PID, Fuzzy-PID, PINN-PID
+  pour <code> = S1, S2, S3, S8a, S10 (21 figures ; 11 avec
+  AVEC_RAPPORT_CYCLIQUE = false).
+  Rapport cyclique d : c'est l'enregistrement cmp_d des modeles, le
+  signal qui entre dans le bloc PWM Generator, donc APRES la saturation
+  physique [0.01 ; 0.99] du banc commun (pas la sortie brute du PID).
+  Memes zooms, styles et legende que les figures de Vout ; axe "rapport
+  cyclique d". Une butee (0.01 ou 0.99) n'est tracee, en pointilles gris
+  fins, que dans les panneaux ou les donnees l'atteignent. La console
+  donne pour chaque methode le temps passe en butee (total et avant
+  30 ms) et le premier et le dernier instant en butee.
   Gains du Fuzzy-PID : sortie brute du bloc de Zhao (P, I, D du bloc PID
   commun, I = Kp^2 / (alpha Kd)), recalculee a chaque pas avec e et De,
   tracee sans filtrage ; la bande verte large est dessinee en premier, les

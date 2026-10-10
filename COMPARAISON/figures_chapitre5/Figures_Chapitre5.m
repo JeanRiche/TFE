@@ -21,6 +21,23 @@
 % sont divises par ceux de ZN comme les autres. Ils changent a chaque pas
 % avec e et De : la courbe brute est tracee, sans filtrage. Le minimum et
 % le maximum de chaque rapport sur l'essai sont affiches dans la console.
+%   Fig5_<code>_A_d_ZN_ELM.png             rapport cyclique d, memes
+%   Fig5_<code>_B_d_ELM_PSO_Fuzzy_PINN.png methodes, meme mise en page,
+%                                          memes zooms et styles que les
+%                                          figures de Vout (reglage
+%                                          AVEC_RAPPORT_CYCLIQUE, ajout du
+%                                          10 octobre 2026).
+% Rapport cyclique d : enregistrement cmp_d, pris par
+% Construire_Modeles_Comparaison.m sur le signal qui alimente l'entree du
+% bloc "PWM Generator (DC-DC)", donc APRES la saturation physique
+% [0.01 ; 0.99] du banc commun (D_MIN, D_MAX ; Simuler_Modeles_Comparaison.m
+% refuse un d hors de cet intervalle). Dans chaque panneau, une butee
+% (0.01 ou 0.99) est tracee en pointilles gris fins seulement si les
+% donnees du panneau l'atteignent (a 1e-9 pres) ; elle entre alors dans la
+% legende ("saturation (0.01 ; 0.99)"). Ordonnees : donnees du panneau,
+% marge de 8 %, rien n'est coupe. La console donne, par scenario et par
+% methode, le temps passe en butee (total, avant 30 ms) et le premier et
+% le dernier instant en butee.
 % Chaque figure est aussi enregistree en .fig. Aucune metrique n'est
 % redefinie : le script recalcule seulement l'IAE de la fenetre de
 % classement sur les donnees tracees et la compare a metriques_banc.csv
@@ -165,6 +182,8 @@ SOURCE = 'enregistres';                      % 'enregistres' : fichiers resultat
 SIMULER_SI_ABSENT = false;                   % true : simuler un modele dont le resultat manque
 ARRETER_SI_ECART = true;                     % arret si l'IAE s'ecarte du banc hors tolerance
 FIGURE_GAINS_AVEC_ZN = true;                 % droite y = 1 (Ziegler-Nichols) dans Fig5_S10_gains
+AVEC_RAPPORT_CYCLIQUE = true;                % figures A et B du rapport cyclique d (Fig5_<code>_A_d_..., _B_d_...)
+D_BUTEES = [0.01, 0.99];                     % saturation physique devant le PWM (banc commun, D_MIN / D_MAX)
 FIGURES_VISIBLES = 'on';                     % 'off' : figures non affichees (enregistrees quand meme)
 
 % Regle des zooms (voir l'en-tete ; ne pas changer d'une figure a l'autre)
@@ -310,17 +329,29 @@ for s = 1:numel(SCENARIOS)
                 strjoin(arrayfun(@(x) sprintf('%g', x), non_zoomes, 'UniformOutput', false), ', '));
     end
     fprintf('\n');
-    for f = 1:2
-        if f == 1
-            cles = FIG_A;
-            nom = sprintf('Fig5_%s_A_ZN_ELM', code);
-        else
-            cles = FIG_B;
-            nom = sprintf('Fig5_%s_B_ELM_PSO_Fuzzy_PINN', code);
+    grandeurs_tracees = {'v'};
+    if AVEC_RAPPORT_CYCLIQUE
+        grandeurs_tracees{end + 1} = 'd';
+        resume_butees(D.(code), METH, code, D_BUTEES);
+    end
+    for gq = grandeurs_tracees
+        for f = 1:2
+            if strcmp(gq{1}, 'v')
+                suffixe = '';
+            else
+                suffixe = 'd_';
+            end
+            if f == 1
+                cles = FIG_A;
+                nom = sprintf('Fig5_%s_A_%sZN_ELM', code, suffixe);
+            else
+                cles = FIG_B;
+                nom = sprintf('Fig5_%s_B_%sELM_PSO_Fuzzy_PINN', code, suffixe);
+            end
+            fig = figure_vout(D.(code), METH, cles, zooms, textes, FORME, nom, gq{1}, D_BUTEES);
+            fichiers = enregistrer(fig, DOSSIER_SORTIE, nom, RESOLUTION_DPI);
+            fprintf('         %s\n', strjoin(fichiers, ' et '));
         end
-        fig = figure_vout(D.(code), METH, cles, zooms, textes, FORME, nom);
-        fichiers = enregistrer(fig, DOSSIER_SORTIE, nom, RESOLUTION_DPI);
-        fprintf('         %s\n', strjoin(fichiers, ' et '));
     end
 end
 
@@ -402,7 +433,11 @@ function r = normaliser(e, Te)
             K = K.';
         end
     end
-    r = struct('t', t, 'v', v, 'consigne', c, 'K', K, 'fichier', '');
+    d = [];
+    if isfield(e, 'd') && numel(e.d) == N
+        d = double(e.d(:));
+    end
+    r = struct('t', t, 'v', v, 'consigne', c, 'K', K, 'd', d, 'fichier', '');
 end
 
 function r = simuler_modele(dossier, MDL, code, Te)
@@ -442,6 +477,8 @@ function r = simuler_modele(dossier, MDL, code, Te)
     close_system(MDL, 0);
     n = numel(sc.t);
     [t, v] = extraire(sortie, 'cmp_vout');
+    [~, d] = extraire(sortie, 'cmp_d');
+    d = d(1:min(n, end), 1);
     t = t(1:min(n, end));
     v = v(1:min(n, end), 1);
     K = [];
@@ -452,7 +489,7 @@ function r = simuler_modele(dossier, MDL, code, Te)
     if numel(t) ~= n || max(abs(t - sc.t(:))) > 1e-9
         error('%s : enregistrement non aligne avec le profil.', MDL);
     end
-    r = struct('t', t, 'v', v, 'consigne', 100 + double(sc.dvref(:)), 'K', K, 'fichier', [fs ' (sim)']);
+    r = struct('t', t, 'v', v, 'consigne', 100 + double(sc.dvref(:)), 'K', K, 'd', d, 'fichier', [fs ' (sim)']);
     if abs(t(2) - t(1) - Te) > 1e-12
         error('%s : pas d''enregistrement different de Te.', MDL);
     end
@@ -532,9 +569,19 @@ function [z, textes, non_zoomes] = fenetres_zoom(code, ev, z_s1, avant, apres, n
                       'UniformOutput', false);
 end
 
-function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom)
+function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom, champ, butees)
     % Panneau du haut (toute la duree) et zooms dessous (grille de une ou
     % deux colonnes). Legende au-dessus, hors des courbes.
+    % champ = 'v' : Vout et consigne ; champ = 'd' : rapport cyclique d
+    % (entree du PWM) et, dans un panneau seulement si les donnees de ce
+    % panneau l'atteignent, la butee de saturation (pointilles gris fins).
+    if strcmp(champ, 'd')
+        for c = cles
+            if isempty(Dc.(c{1}).d)
+                error('%s : pas de rapport cyclique d dans les resultats (champ d).', c{1});
+            end
+        end
+    end
     nz = size(zooms, 1);
     nc = 1 + (nz > 1);
     nrz = ceil(nz / nc);
@@ -557,6 +604,7 @@ function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom)
     fenetres = [fen_tout; zooms];
     ax = gobjects(1, nz + 1);
     h_leg = gobjects(1, numel(idx) + 1);
+    butee_vue = false;
     for p = 1:nz + 1
         if p == 1
             ax(p) = nexttile(tl, 1, [1, nc]);
@@ -576,14 +624,30 @@ function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom)
             end
         end
         k = t_ms >= a - 1e-9 & t_ms <= b + 1e-9;
-        h_leg(end) = plot(ax(p), t_ms(k), ref.consigne(k), ':', 'Color', F.gris_consigne, 'LineWidth', 0.8);
-        y_tout = [y_tout; ref.consigne(k)]; %#ok<AGROW>
+        if strcmp(champ, 'v')
+            h_leg(end) = plot(ax(p), t_ms(k), ref.consigne(k), ':', 'Color', F.gris_consigne, 'LineWidth', 0.8);
+            y_tout = [y_tout; ref.consigne(k)]; %#ok<AGROW>
+        else
+            % butees atteintes par les donnees de ce panneau (a 1e-9 pres)
+            y_p = [];
+            for i = idx
+                r = Dc.(METH(i).cle);
+                tm = r.t * 1e3;
+                y_p = [y_p; r.d(tm >= a - 1e-9 & tm <= b + 1e-9)]; %#ok<AGROW>
+            end
+            for B = butees
+                if any(abs(y_p - B) <= 1e-9)
+                    h_leg(end) = plot(ax(p), [a, b], [B, B], ':', 'Color', F.gris_consigne, 'LineWidth', 0.8);
+                    butee_vue = true;
+                end
+            end
+        end
         for i = ordre_trace
             r = Dc.(METH(i).cle);
             tm = r.t * 1e3;
             k = tm >= a - 1e-9 & tm <= b + 1e-9;
-            h_leg(idx == i) = tracer(ax(p), tm(k), r.v(k), METH(i));
-            y_tout = [y_tout; r.v(k)]; %#ok<AGROW>
+            h_leg(idx == i) = tracer(ax(p), tm(k), r.(champ)(k), METH(i));
+            y_tout = [y_tout; r.(champ)(k)]; %#ok<AGROW>
         end
         xlim(ax(p), [a, b]);
         fixer_ordonnees(ax(p), y_tout, F.marge);
@@ -600,10 +664,29 @@ function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom)
             xlabel(ax(p), 'temps (ms)', 'FontName', F.police, 'FontSize', F.etiq);
         end
         if p == 1 || mod(p - 2, nc) == 0
-            ylabel(ax(p), 'V_{out} (V)', 'FontName', F.police, 'FontSize', F.etiq);
+            if strcmp(champ, 'v')
+                ylabel(ax(p), 'V_{out} (V)', 'FontName', F.police, 'FontSize', F.etiq);
+            else
+                ylabel(ax(p), 'rapport cyclique d', 'FontName', F.police, 'FontSize', F.etiq);
+            end
         end
     end
-    noms = [{METH(idx).nom}, {'consigne'}];
+    % Objets de legende recrees dans le panneau (a) (donnees NaN, rien de
+    % trace) : une legende ne doit citer que des objets de son axe.
+    h_leg = gobjects(1, numel(idx) + 1);
+    for q = 1:numel(idx)
+        h_leg(q) = plot(ax(1), NaN, NaN, '-', 'Color', METH(idx(q)).couleur, 'LineWidth', METH(idx(q)).epaisseur);
+    end
+    h_leg(end) = plot(ax(1), NaN, NaN, ':', 'Color', F.gris_consigne, 'LineWidth', 0.8);
+    if strcmp(champ, 'v')
+        noms = [{METH(idx).nom}, {'consigne'}];
+    elseif butee_vue
+        noms = [{METH(idx).nom}, {sprintf('saturation (%g ; %g)', butees)}];
+    else
+        noms = {METH(idx).nom};
+        delete(h_leg(end));
+        h_leg = h_leg(1:end - 1);
+    end
     lg = legend(ax(1), h_leg, noms, 'Orientation', 'horizontal', 'Location', 'northoutside', ...
                 'FontName', F.police, 'FontSize', F.grad, 'Box', 'off');
     reglages_legende(lg, numel(noms), F);
@@ -755,6 +838,32 @@ function g = gains_pso(racine, dossier)
     end
     if ~all(isfinite(g))
         warning('Gains du PSO-PID illisibles : pas de droite PSO-PID dans la figure des gains.');
+    end
+end
+
+function resume_butees(Dc, METH, code, butees)
+    % Console : pour chaque methode, temps passe par d sur une butee de
+    % saturation (a 1e-9 pres) sur tout l'essai, premier et dernier instant,
+    % et la part pendant le demarrage (0 a 30 ms).
+    fprintf('         rapport cyclique en butee (%g ou %g), %s :\n', butees, code);
+    for m = 1:numel(METH)
+        r = Dc.(METH(m).cle);
+        if isempty(r.d)
+            fprintf('           %-16s : pas de d enregistre\n', METH(m).nom);
+            continue;
+        end
+        te = r.t(2) - r.t(1);
+        en_b = abs(r.d - butees(1)) <= 1e-9 | abs(r.d - butees(2)) <= 1e-9;
+        dem = r.t < 0.03;
+        if ~any(en_b)
+            fprintf('           %-16s : jamais\n', METH(m).nom);
+        else
+            kb = find(en_b);
+            fprintf(['           %-16s : %.3f ms au total (%.3f ms avant 30 ms ; %d pas a %g, %d pas a %g), ' ...
+                     'de %.3f a %.3f ms\n'], METH(m).nom, sum(en_b) * te * 1e3, sum(en_b & dem) * te * 1e3, ...
+                    sum(abs(r.d - butees(1)) <= 1e-9), butees(1), sum(abs(r.d - butees(2)) <= 1e-9), butees(2), ...
+                    r.t(kb(1)) * 1e3, r.t(kb(end)) * 1e3);
+        end
     end
 end
 
