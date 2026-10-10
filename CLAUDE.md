@@ -34,6 +34,17 @@ commune v2.1. État détaillé du travail : `ETAT_DE_REPRISE.md`.
   être très bien référencé ; aucune source citée sans vérification.
 - Corps du chapitre 5 : seulement les scénarios de comparaison (S1, S2, S3,
   S8a, S10) ; les autres essais sont renvoyés à l'annexe sur GitHub.
+- Exigences (consigne du 10 octobre 2026) : la rigueur appliquée au
+  chapitre 5 vaut pour tous les chapitres, et peut être renforcée (chaque
+  chiffre vérifié dans le dépôt, chaque référence vérifiée, notes de
+  relecture avec les sources). La skill `humanizer` est obligatoire pour
+  toute rédaction. Travail final concis et clair, sans zone d'ombre, sans
+  redondance ni passage non pertinent ; le chapitre 5 est le plus long, les
+  autres se limitent au nécessaire.
+- Chapitre 6 : il découle du chapitre 5 ; après validation de son plan, il
+  est rédigé en entier d'un seul tenant.
+- Livraison des chapitres : en Word (gabarit du guide de forme), nettoyé
+  avec `remove-ai-marks` et audit des métadonnées et caractères invisibles.
 
 ## Organisation du travail (consigne du 8 octobre 2026)
 
