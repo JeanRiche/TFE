@@ -1,0 +1,137 @@
+Dossier de travail : /home/user/TFE/ELM_PID
+11 essais lus : S1, S2, S3, S4, S5, S6, S7a, S7b, S8a, S8b, S9
+Essais complementaires lus (hors du cout J) : S10
+ELM : 12 neurones, ordre 2 ; ensemble admissible : 33^3 points, 35.2% admissibles ; jacobien constant des ablations 11.0687.
+Vecteurs de test du modele : ecart 0.0e+00 V sur ybar, 0.0e+00 sur le jacobien.
+S10 construit comme scenario_S10.py ; identique a l'essai complementaire du banc : True
+Jacobien constant des ablations : 11.068653
+60 simulations, quatre processus.
+  [  1/60] S10  ELM-PID            L - 0.1 %  IAE    8.62365 mV.s (  0.6 s)
+  [  2/60] S10  ELM-PID            nominal    IAE    8.63219 mV.s (  0.6 s)
+  [  3/60] S10  ELM-PID            C - 0.1 %  IAE    8.62900 mV.s (  0.6 s)
+  [  4/60] S10  ELM-PID            L + 0.1 %  IAE    7.87725 mV.s (  0.6 s)
+  [  5/60] S10  ELM-PID            C + 0.1 %  IAE    8.62757 mV.s (  0.5 s)
+  [  6/60] S10  Jacobien constant  L - 0.1 %  IAE    7.78236 mV.s (  0.5 s)
+  [  7/60] S10  Jacobien constant  L + 0.1 %  IAE    8.19280 mV.s (  0.5 s)
+  [  8/60] S10  Jacobien constant  nominal    IAE    7.78998 mV.s (  0.6 s)
+  [  9/60] S10  Jacobien constant  C - 0.1 %  IAE    7.79419 mV.s (  0.5 s)
+  [ 10/60] S10  Sans OS-ELM        nominal    IAE    8.55494 mV.s (  0.5 s)
+  [ 11/60] S10  Jacobien constant  C + 0.1 %  IAE    7.78814 mV.s (  0.6 s)
+  [ 12/60] S10  Sans OS-ELM        L - 0.1 %  IAE    8.56169 mV.s (  0.6 s)
+  [ 13/60] S10  Sans OS-ELM        C - 0.1 %  IAE    7.81264 mV.s (  0.5 s)
+  [ 14/60] S10  Sans OS-ELM        L + 0.1 %  IAE    8.57110 mV.s (  0.6 s)
+  [ 15/60] S10  Sans OS-ELM        C + 0.1 %  IAE    7.81894 mV.s (  0.6 s)
+  [ 16/60] S2   ELM-PID            nominal    IAE    2.40617 mV.s (  0.5 s)
+  [ 17/60] S2   ELM-PID            L + 0.1 %  IAE    2.39657 mV.s (  0.5 s)
+  [ 18/60] S2   ELM-PID            L - 0.1 %  IAE    2.41448 mV.s (  0.5 s)
+  [ 19/60] S2   ELM-PID            C - 0.1 %  IAE    2.40845 mV.s (  0.5 s)
+  [ 20/60] S2   ELM-PID            C + 0.1 %  IAE    2.40676 mV.s (  0.6 s)
+  [ 21/60] S2   Jacobien constant  nominal    IAE    2.43234 mV.s (  0.6 s)
+  [ 22/60] S2   Jacobien constant  L - 0.1 %  IAE    2.44360 mV.s (  0.6 s)
+  [ 23/60] S2   Jacobien constant  L + 0.1 %  IAE    2.42391 mV.s (  0.6 s)
+  [ 24/60] S2   Jacobien constant  C - 0.1 %  IAE    2.43815 mV.s (  0.6 s)
+  [ 25/60] S2   Sans OS-ELM        nominal    IAE    2.40617 mV.s (  0.6 s)
+  [ 26/60] S2   Jacobien constant  C + 0.1 %  IAE    2.43439 mV.s (  0.7 s)
+  [ 27/60] S2   Sans OS-ELM        L - 0.1 %  IAE    2.41448 mV.s (  0.6 s)
+  [ 28/60] S2   Sans OS-ELM        L + 0.1 %  IAE    2.39657 mV.s (  0.6 s)
+  [ 29/60] S2   Sans OS-ELM        C - 0.1 %  IAE    2.40845 mV.s (  0.5 s)
+  [ 30/60] S2   Sans OS-ELM        C + 0.1 %  IAE    2.40676 mV.s (  0.5 s)
+  [ 31/60] S3   ELM-PID            nominal    IAE    6.40573 mV.s (  0.5 s)
+  [ 32/60] S3   ELM-PID            L - 0.1 %  IAE    6.42561 mV.s (  0.5 s)
+  [ 33/60] S3   ELM-PID            L + 0.1 %  IAE    6.39681 mV.s (  0.4 s)
+  [ 34/60] S3   ELM-PID            C - 0.1 %  IAE    6.41266 mV.s (  0.5 s)
+  [ 35/60] S3   ELM-PID            C + 0.1 %  IAE    6.40861 mV.s (  0.5 s)
+  [ 36/60] S3   Jacobien constant  nominal    IAE    6.52199 mV.s (  0.6 s)
+  [ 37/60] S3   Jacobien constant  L - 0.1 %  IAE    6.54276 mV.s (  0.5 s)
+  [ 38/60] S3   Jacobien constant  L + 0.1 %  IAE    6.51250 mV.s (  0.5 s)
+  [ 39/60] S3   Jacobien constant  C - 0.1 %  IAE    6.52896 mV.s (  0.5 s)
+  [ 40/60] S3   Jacobien constant  C + 0.1 %  IAE    6.52244 mV.s (  0.5 s)
+  [ 41/60] S3   Sans OS-ELM        nominal    IAE    6.40574 mV.s (  0.4 s)
+  [ 42/60] S3   Sans OS-ELM        L + 0.1 %  IAE    6.39680 mV.s (  0.5 s)
+  [ 43/60] S3   Sans OS-ELM        L - 0.1 %  IAE    6.42566 mV.s (  0.6 s)
+  [ 44/60] S3   Sans OS-ELM        C + 0.1 %  IAE    6.40858 mV.s (  0.4 s)
+  [ 45/60] S3   Sans OS-ELM        C - 0.1 %  IAE    6.41266 mV.s (  0.7 s)
+  [ 46/60] S8a  ELM-PID            nominal    IAE    2.96496 mV.s (  0.5 s)
+  [ 47/60] S8a  ELM-PID            L + 0.1 %  IAE    2.95022 mV.s (  0.5 s)
+  [ 48/60] S8a  ELM-PID            L - 0.1 %  IAE    2.97983 mV.s (  0.7 s)
+  [ 49/60] S8a  ELM-PID            C - 0.1 %  IAE    2.98746 mV.s (  0.6 s)
+  [ 50/60] S8a  ELM-PID            C + 0.1 %  IAE    2.95963 mV.s (  0.6 s)
+  [ 51/60] S8a  Jacobien constant  nominal    IAE    3.04337 mV.s (  0.6 s)
+  [ 52/60] S8a  Jacobien constant  L - 0.1 %  IAE    3.04984 mV.s (  0.5 s)
+  [ 53/60] S8a  Jacobien constant  L + 0.1 %  IAE    3.02321 mV.s (  0.5 s)
+  [ 54/60] S8a  Jacobien constant  C - 0.1 %  IAE    3.06734 mV.s (  0.6 s)
+  [ 55/60] S8a  Jacobien constant  C + 0.1 %  IAE    3.03036 mV.s (  0.5 s)
+  [ 56/60] S8a  Sans OS-ELM        nominal    IAE    2.96388 mV.s (  0.5 s)
+  [ 57/60] S8a  Sans OS-ELM        L - 0.1 %  IAE    2.97078 mV.s (  0.6 s)
+  [ 58/60] S8a  Sans OS-ELM        L + 0.1 %  IAE    2.94544 mV.s (  0.5 s)
+  [ 59/60] S8a  Sans OS-ELM        C + 0.1 %  IAE    2.95729 mV.s (  0.5 s)
+  [ 60/60] S8a  Sans OS-ELM        C - 0.1 %  IAE    2.97607 mV.s (  0.5 s)
+Simulations terminees en 10 s.
+
+Controles prealables (tolerance 1e-9 relatif)
+  S2 ELM-PID / metriques_banc.csv                  2.406173812 contre 2.406173812 (ecart 1.83e-10)
+  S3 ELM-PID / metriques_banc.csv                  6.405730038 contre 6.405730038 (ecart 1.31e-11)
+  S8a ELM-PID / metriques_banc.csv                 2.964964206 contre 2.964964206 (ecart 6.98e-11)
+  S10 ELM-PID / metriques_banc.csv                 8.632192631 contre 8.632192631 (ecart 3.04e-12)
+  S2 Jacobien constant / banc_elm_pid_resultats.json 2.432335336 contre 2.432335336 (ecart 0.00e+00)
+  S3 Jacobien constant / banc_elm_pid_resultats.json 6.521991745 contre 6.521991745 (ecart 0.00e+00)
+  S8a Jacobien constant / banc_elm_pid_resultats.json 3.043371951 contre 3.043371951 (ecart 0.00e+00)
+  S2 Sans OS-ELM / banc_elm_pid_resultats.json     2.406173812 contre 2.406173812 (ecart 0.00e+00)
+  S3 Sans OS-ELM / banc_elm_pid_resultats.json     6.405738229 contre 6.405738229 (ecart 0.00e+00)
+  S8a Sans OS-ELM / banc_elm_pid_resultats.json    2.963883446 contre 2.963883446 (ecart 0.00e+00)
+  ecart relatif maximal 1.83e-10
+
+====================================================================================================
+ S2 : IAE de classement (mV.s) par variante
+====================================================================================================
+                         nominal   L - 0.1 %   L + 0.1 %   C - 0.1 %   C + 0.1 %
+  ELM-PID                 2.4062      2.4145      2.3966      2.4084      2.4068
+  Jacobien constant       2.4323      2.4436      2.4239      2.4381      2.4344
+  Sans OS-ELM             2.4062      2.4145      2.3966      2.4084      2.4068
+
+  Paires (ecart = IAE_ablation / IAE_ELM-PID - 1, en %)
+    ELM-PID / Jacobien constant  SEPAREE      nominal   +1.087 %   min   +1.087 %   max   +1.233 %   signes [1, 1, 1, 1, 1]
+    ELM-PID / Sans OS-ELM        NON SEPAREE  nominal   +0.000 %   min   +0.000 %   max   +0.000 %   signes [0, 0, 0, 0, 0]
+
+====================================================================================================
+ S3 : IAE de classement (mV.s) par variante
+====================================================================================================
+                         nominal   L - 0.1 %   L + 0.1 %   C - 0.1 %   C + 0.1 %
+  ELM-PID                 6.4057      6.4256      6.3968      6.4127      6.4086
+  Jacobien constant       6.5220      6.5428      6.5125      6.5290      6.5224
+  Sans OS-ELM             6.4057      6.4257      6.3968      6.4127      6.4086
+
+  Paires (ecart = IAE_ablation / IAE_ELM-PID - 1, en %)
+    ELM-PID / Jacobien constant  SEPAREE      nominal   +1.815 %   min   +1.776 %   max   +1.823 %   signes [1, 1, 1, 1, 1]
+    ELM-PID / Sans OS-ELM        NON SEPAREE  nominal   +0.000 %   min   -0.000 %   max   +0.001 %   signes [1, 1, -1, 1, -1]
+
+====================================================================================================
+ S8a : IAE de classement (mV.s) par variante
+====================================================================================================
+                         nominal   L - 0.1 %   L + 0.1 %   C - 0.1 %   C + 0.1 %
+  ELM-PID                 2.9650      2.9798      2.9502      2.9875      2.9596
+  Jacobien constant       3.0434      3.0498      3.0232      3.0673      3.0304
+  Sans OS-ELM             2.9639      2.9708      2.9454      2.9761      2.9573
+
+  Paires (ecart = IAE_ablation / IAE_ELM-PID - 1, en %)
+    ELM-PID / Jacobien constant  SEPAREE      nominal   +2.644 %   min   +2.349 %   max   +2.674 %   signes [1, 1, 1, 1, 1]
+    ELM-PID / Sans OS-ELM        SEPAREE      nominal   -0.036 %   min   -0.381 %   max   -0.036 %   signes [-1, -1, -1, -1, -1]
+
+====================================================================================================
+ S10 : IAE de classement (mV.s) par variante
+====================================================================================================
+                         nominal   L - 0.1 %   L + 0.1 %   C - 0.1 %   C + 0.1 %
+  ELM-PID                 8.6322      8.6236      7.8773      8.6290      8.6276
+  Jacobien constant       7.7900      7.7824      8.1928      7.7942      7.7881
+  Sans OS-ELM             8.5549      8.5617      8.5711      7.8126      7.8189
+
+  Paires (ecart = IAE_ablation / IAE_ELM-PID - 1, en %)
+    ELM-PID / Jacobien constant  NON SEPAREE  nominal   -9.757 %   min   -9.757 %   max   +4.006 %   signes [-1, -1, 1, -1, -1]
+    ELM-PID / Sans OS-ELM        NON SEPAREE  nominal   -0.895 %   min   -9.461 %   max   +8.808 %   signes [-1, -1, 1, -1, -1]
+
+  S10, nominal : multiplicateurs de Ziegler-Nichols (P, I, D) en fin d'essai
+    ELM-PID            (3.372, 2.067, 1.352)
+    Jacobien constant  (3.405, 2.236, 1.419)
+    Sans OS-ELM        (3.391, 2.094, 1.364)
+
+ablation_resultats.json ecrit. Duree totale 10 s.
