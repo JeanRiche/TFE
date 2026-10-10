@@ -887,6 +887,20 @@ end
 function fichiers = enregistrer(fig, dossier, nom, dpi)
     % <nom>.png (exportgraphics, sinon print) et <nom>.fig.
     fichiers = {fullfile(dossier, [nom '.png']), fullfile(dossier, [nom '.fig'])};
+    % Barres d'outils des axes masquees avant l'export (sinon MATLAB
+    % previent que l'image exportee les montre).
+    axes_fig = findall(fig, 'Type', 'axes');
+    for j = 1:numel(axes_fig)
+        try
+            axes_fig(j).Toolbar.Visible = 'off';
+        catch
+            try
+                axtoolbar(axes_fig(j), 'Visible', 'off');
+            catch
+            end
+        end
+    end
+    drawnow;
     try
         exportgraphics(fig, fichiers{1}, 'Resolution', dpi);
     catch
