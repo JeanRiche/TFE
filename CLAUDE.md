@@ -24,6 +24,16 @@ commune v2.1. État détaillé du travail : `ETAT_DE_REPRISE.md`.
   `remove-ai-marks` (nettoyer les marques de provenance des documents livrés)
   et `doc-to-markdown` (convertir les .docx fournis en Markdown avant de les
   travailler).
+- Ordre de rédaction (consigne du 10 octobre 2026) : chapitre 5 (simulation
+  et analyse des performances), puis chapitre 6 (perspectives et extension),
+  puis les chapitres 1 à 4. Les chapitres 1 à 4 sont écrits pour aboutir
+  aux chapitres 5 et 6 : s'y référer pour éviter toute incohérence.
+- Avant de rédiger un chapitre, soumettre d'abord son plan à Jean-Riche et
+  attendre son accord.
+- Forme : `REDACTION/guide_de_forme.md` (thèse de référence). Le travail doit
+  être très bien référencé ; aucune source citée sans vérification.
+- Corps du chapitre 5 : seulement les scénarios de comparaison (S1, S2, S3,
+  S8a, S10) ; les autres essais sont renvoyés à l'annexe sur GitHub.
 
 ## Organisation du travail (consigne du 8 octobre 2026)
 
