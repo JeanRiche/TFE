@@ -1,5 +1,11 @@
 # Dépendances des chapitres 5 et 6 envers les chapitres 1 à 4
 
+**Décision de l'auteur (10 octobre 2026), vocabulaire des essais, valable dans tous les chapitres :**
+
+- les onze essais S1 à S9 de la base commune (S7a, S7b, S8a et S8b compris) s'appellent « essais de développement » ; les termes « essais de jugement », « onze essais de jugement » et « essais du banc commun » ne sont plus employés ;
+- les quatre essais E1 à E4 qui ont servi à régler les méthodes s'appellent « essais de réglage » ; « essais de mise au point » n'est plus employé ;
+- le chapitre 3 doit définir ces deux catégories (contenu, rôle, et règle : aucun réglage sur les essais de développement).
+
 Document de travail (non commité). Sources lues : `chapitre5/chapitre5_sections_5_1_5_2.md`, `chapitre5_section_5_3.md`, `chapitre5_section_5_4.md`, `chapitre5_sections_5_5_5_6.md`, `chapitre6/chapitre6_perspectives.md` (notes de relecture ignorées). Pour chaque élément : ce que les chapitres 5 et 6 supposent déjà posé, où ils l'utilisent, et ce que le chapitre amont doit fournir.
 
 Renvois explicites relevés : « chapitre 3 » (5.2.1, trois fois : dimensionnement, calcul des gains ZN, validation du banc sur les onze essais) ; « chapitre 4 » (5.2.1 : ELM-PID) ; « les chapitres précédents » (5.1) ; « la proposition du travail » (5.2.2, 5.5.2, 6.4). Aucun renvoi à une section précise des chapitres 1 à 4.
@@ -11,8 +17,8 @@ Renvois explicites relevés : « chapitre 3 » (5.2.1, trois fois : dimensionnem
 | « Proposition du travail » et ses trois cas prévus (régime normal, perturbation sur la commande, perturbation sur la charge) | 5.2.2, 5.5.2 | Rappel de la proposition et des trois cas, origine de S1, S2, S3 |
 | Hypothèses H1 à H4, avec leur formulation du 8 octobre 2026 citée entre guillemets | 5.5.2 (tableau 5.9) | Énoncé exact, mot pour mot identique ; préciser que « PID à gains fixes » de H1 désigne le PID de ZN |
 | Réécriture des hypothèses le 8 octobre 2026, avant le calcul du ch. 5, alors que J était déjà connu | 5.5.2 | Chronologie honnête : date, ce qui était connu à ce moment |
-| Règles de méthode : critères et prévisions écrits et commités avant le calcul ; aucun réglage sur les essais de jugement ; résultats publiés quels qu'ils soient | 5.1, 5.2.2, 5.2.3, 5.5.3, 6.1, 6.2, 6.3 | Exposé des règles et de leur raison |
-| Distinction essais de développement / essais de jugement / essais de réglage | 5.2.1, 5.4.1, 6.1 | Définition des trois catégories |
+| Règles de méthode : critères et prévisions écrits et commités avant le calcul ; aucun réglage sur les onze essais de développement ; résultats publiés quels qu'ils soient | 5.1, 5.2.2, 5.2.3, 5.5.3, 6.1, 6.2, 6.3 | Exposé des règles et de leur raison |
+| Règle « aucun réglage sur les essais de développement » et renvoi aux deux catégories d'essais (définies au chapitre 3) | 5.2.1, 5.4.1, 6.1 | Annonce de la règle ; la définition des catégories revient au chapitre 3 |
 | Périmètre : simulation seule, aucun montage réel ; prototype physique exclu dès la proposition | 5.1, 5.5.3, 6.4 | Énoncé du périmètre et de sa raison |
 | Choix des « méthodes avancées » (PSO-PID, Fuzzy-PID, PINN-PID) comparées à l'ELM-PID et à ZN | 5.1, 5.4 | Justification du choix des comparateurs |
 | Annexe sur le dépôt GitHub (autres essais, classements, définition de J) | 5.2.2, 5.2.3 | Annonce de l'annexe et de son contenu |
@@ -46,6 +52,7 @@ Renvois explicites relevés : « chapitre 3 » (5.2.1, trois fois : dimensionnem
 | « Base commune » (v2.1) : ce qui est identique pour toutes les méthodes | 5.2.1 | Définition et version de la base |
 | Modèle Simulink `Buck_Commun` (figure 5.1) et banc Python ; validation croisée sur les onze essais (écart ≤ 0,3 % hors S7a) | 5.2.1 (« chapitre 3 »), 5.4.2, 6.4 | Description des deux outils et de la validation |
 | Les onze essais de développement (dont S1, S2, S3, S7a, S8a) | 5.2.1, 5.2.2 | Liste et description des onze essais |
+| Les quatre essais de réglage E1 à E4 (E1, charge de 7 à 4,5 Ω ; E2, *V*in de 210 V à 175 puis 235 V sous 15 Ω ; E3, échelon de consigne de 10 V à 60 Ω ; E4, bruit de mesure et quantification à 9 Ω), distincts des onze essais de développement | 4.4.4, 4.6, 5.2.1, 5.4.1 | Définition des deux catégories d'essais et de leur rôle (décision du 10 octobre 2026) |
 | Règle de sélection écrite avant le calcul, qui a désigné S8a | 5.2.2 | Énoncé de la règle (ou renvoi au ch. 1) |
 | Coût J : moyenne de treize rapports d'IAE à ZN sur les onze essais | 5.2.3, 5.5.2 | Mention et usage pendant la mise au point (définition détaillée sur GitHub) |
 

@@ -150,7 +150,7 @@ abandonné et doit être tranché avec Jean-Riche ou ses encadrants.
 |---|---|---|---|
 | 1.2 Problématique : « limites du contrôle PID classique dans les systèmes non linéaires perturbés » | Les résultats ne montrent pas de limite du PID fixe sur la plage étudiée : le PSO-PID, PID à gains fixes, est premier sur J et sur S1, S2, S3, S8a, S10. La problématique doit être reformulée en question ouverte. | modifié | `ETAT_DE_REPRISE.md` §4.1 et §4.3 ; `COMPARAISON/metriques/metriques_banc.md` |
 | Hypothèses (absentes, résultats annoncés à leur place) | Phrases réécrites en hypothèses vérifiables | ajouté | `REDACTION/proposition_resultats_en_hypotheses.md` |
-| 1.4 Méthodologie « étude théorique → modélisation → simulation → comparaison → rédaction » | Même enchaînement, plus une règle de méthode : critères et prévisions écrits et commités avant chaque calcul, aucun réglage sur les onze essais de jugement, prévisions publiées justes ou fausses | modifié (élargi) | `CLAUDE.md` ; `ELM_PID/criteres_elm_pid.txt` (prévisions Q1 à Q8) ; `PINN_PID/criteres_pinn_pid.txt` ; `COMPARAISON/criteres_comparaison.txt` |
+| 1.4 Méthodologie « étude théorique → modélisation → simulation → comparaison → rédaction » | Même enchaînement, plus une règle de méthode : critères et prévisions écrits et commités avant chaque calcul, aucun réglage sur les onze essais de développement, prévisions publiées justes ou fausses | modifié (élargi) | `CLAUDE.md` ; `ELM_PID/criteres_elm_pid.txt` (prévisions Q1 à Q8) ; `PINN_PID/criteres_pinn_pid.txt` ; `COMPARAISON/criteres_comparaison.txt` |
 
 ### Chapitre 2 : État de l'art
 
@@ -192,7 +192,7 @@ abandonné et doit être tranché avec Jean-Riche ou ses encadrants.
 | 5.5 Comparaison avec un PID classique | Ziegler-Nichols comme référence ; ELM-PID J = 0.746 contre 1.000 | tenu | `ETAT_DE_REPRISE.md` §4.1 ; `ELM_PID/banc_elm_pid_resultats.json` |
 | 5.6 Comparaison PSO et Fuzzy | PSO-PID (J = 0.714), Fuzzy-PID (J = 0.877), plus PINN-PID (J = 0.757) | tenu, élargi | `COMPARAISON/comparaison_resultats.json` ; `COMPARAISON/criteres_comparaison.txt` |
 | Critères IAE, ISE, ITAE, dépassement, temps de montée et d'établissement | Coût J (13 rapports d'IAE à Ziegler-Nichols) pour le classement ; ISE, ITAE, dépassement, montée, établissement, retour dans ±1 V publiés à côté, sans changer l'ordre | modifié | `COMPARAISON/metriques/definitions_metriques.txt` ; `COMPARAISON/metriques/metriques_banc.md` |
-| « Comparaison systématique sur 4 types de perturbations » | Onze essais de jugement, plus S10 (changement durable du point de fonctionnement), ajouté après coup avec l'encadrant et hors du coût J | modifié (élargi) | `COMPARAISON/S10/criteres_S10.txt` |
+| « Comparaison systématique sur 4 types de perturbations » | Onze essais de développement, plus S10 (changement durable du point de fonctionnement), ajouté après coup avec l'encadrant et hors du coût J | modifié (élargi) | `COMPARAISON/S10/criteres_S10.txt` |
 | « Graphes radar ou bar charts » | Graphe de classement par essai et courbes des scénarios ; pas de radar | modifié | `COMPARAISON/classement_par_essai.png` ; `COMPARAISON/comparaison_S8a.png` |
 | « Visualisation de la convergence (PSO) » | Fait | tenu | `PSO_PID/pso_pid_convergence.png` |
 | (absent) Règle de choix des scénarios fixée avant calcul | Règle C1 à C4 ; avec les versions finales elle ne désigne aucun scénario. Scénarios du corps choisis par l'auteur : S1, S2, S3, S8a. | ajouté | `COMPARAISON/criteres_comparaison.txt` ; `ETAT_DE_REPRISE.md` §3.1 |

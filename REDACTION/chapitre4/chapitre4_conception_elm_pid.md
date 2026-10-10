@@ -125,7 +125,7 @@ Le départ (1, 1, 1) est sur la frontière de l'ensemble, qui y est localement n
 
 ### 4.4.4. Réglages et variantes
 
-Les réglages viennent de l'article ou des critères écrits avant le calcul : fenêtres de 0,5 ms, *η* = 0,5, *α* = 0,001, *ε* = 10⁻³, zones mortes de 0,1 V, multiplicateurs dans [1/4 ; 4]. Les essais de mise au point E1 à E4, distincts des onze essais de développement, ont servi à contrôler le code et n'ont conduit à changer aucun réglage.
+Les réglages viennent de l'article ou des critères écrits avant le calcul : fenêtres de 0,5 ms, *η* = 0,5, *α* = 0,001, *ε* = 10⁻³, zones mortes de 0,1 V, multiplicateurs dans [1/4 ; 4]. Pour l'ELM-PID, les essais de réglage E1 à E4, distincts des onze essais de développement, ont seulement servi à contrôler le code : ils n'ont conduit à changer aucune valeur.
 
 Deux variantes mesurent le rôle du réseau (section 5.5.3). Dans la variante à jacobien constant, *J*(*n*) est remplacé par 11,07 V par unité, médiane du jacobien d'une régression linéaire d'ordre 2 apprise sur les mêmes données. Dans la variante sans OS-ELM, les poids de sortie restent ceux de l'apprentissage hors ligne. Deux variantes de la projection sont publiées sur le dépôt.
 
@@ -165,7 +165,7 @@ où *x* est le vecteur des multiplicateurs des gains de Ziegler-Nichols. L'artic
 
 Après chaque itération, *x* est ramené dans une boîte de gains : *P* et *D* de 1 à 2,378 fois, *I* de 0,25 à 1 fois ceux de Ziegler-Nichols. C'est le plus grand pavé contenant le départ qui satisfait le critère de marge de l'ELM-PID ; sa borne basse sur *I* vient de l'étendue de la grille, pas du critère. Son calcul prend 32 s.
 
-L'optimisation n'a lieu que si l'erreur efficace de la fenêtre dépasse 0,1 V. Sans cette zone morte, le terme 10⁻³ |*x*|² décide seul en régime et ramène les gains au coin (1 ; 0,25 ; 1) de la boîte. Elle porte sur l'erreur efficace, et non sur la moyenne, parce que le coût (4.10) est quadratique ; le seuil et les références sont ceux de l'ELM-PID. Cette zone morte a été choisie après un premier calcul sans elle (indice global de 0,893 sur les onze essais), parmi trois corrections candidates testées sur les seuls essais de mise au point E1 à E4 ; la règle de choix était écrite avant, mais la valeur de cette correction sur les onze essais était déjà connue par une ablation du premier calcul. L'historique complet est sur le dépôt.
+L'optimisation n'a lieu que si l'erreur efficace de la fenêtre dépasse 0,1 V. Sans cette zone morte, le terme 10⁻³ |*x*|² décide seul en régime et ramène les gains au coin (1 ; 0,25 ; 1) de la boîte. Elle porte sur l'erreur efficace, et non sur la moyenne, parce que le coût (4.10) est quadratique ; le seuil et les références sont ceux de l'ELM-PID. Cette zone morte a été choisie après un premier calcul sans elle (indice global de 0,893 sur les onze essais), parmi trois corrections candidates testées sur les seuls essais de réglage E1 à E4 ; la règle de choix était écrite avant, mais la valeur de cette correction sur les onze essais était déjà connue par une ablation du premier calcul. L'historique complet est sur le dépôt.
 
 ## 4.7. Conclusion
 
@@ -207,7 +207,7 @@ Le PSO-PID, le Fuzzy-PID et le PINN-PID partagent ce bloc PID et ne diffèrent q
 | Ensemble admissible : 9 points, 24,93°, 2,2 kHz, grille 33³ = 35 937, 12 663 admissibles (35,2 %), 0 admis à tort sur 3 000, 181 s | `ELM_PID/ensemble_gains_elm.py`, en-tête ; `ensemble_gains_elm_sortie_console.txt` |
 | Départ sur la frontière, non convexe, pavé en coin, hausse conjointe *I* × 1,2 et *D* × 1,3 admissible | `criteres_elm_pid.txt` §3 (V2, V3) ; console de l'ensemble, contrôle 2 |
 | Projection : point de sortie (30 bissections), retrait de la composante sortante, restauration le long de la normale, au plus 10 fois | `criteres_elm_pid.txt` M3 ; `banc_elm_pid.py`, `projeter`, `restaurer` |
-| E1 à E4 de mise au point, aucun réglage changé ensuite | `criteres_elm_pid.txt` §6 |
+| Essais de réglage E1 à E4, aucune valeur changée ensuite | `criteres_elm_pid.txt` §6 |
 | Jacobien constant 11,0687 (médiane du jacobien de la régression linéaire d'ordre 2) ; sans OS-ELM (APPRENDRE = 0) ; deux variantes de projection (M2 seule, sans glissement) | `COMPARAISON/elm_incremental_contre_B_sortie_console.txt`, ligne 3 ; `banc_elm_pid.py` (J_REGRESSION) ; `criteres_elm_pid.txt` §7 |
 | Bloc MATLAB System interprété, trois bloqueurs à *T*c, entrées e, mesure, u, sortie K, sans traversée directe | `ELM_PID/elm_pid_adaptatif.m`, en-tête |
 | Validation : T0 2,3 mV ; mêmes pas d'adaptation ; IAE à 0,1 % sauf S7a (+2,5 %) ; gains 0,13 % (S1-S6), 0,85 % (S8b), 4,2 % (S7a) ; dépassement 13,99 % ; rejeu non transmis | `criteres_elm_pid.txt` §10 ; `ETAT_DE_REPRISE.md` §4.2 |
@@ -236,7 +236,8 @@ Le PSO-PID, le Fuzzy-PID et le PINN-PID partagent ce bloc PID et ne diffèrent q
 
 - Équation (5.4) : réglé le 10 octobre 2026. Elle écrivait *φ* = *J* *s* et omettait l'inertie ; elle est retirée du chapitre 5, dont la section 5.5.3 renvoie à la loi (4.7).
 - Tension mesurée : réglé le 10 octobre 2026. Les chapitres 5 (5.5.3) et 6 (6.3.4) écrivent maintenant *J*(*n*) = ∂ŷ/∂d̄ et « tension mesurée », comme (4.5) et 4.3.1.
-- Vocabulaire des essais : ce chapitre suit le chapitre 5 (« onze essais de développement », « essais de mise au point E1 à E4 », « essais de réglage » pour le PSO-PID). E1 à E4 sont les mêmes quatre essais pour l'ELM-PID, le PSO-PID et le PINN-PID. Le chapitre 1 doit définir ces catégories.
+- Vocabulaire des essais (décision du 10 octobre 2026) : « essais de développement » pour les onze essais S1 à S9 de la base commune, « essais de réglage » pour E1 à E4, dans tous les chapitres. E1 à E4 sont les mêmes quatre essais pour l'ELM-PID, le PSO-PID et le PINN-PID ; pour l'ELM-PID ils n'ont servi qu'au contrôle du code (4.4.4). Le chapitre 3 doit définir ces deux catégories.
+- Remplacements du 10 octobre 2026. 4.4.4 : « Les essais de mise au point E1 à E4, distincts des onze essais de développement, ont servi à contrôler le code et n'ont conduit à changer aucun réglage » devient « Pour l'ELM-PID, les essais de réglage E1 à E4, distincts des onze essais de développement, ont seulement servi à contrôler le code : ils n'ont conduit à changer aucune valeur ». La précision « pour l'ELM-PID » évite de laisser croire que les essais de réglage n'ont rien réglé du tout (ils ont réglé le PSO-PID et choisi la zone morte du PINN-PID). 4.6.3 : « essais de mise au point E1 à E4 » devient « essais de réglage E1 à E4 ». Tableau des sources : « E1 à E4 de mise au point » devient « Essais de réglage E1 à E4 ».
 - Honnêteté sur l'option B : le diagnostic qui l'a motivée a été mesuré sur les onze essais (dont S2 et S3). Le texte le dit (4.2.2).
 - Réouverture de la porte : réglé le 10 octobre 2026. Les chapitres 5 (5.3.2, 5.5.3) et 6 (6.3.2) disent « 1,5 ms après la fin de la fenêtre saturée, soit 1,5 à 2 ms après l'événement », comme 4.4.2 et la figure 4.3.
 - Figures 4.1 à 4.3 : les chevauchements relevés au premier tirage ont été corrigés dans `schemas_chapitre4.py`. Le 10 octobre 2026, figure 4.3 : les étiquettes « fermée » ont un fond blanc (les hachures ne traversent plus le texte), et « réouverture 1,5 ms après la fin de *m* », « *d* en butée », « fenêtre *m* suspecte » et « points : *e*(*k*) ; traits : ē(*n*) » ont un fond blanc qui masque les pointillés.

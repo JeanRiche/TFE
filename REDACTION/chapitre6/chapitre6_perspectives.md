@@ -2,7 +2,7 @@
 
 ## 6.1. Introduction
 
-Le chapitre 5 s'est terminé sur des questions laissées ouvertes (section 5.6). Nous les reprenons ici une à une : pour chacune, la limite constatée, le travail à faire et la grandeur qui permettra de le juger. La méthode ne change pas. Les critères et les prévisions seront écrits avant le calcul, et aucun réglage ne sera fait sur les essais de jugement.
+Le chapitre 5 s'est terminé sur des questions laissées ouvertes (section 5.6). Nous les reprenons ici une à une : pour chacune, la limite constatée, le travail à faire et la grandeur qui permettra de le juger. La méthode ne change pas. Les critères et les prévisions seront écrits avant le calcul, et aucun réglage ne sera fait sur les onze essais de développement.
 
 ## 6.2. Valider les résultats hors des conditions de simulation
 
@@ -103,3 +103,7 @@ Tableau 6.1 : Limites constatées au chapitre 5 et perspectives.
 - 6.3.2 : la porte se rouvre 1,5 ms après la fin de la fenêtre saturée, soit 1,5 à 2 ms après l'événement (section 4.4.2, figure 4.3), et non « 1,5 ms après l'événement » ; « l'erreur » devient « l'erreur moyenne » (la zone morte porte sur ē).
 - 6.3.4 : « ∂*v*o/∂*d* » remplacé par le jacobien ∂ŷ/∂d̄ du réseau (équation (4.5)), comparé au jacobien vrai ; « la tension de sortie » devient « la tension mesurée » (entrées ȳ(*n* − 1), ȳ(*n* − 2) du réseau, section 4.3.1).
 - Tableau 6.1 : aucune mention de ∂*v*o/∂*d* ni de la tension de sortie ; rien à changer.
+
+### Vocabulaire des essais (décision de l'auteur, 10 octobre 2026)
+
+- 6.1 : « aucun réglage ne sera fait sur les essais de jugement » devient « aucun réglage ne sera fait sur les onze essais de développement » (S1 à S9). Les essais E1 à E4 s'appellent « essais de réglage » ; le chapitre 6 ne les cite pas.

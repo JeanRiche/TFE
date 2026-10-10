@@ -10,7 +10,7 @@ commune v2.1. État détaillé du travail : `ETAT_DE_REPRISE.md`.
 - Jean-Riche demande un mentor exigeant : remettre en question ses hypothèses,
   ne pas valider par complaisance, dire ce qui ne tient pas et pourquoi.
 - Méthode de travail : critères et prévisions écrits et commités avant chaque
-  calcul ; aucun réglage sur les onze essais de jugement ; chaque modification
+  calcul ; aucun réglage sur les onze essais de développement (essais de réglage : E1 à E4) ; chaque modification
   d'une méthode est justifiée par une référence vérifiée et documentée ;
   résultats publiés même quand ils contredisent l'attente.
 - Ne jamais choisir un scénario ou une grandeur d'après le classement qu'on

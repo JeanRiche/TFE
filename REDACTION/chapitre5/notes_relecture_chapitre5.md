@@ -61,6 +61,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 - Proposition du TFE (`proposition_corrigee.md`, plan du chapitre 5, rédigé avant tout résultat ; voir aussi `plan_depart_contre_realise.md` §1.7) : « 5.2 Étude en régime normal (sans perturbation) : Réponse temporelle, temps de montée, overshoot, régulation en régime établi. » ; « 5.3 Étude avec perturbation sur la commande : Injection de bruit ou d'un signal sinusoïdal sur la consigne, analyse de la robustesse. » ; « 5.4 Étude avec perturbation sur la charge : Simulation de variations rapides de résistance de charge, test de stabilité. » La proposition place elle-même la perturbation « sur la consigne », ce qui rejoint S2. Elle ne cite pas Lu et al. dans ce plan : le lien avec F1 et F2 vient des essais, pas du texte de la proposition.
 - 5.1 annonce 5.3 à 5.6 selon le plan approuvé ; S10 est traité dans 5.3 et 5.4.
 - Milliers : remplacer les espaces par des espaces fines insécables dans Word (guide §8).
+- Vocabulaire des essais (décision de l'auteur, 10 octobre 2026) : « essais de développement » pour les onze essais S1 à S9, « essais de réglage » pour E1 à E4. Remplacements : 5.2.1, « distincts des essais de jugement » devient « distincts des essais de développement » ; 5.2.2, « onze essais du banc commun » devient « onze essais de développement » ; 5.4.1, « distincts des essais de jugement » devient « distincts des essais de développement ». Le chapitre 3 doit définir les deux catégories.
 
 ## Source : `chapitre5_section_5_3.md`
 
