@@ -1,0 +1,763 @@
+%% FIGURES_CHAPITRE5.m
+%
+% OBJECTIF
+% --------
+% Produire les figures de comparaison du chapitre 5 du memoire (scenarios
+% S1, S2, S3, S8a et S10, base commune v2.1), a partir des resultats des
+% modeles Simulink de comparaison (<M>_<code>.slx et ZN_<code>.slx, faits
+% par Construire_Modeles_Comparaison.m) :
+%   Fig5_<code>_A_ZN_ELM.png               Ziegler-Nichols et ELM-PID ;
+%   Fig5_<code>_B_ELM_PSO_Fuzzy_PINN.png   ELM-PID, PSO-PID, Fuzzy-PID,
+%                                          PINN-PID ;
+%   Fig5_S10_gains.png                     gains P, I, D de l'ELM-PID et
+%                                          du PINN-PID divises par ceux de
+%                                          Ziegler-Nichols (S10), avec les
+%                                          gains constants du PSO-PID.
+% Chaque figure est aussi enregistree en .fig. Aucune metrique n'est
+% redefinie : le script recalcule seulement l'IAE de la fenetre de
+% classement sur les donnees tracees et la compare a metriques_banc.csv
+% (controle que les figures viennent des bons modeles).
+%
+% D'OU VIENNENT LES DONNEES (choix du chemin le plus leger)
+% --------------------------------------------------------
+% Simuler_Modeles_Comparaison.m (meme script dans les quatre dossiers de
+% methode) simule les modeles <M>_<code>.slx et ENREGISTRE les signaux dans
+% le dossier de la methode :
+%   resultats_Buck_Commun_<M>_comparaison.mat   (ELM_PID, PINN_PID,
+%                                                Fuzzy_PID, PSO_PID)
+%   resultats_Buck_Commun_comparaison.mat       (Ziegler-Nichols, modeles
+%                                                ZN_<code>, dossier PSO_PID)
+% variable "resultats" : une entree par scenario, champs code, t, v,
+% consigne, d, iL, K (gains P, I, D a chaque pas, methodes adaptatives),
+% modele (nom du modele simule). Ce sont exactement les signaux des
+% enregistrements cmp_vout et cmp_K des modeles.
+% Ce script LIT donc ces fichiers (reglage SOURCE = 'enregistres') :
+% quelques secondes au lieu de 15 a 25 minutes de simulation. Si un
+% scenario manque dans un fichier, il s'arrete et dit quoi lancer ; avec
+% SIMULER_SI_ABSENT = true, il simule alors lui-meme le modele manquant
+% (meme lecture que Simuler_Modeles_Comparaison.m : dossier de la methode,
+% charger_scenario, sim, enregistrements cmp_vout et cmp_K ; aucun .slx
+% n'est enregistre, aucun fichier de resultats n'est ecrit). SOURCE =
+% 'simuler' force la simulation de tous les modeles.
+% Fichier plus ancien que le modele .slx : avertissement (resultats
+% peut-etre perimes, relancer Simuler_Modeles_Comparaison.m).
+%
+% REGLE DES FENETRES DE ZOOM (fixee avant tout trace, la meme pour toutes
+% les methodes et tous les resultats)
+% ----------------------------------------------------------------------
+% Panneau du haut : toute la duree de l'essai (0 a 200 ms).
+% Panneaux de zoom, au-dessous :
+%   - S1 (aucun evenement) : demarrage, [0 ; 10] ms ;
+%   - autres scenarios : pour chaque evenement te du scenario, la fenetre
+%     [te - 1 ms ; te + 9 ms]. Les evenements sont lus dans
+%     scenario_<code>.mat (variable evenements, ecrite par
+%     scenarios_communs.py) et compares a la liste de reference ci-dessous
+%     (scenarios_communs.json, criteres_S10.txt) :
+%       S2, S3 : 50 et 70 ms (debut et fin de la perturbation) ;
+%       S8a    : 50, 70, 100, 120 ms ;
+%       S10    : 50, 100, 115, 130, 145, 160, 175 ms.
+%   - au plus NB_ZOOMS_MAX = 4 panneaux de zoom (grille de deux colonnes) :
+%     au-dela (S10 seulement), les quatre PREMIERS evenements sont zoomes
+%     (50, 100, 115, 130 ms) ; les suivants (145, 160, 175 ms) ne sont
+%     visibles que dans le panneau du haut, ce que la legende du memoire
+%     doit dire. Quatre et non trois : les quatre evenements de S8a tiennent
+%     tous dans la grille 2 x 2. Les fenetres de zoom sont grisees dans le
+%     panneau du haut.
+% Ordonnees de chaque panneau : du minimum au maximum des donnees tracees
+% DANS ce panneau (toutes les courbes de la figure et la consigne, sur la
+% fenetre du panneau), elargi de 8 % de l'etendue de chaque cote, comme
+% fixer_ordonnees de Simuler_Modeles_Comparaison.m : aucune courbe ne
+% touche le cadre.
+%
+% STYLES (les memes dans toutes les figures)
+% ------------------------------------------
+%   Ziegler-Nichols : noir [0 0 0], tirets '--', 1.2 pt ;
+%   ELM-PID         : rouge [0.84 0.15 0.16], trait plein, 1.5 pt ;
+%   PSO-PID         : bleu [0.12 0.47 0.71], tiret-point '-.', 1.2 pt ;
+%   Fuzzy-PID       : vert [0.17 0.63 0.17], tirets '--', 1.2 pt ;
+%   PINN-PID        : orange [1.0 0.5 0.05], pointilles ':', 1.8 pt ;
+%   consigne        : gris [0.5 0.5 0.5], pointilles ':', 0.8 pt.
+% Couleur ET style de trait distinguent chaque methode (lecture en noir et
+% blanc ou par un lecteur daltonien). Ordre de trace : traits pleins
+% d'abord, tirets et pointilles par-dessus, pour qu'une courbe pleine ne
+% cache pas une courbe discontinue confondue avec elle. Legende au-dessus
+% des panneaux, hors de la zone des courbes.
+% Mise en page : 16 cm de large (bloc de texte de 15.5 cm), hauteur selon
+% le nombre de rangees ; Times New Roman, etiquettes 11 pt, graduations
+% 10 pt ; pas de titre (la legende de la figure est dans le memoire) ;
+% panneaux reperes (a), (b), ... pour la legende du memoire.
+% PNG 300 dpi (exportgraphics, sinon print -dpng -r300) et .fig.
+%
+% CONTROLE DES DONNEES (console)
+% ------------------------------
+% Pour chaque scenario et chaque methode : IAE de la fenetre de
+% classement recalculee sur les donnees tracees, avec la definition de
+% calculer_metriques (Metriques_Simulink.m, definitions_metriques.txt) :
+%   S1 : de 0 a 30 ms (IAE de demarrage ; S1 n'a aucun evenement apres
+%        30 ms, criteres_comparaison.txt) ;
+%   S2, S3, S8a : de 30 ms a la fin ;
+%   S10 : de 100 ms a la fin (criteres_S10.txt) ;
+% e = consigne - Vout aux instants k Te, IAE = somme |e| Te (mV.s). Elle
+% est comparee a la ligne "classement ; IAE" de
+% COMPARAISON/metriques/metriques_banc.csv. Tolerance (comme
+% Metriques_Simulink.m) : 1 % ; S10 : 3 % pour l'ELM-PID et le PINN-PID.
+% Ziegler-Nichols est compare aussi, a titre indicatif (une seule version,
+% non controle par Metriques_Simulink.m). Un ecart hors tolerance sur une
+% autre methode signale un dossier perime ou mal regle (DOSSIER_*) : avec
+% ARRETER_SI_ECART = true, le script s'arrete avant de tracer.
+%
+% UTILISATION
+% -----------
+% Ce script est dans Regulateurs/COMPARAISON/figures_chapitre5 (deux
+% niveaux sous la racine des dossiers de methode). Regler DOSSIER_* puis
+% lancer. Prerequis : Simuler_Modeles_Comparaison.m lance dans chaque
+% dossier de methode (et avec AVEC_ZIEGLER_NICHOLS = true dans PSO_PID),
+% scenario_<code>.mat dans les dossiers, metriques_banc.csv dans
+% COMPARAISON/metriques. Lecture seule de tous ces fichiers.
+% Compatible MATLAB R2024a.
+% ---------------------------------------------------------------------
+
+clear; clc;
+
+% --- Reglages ---
+% Dossiers de methode, relatifs a RACINE (vide : deux niveaux au-dessus de
+% ce script). NOTE ELM-PID : dossier de l'ELM-PID RETENU (option B). Chez
+% toi : ELM_PID_B ; dans le depot git : ELM_PID.
+RACINE        = '';
+DOSSIER_ELM   = 'ELM_PID_B';
+DOSSIER_PINN  = 'PINN_PID';
+DOSSIER_PSO   = 'PSO_PID';
+DOSSIER_FUZZY = 'FUZZY_PID';
+DOSSIER_ZN    = DOSSIER_PSO;                 % modeles ZN_<code> : dossier PSO_PID
+SCENARIOS     = {'S1', 'S2', 'S3', 'S8a', 'S10'};
+DOSSIER_SORTIE = '';                         % vide : dossier de ce script (figures_chapitre5)
+SOURCE = 'enregistres';                      % 'enregistres' : fichiers resultats_*_comparaison.mat ;
+                                             % 'simuler' : sim() de chaque modele (15 a 25 min)
+SIMULER_SI_ABSENT = false;                   % true : simuler un modele dont le resultat manque
+ARRETER_SI_ECART = true;                     % arret si l'IAE s'ecarte du banc hors tolerance
+FIGURE_GAINS_AVEC_ZN = true;                 % droite y = 1 (Ziegler-Nichols) dans Fig5_S10_gains
+FIGURES_VISIBLES = 'on';                     % 'off' : figures non affichees (enregistrees quand meme)
+
+% Regle des zooms (voir l'en-tete ; ne pas changer d'une figure a l'autre)
+ZOOM_S1_MS    = [0, 10];                     % demarrage
+ZOOM_AVANT_MS = 1;                           % fenetre [te - 1 ; te + 9] ms
+ZOOM_APRES_MS = 9;
+NB_ZOOMS_MAX  = 4;                           % au plus 4 zooms (grille 2 x 2)
+MARGE_ORDONNEES = 0.08;                      % 8 % de l'etendue de chaque cote
+
+% Evenements de reference (scenarios_communs.json, criteres_S10.txt), en s
+EVENEMENTS_REF = struct('S1', zeros(1, 0), 'S2', [0.05, 0.07], 'S3', [0.05, 0.07], ...
+                        'S8a', [0.05, 0.07, 0.10, 0.12], ...
+                        'S10', [0.05, 0.10, 0.115, 0.13, 0.145, 0.16, 0.175]);
+
+% Mise en forme
+LARGEUR_CM = 16;
+POLICE = 'Times New Roman';
+TAILLE_ETIQUETTES = 11;
+TAILLE_GRADUATIONS = 10;
+RESOLUTION_DPI = 300;
+GRIS_CONSIGNE = [0.5 0.5 0.5];
+GRIS_FENETRE = [0.93 0.93 0.93];
+
+TE = 1/(22000*10);                           % periode du regulateur et des enregistrements (s)
+K_ZN = [0.093910, 301.089, 7.3227e-06];      % P, I, D de Ziegler-Nichols
+SEUIL_CONTROLE = 0.01;
+
+% Methodes : nom, dossier, modele source (nom du fichier de resultats),
+% prefixe des modeles, couleur, style, epaisseur (pt), tolerance S10.
+METH = struct( ...
+    'nom',     {'Ziegler-Nichols', 'ELM-PID', 'PSO-PID', 'Fuzzy-PID', 'PINN-PID'}, ...
+    'cle',     {'ZN', 'ELM', 'PSO', 'FUZZY', 'PINN'}, ...
+    'dossier', {DOSSIER_ZN, DOSSIER_ELM, DOSSIER_PSO, DOSSIER_FUZZY, DOSSIER_PINN}, ...
+    'source',  {'Buck_Commun', 'Buck_Commun_ELM_PID', 'Buck_Commun_PSO_PID', 'Buck_Commun_Fuzzy_PID', ...
+                'Buck_Commun_PINN_PID'}, ...
+    'prefixe', {'ZN', 'ELM_PID', 'PSO_PID', 'Fuzzy_PID', 'PINN_PID'}, ...
+    'couleur', {[0 0 0], [0.84 0.15 0.16], [0.12 0.47 0.71], [0.17 0.63 0.17], [1.0 0.5 0.05]}, ...
+    'style',   {'--', '-', '-.', '--', ':'}, ...
+    'epaisseur', {1.2, 1.5, 1.2, 1.2, 1.8}, ...
+    'tol_S10', {0.01, 0.03, 0.01, 0.01, 0.03}, ...
+    'controle', {false, true, true, true, true});
+FIG_A = {'ZN', 'ELM'};                       % ordre de la legende
+FIG_B = {'ELM', 'PSO', 'FUZZY', 'PINN'};
+
+% --- Chemins ---
+ICI = fileparts(mfilename('fullpath'));
+if isempty(ICI)
+    ICI = pwd;
+end
+if isempty(RACINE)
+    RACINE = fullfile(ICI, '..', '..');
+end
+if isempty(DOSSIER_SORTIE)
+    DOSSIER_SORTIE = ICI;
+end
+fprintf('Racine : %s\nDossiers lus (reglages DOSSIER_* en tete du script) :\n', RACINE);
+for m = 1:numel(METH)
+    d_ = fullfile(RACINE, METH(m).dossier);
+    fprintf('  %-16s : %s\n', METH(m).nom, d_);
+    if ~isfolder(d_)
+        error('Dossier introuvable : %s (regler DOSSIER_* en tete du script).', d_);
+    end
+end
+fb = fullfile(RACINE, 'COMPARAISON', 'metriques', 'metriques_banc.csv');
+if ~isfile(fb)
+    error('metriques_banc.csv introuvable (%s) : controle des donnees impossible.', fb);
+end
+BANC = lire_csv(fb);
+fprintf('Source des donnees : %s.\n', SOURCE);
+
+% --- Lecture des donnees et controle ---
+D = struct();                                % D.(code).(cle) : t, v, consigne, K
+ECARTS = {};
+fprintf('\nIAE de la fenetre de classement recalculee sur les donnees tracees (mV.s) :\n');
+fprintf('  %-5s %-16s %-14s %10s %10s %8s %6s  %s\n', 'essai', 'methode', 'fenetre', 'figure', 'banc', ...
+        'ecart %', 'tol %', 'etat');
+for s = 1:numel(SCENARIOS)
+    code = SCENARIOS{s};
+    for m = 1:numel(METH)
+        r = obtenir_essai(RACINE, METH(m), code, SOURCE, SIMULER_SI_ABSENT, TE);
+        D.(code).(METH(m).cle) = r;
+        [iae, fen] = iae_classement(r.v, r.consigne, code, TE);
+        k_ = [code '|' METH(m).nom '|classement|classement|IAE'];
+        tol = SEUIL_CONTROLE;
+        if strcmp(code, 'S10')
+            tol = max(tol, METH(m).tol_S10);
+        end
+        if isKey(BANC, k_)
+            b = BANC(k_);
+            ec = iae / b - 1;
+            if abs(ec) <= tol
+                etat = 'ok';
+            elseif METH(m).controle
+                etat = 'HORS TOLERANCE';
+                ECARTS{end + 1} = sprintf('%s %s : %.3f contre %.3f mV.s au banc (%+.2f %%) - %s', ...
+                                          code, METH(m).nom, iae, b, ec * 100, r.fichier); %#ok<SAGROW>
+            else
+                etat = 'hors tolerance (indicatif)';
+            end
+        else
+            b = NaN;
+            ec = NaN;
+            etat = 'absent du banc';
+        end
+        fprintf('  %-5s %-16s %-14s %10.3f %10.3f %+8.2f %6.1f  %s\n', code, METH(m).nom, fen, iae, b, ...
+                ec * 100, tol * 100, etat);
+    end
+end
+if ~isempty(ECARTS)
+    fprintf('\nATTENTION : donnees qui ne correspondent pas a la version retenue :\n  %s\n', ...
+            strjoin(ECARTS, '\n  '));
+    fprintf(['  -> verifier DOSSIER_* (ELM-PID : dossier de l''option B) et relancer ' ...
+             'Simuler_Modeles_Comparaison.m dans le dossier en cause.\n']);
+    if ARRETER_SI_ECART
+        error('Figures non produites : %d ecart(s) hors tolerance (ARRETER_SI_ECART = true).', numel(ECARTS));
+    end
+end
+
+% --- Evenements de chaque scenario ---
+EV = struct();
+for s = 1:numel(SCENARIOS)
+    code = SCENARIOS{s};
+    EV.(code) = lire_evenements(fullfile(RACINE, DOSSIER_ELM), code, EVENEMENTS_REF);
+end
+
+% --- Figures A et B ---
+if ~isfolder(DOSSIER_SORTIE)
+    mkdir(DOSSIER_SORTIE);
+end
+FORME = struct('police', POLICE, 'etiq', TAILLE_ETIQUETTES, 'grad', TAILLE_GRADUATIONS, ...
+               'largeur', LARGEUR_CM, 'gris_consigne', GRIS_CONSIGNE, 'gris_fenetre', GRIS_FENETRE, ...
+               'marge', MARGE_ORDONNEES, 'dpi', RESOLUTION_DPI, 'visible', FIGURES_VISIBLES);
+fprintf('\nFenetres de zoom (regle de l''en-tete) :\n');
+for s = 1:numel(SCENARIOS)
+    code = SCENARIOS{s};
+    [zooms, textes, non_zoomes] = fenetres_zoom(code, EV.(code), ZOOM_S1_MS, ZOOM_AVANT_MS, ZOOM_APRES_MS, ...
+                                                NB_ZOOMS_MAX);
+    fprintf('  %-4s : %s', code, strjoin(arrayfun(@(i) sprintf('[%g ; %g] ms', zooms(i, 1), zooms(i, 2)), ...
+            1:size(zooms, 1), 'UniformOutput', false), ', '));
+    if ~isempty(non_zoomes)
+        fprintf(' ; evenements non zoomes (panneau du haut seulement) : %s ms', ...
+                strjoin(arrayfun(@(x) sprintf('%g', x), non_zoomes, 'UniformOutput', false), ', '));
+    end
+    fprintf('\n');
+    for f = 1:2
+        if f == 1
+            cles = FIG_A;
+            nom = sprintf('Fig5_%s_A_ZN_ELM', code);
+        else
+            cles = FIG_B;
+            nom = sprintf('Fig5_%s_B_ELM_PSO_Fuzzy_PINN', code);
+        end
+        fig = figure_vout(D.(code), METH, cles, zooms, textes, FORME, nom);
+        fichiers = enregistrer(fig, DOSSIER_SORTIE, nom, RESOLUTION_DPI);
+        fprintf('         %s\n', strjoin(fichiers, ' et '));
+    end
+end
+
+% --- Figure des gains (S10) ---
+if any(strcmp(SCENARIOS, 'S10'))
+    g_pso = gains_pso(RACINE, DOSSIER_PSO);
+    if all(isfinite(g_pso))
+        fprintf('\nGains constants du PSO-PID : P = %.5g, I = %.5g, D = %.5g (%.3f / %.3f / %.3f x ZN).\n', ...
+                g_pso, g_pso ./ K_ZN);
+    end
+    fig = figure_gains(D.S10, METH, K_ZN, g_pso, FIGURE_GAINS_AVEC_ZN, FORME);
+    fichiers = enregistrer(fig, DOSSIER_SORTIE, 'Fig5_S10_gains', RESOLUTION_DPI);
+    fprintf('Figure des gains : %s\n', strjoin(fichiers, ' et '));
+end
+fprintf('\nTermine. Figures dans %s.\n', DOSSIER_SORTIE);
+
+
+%% ===================== Fonctions =====================================
+
+function r = obtenir_essai(racine, M, code, source, simuler_si_absent, Te)
+    % Signaux d'un essai : t, v, consigne (colonnes), K (gains a chaque pas,
+    % vide pour les gains constants), fichier (origine).
+    dossier = fullfile(racine, M.dossier);
+    modele = [M.prefixe '_' code];
+    f = fullfile(dossier, ['resultats_' M.source '_comparaison.mat']);
+    r = [];
+    if strcmp(source, 'enregistres')
+        if isfile(f)
+            S = load(f, 'resultats');
+            if isfield(S, 'resultats')
+                j = find(strcmp({S.resultats.code}, code), 1);
+                if ~isempty(j)
+                    e = S.resultats(j);
+                    if isfield(e, 'modele') && ~isempty(e.modele) && ~strcmp(e.modele, modele)
+                        error('%s : l''entree %s vient du modele %s et non de %s.', f, code, e.modele, modele);
+                    end
+                    r = normaliser(e, Te);
+                    r.fichier = f;
+                    fs = fullfile(dossier, [modele '.slx']);
+                    if isfile(fs)
+                        a = dir(fs);
+                        b = dir(f);
+                        if a.datenum > b.datenum
+                            warning(['%s est plus recent que %s : resultats peut-etre perimes ' ...
+                                     '(relancer Simuler_Modeles_Comparaison.m).'], fs, f);
+                        end
+                    end
+                end
+            end
+        end
+        if isempty(r) && ~simuler_si_absent
+            error(['%s %s : pas de resultat dans %s.\nLancer Simuler_Modeles_Comparaison.m dans %s ' ...
+                   '(MODELES_A_SIMULER = {''%s''}), ou mettre SIMULER_SI_ABSENT = true.'], ...
+                  M.nom, code, f, dossier, modele);
+        end
+    end
+    if isempty(r)
+        r = simuler_modele(dossier, modele, code, Te);
+    end
+end
+
+function r = normaliser(e, Te)
+    % Colonnes, consigne vectorielle, temps reconstruit s'il manque.
+    v = double(e.v(:));
+    N = numel(v);
+    if isfield(e, 't') && numel(e.t) == N
+        t = double(e.t(:));
+    else
+        t = (0:N - 1)' * Te;
+    end
+    c = double(e.consigne(:));
+    if isscalar(c)
+        c = c * ones(N, 1);
+    end
+    K = [];
+    if isfield(e, 'K') && ~isempty(e.K)
+        K = double(e.K);
+        if size(K, 1) ~= N && size(K, 2) == N
+            K = K.';
+        end
+    end
+    r = struct('t', t, 'v', v, 'consigne', c, 'K', K, 'fichier', '');
+end
+
+function r = simuler_modele(dossier, MDL, code, Te)
+    % Meme lecture que Simuler_Modeles_Comparaison.m : dans le dossier de la
+    % methode, charger_scenario(code), sim du modele, enregistrements
+    % cmp_vout et cmp_K. To Workspace d'origine mis en commentaire EN
+    % MEMOIRE ; le modele est ferme sans etre enregistre.
+    fs = fullfile(dossier, [MDL '.slx']);
+    if ~isfile(fs)
+        error('Modele introuvable : %s (lancer Construire_Modeles_Comparaison.m).', fs);
+    end
+    fprintf('  simulation de %s ...\n', fs);
+    ancien = pwd;
+    retour = onCleanup(@() cd(ancien));
+    cd(dossier);
+    sc = charger_scenario(code);
+    if bdIsLoaded(MDL)
+        if strcmp(get_param(MDL, 'Dirty'), 'on')
+            error('%s est ouvert avec des modifications non enregistrees.', MDL);
+        end
+        close_system(MDL, 0);
+    end
+    load_system(fs);
+    try
+        tw = find_system(MDL, 'SearchDepth', 1, 'BlockType', 'ToWorkspace');
+        noms = get_param(tw, 'VariableName');
+        for j = 1:numel(tw)
+            if ~startsWith(noms{j}, 'cmp_')
+                set_param(tw{j}, 'Commented', 'on');
+            end
+        end
+        sortie = sim(MDL, 'ReturnWorkspaceOutputs', 'on');
+    catch ME
+        close_system(MDL, 0);
+        rethrow(ME);
+    end
+    close_system(MDL, 0);
+    n = numel(sc.t);
+    [t, v] = extraire(sortie, 'cmp_vout');
+    t = t(1:min(n, end));
+    v = v(1:min(n, end), 1);
+    K = [];
+    if any(strcmp(noms, 'cmp_K'))
+        [~, K] = extraire(sortie, 'cmp_K');
+        K = K(1:min(n, end), :);
+    end
+    if numel(t) ~= n || max(abs(t - sc.t(:))) > 1e-9
+        error('%s : enregistrement non aligne avec le profil.', MDL);
+    end
+    r = struct('t', t, 'v', v, 'consigne', 100 + double(sc.dvref(:)), 'K', K, 'fichier', [fs ' (sim)']);
+    if abs(t(2) - t(1) - Te) > 1e-12
+        error('%s : pas d''enregistrement different de Te.', MDL);
+    end
+end
+
+function [t, M] = extraire(sortie, nom)
+    % Enregistrement To Workspace (timeseries ou structure avec temps),
+    % une ligne par instant (comme extraire_matrice de
+    % Simuler_Modeles_Comparaison.m).
+    if ~any(strcmp(sortie.who, nom))
+        error('Enregistrement "%s" absent des resultats de simulation.', nom);
+    end
+    d = sortie.get(nom);
+    if isa(d, 'timeseries')
+        t = d.Time;
+        M = d.Data;
+    else
+        t = d.time;
+        M = d.signals.values;
+    end
+    t = t(:);
+    M = double(squeeze(M));
+    if size(M, 1) ~= numel(t)
+        M = M.';
+    end
+end
+
+function [iae, texte] = iae_classement(v, consigne, code, Te)
+    % IAE de la fenetre de classement, definition de calculer_metriques
+    % (Metriques_Simulink.m) : instants k de [ka ; kb), indice MATLAB k + 1.
+    N = numel(v);
+    k30 = round(0.03 / Te);
+    k100 = round(0.10 / Te);
+    if strcmp(code, 'S1')
+        ka = 0; kb = k30; texte = '0 a 30 ms';
+    elseif strcmp(code, 'S10')
+        ka = k100; kb = N; texte = '100 ms a fin';
+    else
+        ka = k30; kb = N; texte = '30 ms a fin';
+    end
+    e = consigne(:) - v(:);
+    iae = sum(abs(e(ka + 1:kb))) * Te * 1e3;
+end
+
+function ev = lire_evenements(dossier, code, ref)
+    % Instants des evenements (s) : scenario_<code>.mat, compares a la
+    % liste de reference de l'en-tete.
+    attendu = ref.(code);
+    f = fullfile(dossier, ['scenario_' code '.mat']);
+    if isfile(f)
+        m = load(f, 'evenements');
+        ev = reshape(double(m.evenements), 1, []);
+        if numel(ev) ~= numel(attendu) || any(abs(ev - attendu) > 1e-9)
+            error('%s : evenements [%s] differents de la reference [%s].', f, num2str(ev), num2str(attendu));
+        end
+    else
+        warning('%s absent : evenements de reference de l''en-tete.', f);
+        ev = attendu;
+    end
+end
+
+function [z, textes, non_zoomes] = fenetres_zoom(code, ev, z_s1, avant, apres, n_max)
+    % Regle de l'en-tete. z : une ligne [debut, fin] (ms) par zoom.
+    ev_ms = round(ev * 1e3 * 1e6) / 1e6;
+    non_zoomes = [];
+    if isempty(ev_ms) || strcmp(code, 'S1')
+        z = z_s1;
+        textes = {['d' lettre(233) 'marrage']};
+        return;
+    end
+    if numel(ev_ms) > n_max
+        non_zoomes = ev_ms(n_max + 1:end);
+        ev_ms = ev_ms(1:n_max);
+    end
+    z = [ev_ms(:) - avant, ev_ms(:) + apres];
+    textes = arrayfun(@(x) sprintf('%s %g ms', [lettre(233) 'v' lettre(233) 'nement ' lettre(224)], x), ev_ms, ...
+                      'UniformOutput', false);
+end
+
+function fig = figure_vout(Dc, METH, cles, zooms, textes, F, nom)
+    % Panneau du haut (toute la duree) et zooms dessous (grille de une ou
+    % deux colonnes). Legende au-dessus, hors des courbes.
+    nz = size(zooms, 1);
+    nc = 1 + (nz > 1);
+    nrz = ceil(nz / nc);
+    nr = 1 + nrz;
+    hauteur = 6.5 + 4.5 * nrz;                    % cm : 11 (1 rangee de zooms), 15.5 (2 rangees)
+    fig = figure('Name', nom, 'Color', 'w', 'Units', 'centimeters', 'Visible', F.visible);
+    pos = get(fig, 'Position');
+    set(fig, 'Position', [pos(1), max(1, pos(2) - 6), F.largeur, hauteur]);
+    set(fig, 'PaperUnits', 'centimeters', 'PaperSize', [F.largeur, hauteur], ...
+        'PaperPosition', [0, 0, F.largeur, hauteur]);
+    tl = tiledlayout(fig, nr, nc, 'TileSpacing', 'compact', 'Padding', 'compact');
+    idx = cellfun(@(c) find(strcmp({METH.cle}, c)), cles);
+    % Ordre de trace : traits pleins d'abord, discontinus par-dessus
+    plein = arrayfun(@(i) strcmp(METH(i).style, '-'), idx);
+    ordre_trace = [idx(plein), idx(~plein)];
+    lettres = 'abcdefgh';
+    ref = Dc.(METH(idx(1)).cle);
+    t_ms = ref.t * 1e3;
+    fen_tout = [t_ms(1), t_ms(end)];
+    fenetres = [fen_tout; zooms];
+    ax = gobjects(1, nz + 1);
+    h_leg = gobjects(1, numel(idx) + 1);
+    for p = 1:nz + 1
+        if p == 1
+            ax(p) = nexttile(tl, 1, [1, nc]);
+        else
+            ligne = 1 + ceil((p - 1) / nc);
+            col = mod(p - 2, nc) + 1;
+            ax(p) = nexttile(tl, (ligne - 1) * nc + col);
+        end
+        hold(ax(p), 'on');
+        a = fenetres(p, 1);
+        b = fenetres(p, 2);
+        y_tout = [];
+        if p == 1                                  % fenetres de zoom grisees
+            for q = 1:nz
+                patch(ax(p), zooms(q, [1 2 2 1]), [-1e6 -1e6 1e6 1e6], F.gris_fenetre, ...
+                      'EdgeColor', 'none', 'HandleVisibility', 'off');
+            end
+        end
+        k = t_ms >= a - 1e-9 & t_ms <= b + 1e-9;
+        h_leg(end) = plot(ax(p), t_ms(k), ref.consigne(k), ':', 'Color', F.gris_consigne, 'LineWidth', 0.8);
+        y_tout = [y_tout; ref.consigne(k)]; %#ok<AGROW>
+        for i = ordre_trace
+            r = Dc.(METH(i).cle);
+            tm = r.t * 1e3;
+            k = tm >= a - 1e-9 & tm <= b + 1e-9;
+            h = plot(ax(p), tm(k), r.v(k), METH(i).style, 'Color', METH(i).couleur, ...
+                     'LineWidth', METH(i).epaisseur);
+            h_leg(idx == i) = h;
+            y_tout = [y_tout; r.v(k)]; %#ok<AGROW>
+        end
+        xlim(ax(p), [a, b]);
+        fixer_ordonnees(ax(p), y_tout, F.marge);
+        grid(ax(p), 'on');
+        box(ax(p), 'on');
+        set(ax(p), 'Layer', 'top', 'FontName', F.police, 'FontSize', F.grad);
+        if p == 1
+            txt = sprintf('(%s) essai complet', lettres(p));
+        else
+            txt = sprintf('(%s) %s', lettres(p), textes{p - 1});
+        end
+        title(ax(p), txt, 'FontName', F.police, 'FontSize', F.grad, 'FontWeight', 'normal');
+        if p == 1 || p > 1 + (nrz - 1) * nc
+            xlabel(ax(p), 'temps (ms)', 'FontName', F.police, 'FontSize', F.etiq);
+        end
+        if p == 1 || mod(p - 2, nc) == 0
+            ylabel(ax(p), 'V_{out} (V)', 'FontName', F.police, 'FontSize', F.etiq);
+        end
+    end
+    noms = [{METH(idx).nom}, {'consigne'}];
+    lg = legend(ax(1), h_leg, noms, 'Orientation', 'horizontal', 'Location', 'northoutside', ...
+                'FontName', F.police, 'FontSize', F.grad, 'Box', 'off');
+    try
+        lg.NumColumns = numel(noms);
+        lg.Layout.Tile = 'north';                  % au-dessus de toute la grille
+    catch
+    end
+end
+
+function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
+    % S10 : gains / gains de ZN, un panneau par gain (P, I, D), toute la
+    % duree. ELM-PID et PINN-PID (courbes), PSO-PID (droite constante),
+    % Ziegler-Nichols (droite y = 1, si demande).
+    hauteur = 14;
+    fig = figure('Name', 'Fig5_S10_gains', 'Color', 'w', 'Units', 'centimeters', 'Visible', F.visible);
+    pos = get(fig, 'Position');
+    set(fig, 'Position', [pos(1), max(1, pos(2) - 6), F.largeur, hauteur]);
+    set(fig, 'PaperUnits', 'centimeters', 'PaperSize', [F.largeur, hauteur], ...
+        'PaperPosition', [0, 0, F.largeur, hauteur]);
+    tl = tiledlayout(fig, 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+    noms_g = {'P', 'I', 'D'};
+    adapt = {'ELM', 'PINN'};
+    ia = cellfun(@(c) find(strcmp({METH.cle}, c)), adapt);
+    ip = find(strcmp({METH.cle}, 'PSO'));
+    iz = find(strcmp({METH.cle}, 'ZN'));
+    lettres = 'abc';
+    h_leg = gobjects(1, 0);
+    noms_leg = {};
+    for g = 1:3
+        ax = nexttile(tl, g);
+        hold(ax, 'on');
+        y_tout = [];
+        t0 = [];
+        t1 = [];
+        hs = gobjects(1, 4);
+        for q = 1:numel(ia)
+            i = ia(q);
+            r = Dc.(METH(i).cle);
+            if isempty(r.K)
+                warning('%s S10 : pas de gains enregistres (cmp_K) : courbe absente.', METH(i).nom);
+                continue;
+            end
+            tm = r.t * 1e3;
+            y = r.K(:, g) / K_ZN(g);
+            hs(q) = plot(ax, tm, y, METH(i).style, 'Color', METH(i).couleur, 'LineWidth', METH(i).epaisseur);
+            y_tout = [y_tout; y]; %#ok<AGROW>
+            t0 = min([t0, tm(1)]);
+            t1 = max([t1, tm(end)]);
+        end
+        if isempty(t0)
+            t0 = 0; t1 = 200;
+        end
+        if all(isfinite(g_pso))
+            y = g_pso(g) / K_ZN(g);
+            hs(3) = plot(ax, [t0, t1], [y, y], METH(ip).style, 'Color', METH(ip).couleur, ...
+                         'LineWidth', METH(ip).epaisseur);
+            y_tout = [y_tout; y]; %#ok<AGROW>
+        end
+        if avec_zn
+            hs(4) = plot(ax, [t0, t1], [1, 1], METH(iz).style, 'Color', METH(iz).couleur, ...
+                         'LineWidth', METH(iz).epaisseur);
+            y_tout = [y_tout; 1]; %#ok<AGROW>
+        end
+        xlim(ax, [t0, t1]);
+        fixer_ordonnees(ax, y_tout, F.marge);
+        grid(ax, 'on');
+        box(ax, 'on');
+        set(ax, 'Layer', 'top', 'FontName', F.police, 'FontSize', F.grad);
+        ylabel(ax, sprintf('K_%s / K_{%s,ZN}', noms_g{g}, noms_g{g}), 'FontName', F.police, 'FontSize', F.etiq);
+        title(ax, sprintf('(%s) gain %s', lettres(g), noms_g{g}), 'FontName', F.police, 'FontSize', F.grad, ...
+              'FontWeight', 'normal');
+        if g == 3
+            xlabel(ax, 'temps (ms)', 'FontName', F.police, 'FontSize', F.etiq);
+        end
+        if g == 1
+            noms4 = {METH(ia(1)).nom, METH(ia(2)).nom, [METH(ip).nom ' (constant)'], ...
+                     [METH(iz).nom ' (r' lettre(233) 'f' lettre(233) 'rence)']};
+            ok = arrayfun(@(h) isgraphics(h), hs);
+            h_leg = hs(ok);
+            noms_leg = noms4(ok);
+            ax1 = ax;
+        end
+    end
+    lg = legend(ax1, h_leg, noms_leg, 'Orientation', 'horizontal', 'Location', 'northoutside', ...
+                'FontName', F.police, 'FontSize', F.grad, 'Box', 'off');
+    try
+        lg.NumColumns = numel(noms_leg);
+        lg.Layout.Tile = 'north';
+    catch
+    end
+end
+
+function g = gains_pso(racine, dossier)
+    % Gains constants du PSO-PID : bloc "PID Controller" du modele
+    % PSO_PID_S10.slx si Simulink est la, sinon predictions_banc_pso_pid.json
+    % (meme valeurs, ecrites par recherche_pso_pid.py). NaN si rien ne se lit.
+    g = NaN(1, 3);
+    fs = fullfile(racine, dossier, 'PSO_PID_S10.slx');
+    if isfile(fs) && exist('load_system', 'file')
+        try
+            mdl = 'PSO_PID_S10';
+            deja = bdIsLoaded(mdl);
+            if ~deja
+                load_system(fs);
+            end
+            noms = {'P', 'I', 'D'};
+            for q = 1:3
+                g(q) = str2double(get_param([mdl '/PID Controller'], noms{q}));
+            end
+            if ~deja
+                close_system(mdl, 0);
+            end
+        catch
+            g = NaN(1, 3);
+        end
+    end
+    fj = fullfile(racine, dossier, 'predictions_banc_pso_pid.json');
+    if isfile(fj)
+        j = jsondecode(fileread(fj));
+        gj = [j.gains.P, j.gains.I, j.gains.D];
+        if all(isfinite(g)) && max(abs(g ./ gj - 1)) > 1e-6
+            warning('Gains du PSO-PID : modele [%g %g %g], banc [%g %g %g] : valeurs du modele gardees.', g, gj);
+        elseif ~all(isfinite(g))
+            g = gj;
+        end
+    end
+    if ~all(isfinite(g))
+        warning('Gains du PSO-PID illisibles : pas de droite PSO-PID dans la figure des gains.');
+    end
+end
+
+function fixer_ordonnees(ax, y, marge)
+    % Copie de Simuler_Modeles_Comparaison.m : [min - m ; max + m], m = marge
+    % x etendue ; courbe plate : etendue prise a 10 % de la valeur.
+    y = double(y(:));
+    y = y(isfinite(y));
+    if isempty(y)
+        return;
+    end
+    bas = min(y);
+    haut = max(y);
+    etendue = haut - bas;
+    if etendue <= 0
+        etendue = 0.1 * max(abs(haut), 1);
+    end
+    ylim(ax, [bas - marge * etendue, haut + marge * etendue]);
+end
+
+function fichiers = enregistrer(fig, dossier, nom, dpi)
+    % <nom>.png (exportgraphics, sinon print) et <nom>.fig.
+    fichiers = {fullfile(dossier, [nom '.png']), fullfile(dossier, [nom '.fig'])};
+    try
+        exportgraphics(fig, fichiers{1}, 'Resolution', dpi);
+    catch
+        print(fig, fichiers{1}, '-dpng', sprintf('-r%d', dpi));
+    end
+    try
+        savefig(fig, fichiers{2});
+    catch ME
+        warning('%s non ecrit (%s).', fichiers{2}, ME.message);
+        fichiers = fichiers(1);
+    end
+end
+
+function c = lettre(code)
+    % Lettre accentuee (code Unicode < 2048) pour le texte des figures.
+    % MATLAB : char(code). Octave (caracteres en octets UTF-8) : les deux
+    % octets UTF-8 de la lettre.
+    if exist('OCTAVE_VERSION', 'builtin')
+        c = char([192 + floor(code / 64), 128 + mod(code, 64)]);
+    else
+        c = char(code);
+    end
+end
+
+function B = lire_csv(f)
+    % metriques_banc.csv -> table cle -> valeur (copie de Metriques_Simulink.m).
+    fid = fopen(f, 'r', 'n', 'UTF-8');
+    C = textscan(fid, '%s %s %s %s %s %s %s', 'Delimiter', ';', 'Whitespace', '', 'HeaderLines', 1);
+    fclose(fid);
+    B = containers.Map('KeyType', 'char', 'ValueType', 'double');
+    for i = 1:numel(C{1})
+        B([C{1}{i} '|' C{2}{i} '|' C{3}{i} '|' C{4}{i} '|' C{5}{i}]) = str2double(C{6}{i});
+    end
+end
