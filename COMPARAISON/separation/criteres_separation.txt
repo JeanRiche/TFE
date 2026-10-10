@@ -1,0 +1,63 @@
+CRITERES ET PREVISIONS : SEPARATION MESUREE DES METHODES (chapitre 5)
+=============================================================================
+Ecrit et commite le 10 octobre 2026, AVANT tout calcul de ce dossier.
+Remplace, pour le corps du chapitre 5, le seuil fixe de 5 % (critere C1 de
+COMPARAISON/criteres_comparaison.txt). Decision prise avec Jean-Riche le
+10 octobre 2026.
+
+1. POURQUOI
+  Le seuil de 5 % venait d'une observation sur S4 et S8a (avec L ou C a
+  +-0.1 %, l'ordre de deux methodes adaptatives proches pouvait changer),
+  arrondie puis appliquee a des essais ou elle n'avait pas ete mesuree. On
+  mesure donc la separation sur chacun des cinq scenarios du corps.
+
+2. REGLE (fixee avant calcul, non modifiable apres)
+  - Scenarios : S1, S2, S3, S8a, S10 (definitions inchangees).
+  - Methodes : Ziegler-Nichols, PSO-PID, Fuzzy-PID, ELM-PID (option B),
+    PINN-PID (version finale), chacune prise dans son dossier, reglages
+    inchanges.
+  - Cinq variantes du CIRCUIT : nominal ; L a -0.1 % ; L a +0.1 % ;
+    C a -0.1 % ; C a +0.1 %. Les regulateurs ne sont pas modifies (leurs
+    eventuels modeles internes gardent les valeurs nominales), comme dans
+    COMPARAISON/simulations_scenario.py.
+  - Grandeur : l'IAE de classement deja definie (S1 : de 0 a 30 ms ;
+    S2, S3, S8a : de 30 ms a la fin ; S10 : de 100 ms a la fin), meme
+    calcul que metriques_banc.py.
+  - Controle prealable : la variante nominale doit redonner l'IAE de
+    COMPARAISON/metriques/metriques_banc.csv a 1e-9 pres (sinon arret, le
+    calcul n'est pas valide).
+  - Pour chaque paire de methodes (dix paires par scenario) : la paire est
+    SEPAREE si le signe de la difference d'IAE est le meme dans les cinq
+    variantes ; sinon NON SEPAREE. On publie pour chaque paire l'ecart
+    nominal en % et l'ecart minimal et maximal sur les cinq variantes.
+  - Presentation : groupes ordonnes ; deux methodes non separees sont dans
+    le meme groupe. Si la relation n'est pas transitive (A~B, B~C mais A et
+    C separees), on publie la matrice des paires telle quelle, sans forcer
+    des groupes.
+  - Portee annoncee : +-0.1 % mesure si un ecart est structurel ou s'il
+    tient aux instants de declenchement des adaptations ; ce n'est PAS une
+    etude de robustesse aux tolerances reelles des composants (chapitre 6).
+
+3. PREVISIONS (d'apres les IAE nominales de metriques_banc.md, mV.s)
+  S1  : PSO 87.62 ; PINN 92.06 ; ELM 93.72 ; ZN 93.77 ; Fuzzy 110.91.
+        Prevu : PSO separe de tous ; Fuzzy separe de tous ; ELM et ZN non
+        separes (0.05 %) ; PINN probablement non separe de ELM et ZN
+        (1.8 %), incertain.
+  S2  : PSO 2.04 ; ELM 2.41 ; Fuzzy 2.43 ; PINN 2.44 ; ZN 2.84.
+        Prevu : PSO separe de tous ; ZN separe de tous ; ELM, Fuzzy et PINN
+        non separes entre eux.
+  S3  : PSO 5.46 ; PINN 6.40 ; ELM 6.41 ; Fuzzy 7.94 ; ZN 8.67.
+        Prevu : PINN et ELM non separes ; toutes les autres paires
+        separees (Fuzzy et ZN : 9 %, prevu separes).
+  S8a : deja mesure (robustesse_S8a.json, 7 octobre) : PSO < {PINN, ELM}
+        < Fuzzy < ZN ; PINN et ELM non separes. Prevu : meme resultat
+        (recalcul identique).
+  S10 : PSO 3.98 ; PINN 6.63 ; ELM 8.63 ; Fuzzy 9.18 ; ZN 70.48.
+        Prevu : PSO, PINN et ZN separes de tous ; ELM et Fuzzy (6 %)
+        incertain, plutot separes.
+  Les previsions seront comparees aux resultats et publiees telles
+  quelles, justes ou fausses.
+
+4. PRODUITS
+  separation_methodes.py, separation_resultats.json,
+  separation_sortie_console.txt (dans ce dossier).
