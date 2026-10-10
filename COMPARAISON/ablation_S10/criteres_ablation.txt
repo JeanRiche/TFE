@@ -45,3 +45,33 @@ chapitre 5).
 4. PRODUITS (dans ce dossier)
   ablation_reseau_elm.py, ablation_resultats.json,
   ablation_sortie_console.txt.
+
+5. ISSUE (ajoute APRES le calcul du 10 octobre 2026 ; sections 1 a 4
+   inchangees)
+  Controles prealables passes (ecarts au plus 1.8e-10). 60 simulations.
+  Ecart = IAE_ablation / IAE_ELM-PID - 1 (nominal ; min a max sur les cinq
+  variantes) :
+    S2  : jacobien constant +1.09 % (+1.09 a +1.23), SEPAREE ;
+          sans OS-ELM 0.000 %, NON SEPAREE (identique).
+    S3  : jacobien constant +1.82 % (+1.78 a +1.82), SEPAREE ;
+          sans OS-ELM 0.000 %, NON SEPAREE.
+    S8a : jacobien constant +2.64 % (+2.35 a +2.67), SEPAREE ;
+          sans OS-ELM -0.04 % (-0.38 a -0.04), SEPAREE (sans OS-ELM
+          legerement meilleur).
+    S10 : jacobien constant -9.76 % (-9.76 a +4.01), NON SEPAREE ;
+          sans OS-ELM -0.90 % (-9.46 a +8.81), NON SEPAREE.
+          IAE de l'ELM-PID sur S10 : 7.88 a 8.63 selon la variante.
+  Previsions :
+    justes : sans OS-ELM sur S2, S3 (nul) et S8a (moins de 0.1 %, separe) ;
+      sans OS-ELM sur S10 (ecart nominal inferieur a 2 %) ; jacobien
+      constant sur S2, S3, S8a (+1 a +3 %).
+    fausses : jacobien constant sur S10 : au nominal il fait MIEUX que le
+      reseau (-9.8 %), ce que la section 3 classait comme prevision fausse ;
+      l'ecart n'est toutefois pas separe (signe inverse avec L +0.1 %).
+      Separation du jacobien constant sur S2, S3, S8a : annoncee incertaine,
+      separee dans les trois cas.
+  Lecture : pres du point nominal, le jacobien du reseau apporte 1 a 3 %,
+  de facon reproductible ; la mise a jour en ligne (OS-ELM) n'apporte rien
+  de mesurable ; sur S10, l'IAE de l'ELM-PID varie de pres de 10 % avec des
+  changements de 0.1 % du circuit, et ni le reseau ni sa mise a jour ne s'y
+  distinguent de cette sensibilite.
