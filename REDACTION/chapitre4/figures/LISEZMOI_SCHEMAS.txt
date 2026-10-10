@@ -16,8 +16,8 @@ Sources de chaque element dessine
   ELM_PID/banc_commun.py (fonction simuler : mesure bruitee et quantifiee,
   MLI a 22 kHz, saturation [0,01 ; 0,99]), ELM_PID/entrainement_elm.py
   (fonctions apprendre, h_de, predire), ELM_PID/criteres_elm_pid.txt
-  (sections 2 et 4, M1 a M4). Notations reprises de l'equation (5.4) du
-  chapitre 5 (x, e barre, phi, J, s, eta, epsilon).
+  (sections 2 et 4, M1 a M4). Notations reprises de la loi (4.7) du
+  chapitre 4 (x, e barre, phi, J, s, eta, epsilon, alpha).
 
 Fig4_1_boucle_ELM_PID
 ---------------------

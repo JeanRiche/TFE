@@ -74,7 +74,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 | Butée S1 : 1,791 ms au total, dernière à 2,077 ms (ZN et ELM) ; S10 : ELM 175,450 ms, PSO 160,205, PINN 160,141, ZN 53,532, Fuzzy 52,268 | `COMPARAISON/figures_chapitre5/sortie_matlab_Figures_Chapitre5_10oct.txt` (Simulink) |
 | Boucle de 0,5 ms, porte sur trois fenêtres (saturation), zone morte 0,1 V | `ELM_PID/criteres_elm_pid.txt` §2 et M1 (§4) |
 | Changement unique des gains à 4 ms sur S1, x(1,469 ; 1,058 ; 1,152) ; S1 : 1 fenêtre, S2 : 1, S3 : 2 (second à 72 ms), S8a : 7 | `criteres_elm_pid.txt` §8 |
-| Porte fermée pendant F1/F2, réouverture 1,5 ms plus tard, erreur sous 0,1 V (S3 à 52 ms : −0,038 V) | `criteres_elm_pid.txt` §8 (« Ce que l'adaptation fait pendant une perturbation ») et §9 point 3 |
+| Porte fermée pendant F1/F2, réouverture 1,5 ms après la fin de la fenêtre saturée (1,5 à 2 ms après l'événement, règle de la section 4.4.2 et figure 4.3 ; `criteres_elm_pid.txt` §8 écrit « 1.5 ms plus tard »), erreur sous 0,1 V (S3 à 52 ms : −0,038 V) | `criteres_elm_pid.txt` §8 (« Ce que l'adaptation fait pendant une perturbation ») et §9 point 3 |
 | PID figé aux gains de 4 ms : S3 6,41 ; S8a 3,87 (contre 2,96) | `criteres_elm_pid.txt` §8 (« Analyse ajoutée après coup », étape 4c du banc) |
 | S2 e max 2,01 / 2,01 ; S3 5,73 / 5,66 ; retours S3 ZN 1,05 et 1,49 ms, ELM 0,87 et 0,87 ms | `metriques_banc.md`, tableaux S2, S3 et par événement |
 | Amortissement 1,46 et 0,29 | `COMPARAISON/S10/criteres_S10.txt` ; docx ZN, tableau 2 |
@@ -164,9 +164,9 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 | S3, retours 0,87 / 1,05 et 1,49 ms | `metriques_banc.md`, S3 par événement |
 | Ablations : +1,09 / +1,82 / +2,64 % ; S10 −9,76 (−9,76 à +4,01) ; sans OS-ELM 0 / 0 / −0,04 (−0,38 à −0,04) / −0,90 (−9,46 à +8,81) ; ELM 7,88 à 8,63 ; prévisions justes et fausses | `COMPARAISON/ablation_S10/criteres_ablation.txt` §3 et §5 ; `ablation_sortie_console.txt` |
 | Jacobien : 4 615 fenêtres ; vrai 11,2 (4-6 Ω) à 15,8 (50-99 Ω) ; réseau 11,06 à 11,44 (médianes) ; corrélation de ln *J* (réseau) et ln *J* vrai −0,043 ; entrées du réseau ȳ(n−1), ȳ(n−2), d̄(n), d̄(n−1), d̄(n−2) (moyennes par fenêtre, `criteres_elm_pid.txt` §2) ; charge non observable | `ELM_PID/criteres_elm_pid.txt` §5 ; `ELM_PID/entrainement_elm_sortie_console.txt`, étape 5 (lignes 65 à 69) |
-| Gradient normalisé (NLMS), porte de saturation (M1), projection (M2, M3) ; équation (5.4), *η* = 0,5, *ε* = 1e-3, *φ* = *J* (*s* .* *K*_ZN) | `criteres_elm_pid.txt` §2, §4 (M4) ; explication du rôle de *J* (30 %) : `ELM_PID_INCREMENTAL/criteres_elm_pid.txt` §9, point 3 (même loi de gradient, gardée telle quelle en option B) |
+| Gradient normalisé (NLMS), porte de saturation (M1), projection (M2, M3) ; loi (4.7) du chapitre 4 (l'ancienne équation (5.4) est retirée), *η* = 0,5, *ε* = 1e-3, *α* = 0,001, *φ* = *J* (*s* .* *K*_ZN) ; *J* = ∂ŷ/∂d̄, équation (4.5) | `criteres_elm_pid.txt` §2, §4 (M4) ; explication du rôle de *J* (30 %) : `ELM_PID_INCREMENTAL/criteres_elm_pid.txt` §9, point 3 (même loi de gradient, gardée telle quelle en option B) |
 | Facteurs 2,5 et 27 par rapport au PSO-PID : 3,59/1,43 = 2,51 et 38,93/1,43 = 27,2 (l'ancienne version donnait 2,6 et 28, qui sont les rapports à Ziegler-Nichols : 3,59/1,39 = 2,58 et 38,93/1,39 = 28,0) | `metriques_banc.md`, coût de calcul |
-| 1,5 ms | `criteres_elm_pid.txt` §8 et §9, point 3 |
+| Porte rouverte 1,5 à 2 ms après l'événement (1,5 ms après la fin de la fenêtre saturée) | chapitre 4, section 4.4.2 et figure 4.3 ; `banc_elm_pid.py`, en-tête point 4 (porte sur n, n−1, n−2) ; `criteres_elm_pid.txt` §8 et §9, point 3 (« 1.5 ms plus tard », « rattrapée en 1.5 ms ») |
 | « 15 à 26 % », « 75 à 88 % », « 41 % », « dix fois » | sections 5.3 et 5.4 (`metriques_banc.md`, `resultats_S10.json`) |
 
 ### Citations
@@ -184,14 +184,23 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 
 ### Repères
 
-- Aucune figure. Tableaux 5.8 et 5.9. Équation (5.4) ajoutée (la numérotation suit (5.1) à (5.3) de 5.2). Dans (5.4), *s* inclut la mise à l'échelle par les gains de ZN : à simplifier ou à détailler avec le chapitre 4.
+- Aucune figure. Tableaux 5.8 et 5.9. Aucune équation dans 5.5 depuis le 10 octobre : l'ancienne (5.4) est remplacée par un renvoi à la loi (4.7). Le chapitre 5 garde les équations (5.1) à (5.3).
 
 ### Harmonisation du 10 octobre 2026 (cohérence chapitres 5 et 6)
 
-- Notations : le dépassement n'a plus de symbole (*D* reste le gain dérivé) ; l'indice global de mise au point n'est plus noté J (5.2.3, 5.5.2), pour ne pas le confondre avec le jacobien *J* de (5.4). Dans le dépôt, il s'appelle toujours J.
+- Notations : le dépassement n'a plus de symbole (*D* reste le gain dérivé) ; l'indice global de mise au point n'est plus noté J (5.2.3, 5.5.2), pour ne pas le confondre avec le jacobien *J* de (4.5). Dans le dépôt, il s'appelle toujours J.
 - Anti-emballement : « intégration conditionnelle (blocage de l'intégrateur en butée) » en 5.2.1, puis « intégration conditionnelle », comme au chapitre 6. Le code (`banc_commun.py`) parle de « clamping ».
 - PINN-PID : « boîte de gains » partout (5.4.1 disait « ensemble de gains admissibles ») ; « ensemble admissible » est réservé à l'ELM-PID.
 - « Porte » définie à sa première occurrence (5.3.1).
 - 5.5.1 : « facteur 2,6 et 28 par rapport au PSO-PID » remplacé par « 2,5 fois et 27 fois celui du PSO-PID » (3,59/1,43 = 2,51 ; 38,93/1,43 = 27,2 ; 2,6 et 28 étaient les rapports à Ziegler-Nichols, 1,39 µs).
 - Tableau 5.6 : réductions arrondies à l'unité, 41 % et 61 % (`resultats_S10.json`, `gain_adaptation` = 0,4089 et 0,6146 ; la console affiche +40,9 et +61,5 %), comme dans le texte des chapitres 5 et 6.
 - 5.5.3 : entrées exactes du réseau (`criteres_elm_pid.txt` §2 : ȳ(n−1), ȳ(n−2), d̄(n), d̄(n−1), d̄(n−2), moyennes par fenêtre) ; −0,04 est la corrélation de ln *J* du réseau et ln *J* vrai (`entrainement_elm_sortie_console.txt`, étape 5 : −0,043). Même formulation en 6.3.4.
+
+### Alignement sur le chapitre 4 (10 octobre 2026)
+
+- Équation (5.4) retirée : elle écrivait *φ* = *J* *s* et omettait l'inertie. 5.5.3 renvoie à la loi (4.7) (*φ*(*n*) = *J*(*n*) (*s*(*n*) ⊙ *K*ZN), terme *α* (*x*(*n*) − *x*(*n* − 1)), *α* = 0,001) et n'en garde que l'argument sur le signe et la longueur du pas. (5.4) était la dernière équation du chapitre : aucune renumérotation. La phrase « change la longueur du pas de 30 % » devient « change la longueur du pas » : avec *J* au dénominateur, une erreur de 30 % change la longueur d'un facteur 1/1,3 à 1/0,7, pas de 30 % exactement.
+- Tension mesurée : « ∂*v*o/∂*d* » et « moyennes de la tension de sortie » remplacés par *J*(*n*) = ∂ŷ/∂d̄ (équation (4.5)) et « tension mesurée » (5.5.3) ; « sensibilité vraie » devient « jacobien vrai » (section 4.3.2).
+- Réouverture de la porte : 1,5 ms après la fin de la fenêtre saturée, soit 1,5 à 2 ms après l'événement (5.3.2 et 5.5.3). 5.5.3 disait « une perturbation brève, que le PID rattrape en environ 1,5 ms » ; le retour dans ±1 V sur S3 prend 0,87 ms (ELM-PID), la phrase parle maintenant de la réouverture de la porte.
+- Tableau 5.8 : apprentissage du réseau 14,8 s (au lieu de 15 s), comme au chapitre 4 (`entrainement_elm_resultats.json`, `duree_s`).
+- 5.4.1 : premier essai de réglage du PSO-PID « échelon de charge de 7 à 4,5 Ω » (E1 du chapitre 4, `criteres_pso_pid.txt`), au lieu de « à 7 Ω ».
+- Renvois précis ajoutés : porte (section 4.4.2) en 5.3.1 ; variantes d'ablation (section 4.4.4) en 5.5.3.

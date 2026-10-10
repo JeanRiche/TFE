@@ -315,7 +315,8 @@ def figure_4_3():
     a_e.plot(t, e, "o", ms=2.2, color="black", zorder=3)
     for i in range(nf):
         a_e.plot([0.5 * i + 0.02, 0.5 * (i + 1) - 0.02], [ebar[i]] * 2, color="black", lw=1.6, zorder=4)
-    a_e.text(3.0, 2.5, "points : $e(k)$ ; traits : $\\bar{e}(n)$", ha="right", va="top", fontsize=9)
+    a_e.text(3.0, 2.5, "points : $e(k)$ ; traits : $\\bar{e}(n)$", ha="right", va="top", fontsize=9,
+             bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none"), zorder=5)
     a_e.annotate("zone morte\n$|\\bar{e}|$ < 0,1 V", xy=(0.25, 0.08), xytext=(0.25, 0.75),
                  ha="center", va="bottom", fontsize=9, linespacing=1.1,
                  arrowprops=dict(arrowstyle="-", color=GRIS, lw=0.6))
@@ -330,11 +331,13 @@ def figure_4_3():
     a_d.text(0.03, 1.0, "0,99", ha="left", va="bottom", fontsize=9)
     a_d.step(t, d, where="mid", color="black", lw=0.9)
     a_d.annotate("$d$ en butée", xy=(t[i0 + 2], 0.99), xytext=(1.25, 1.07), ha="left", va="center",
-                 fontsize=9, arrowprops=dict(arrowstyle="-", color=GRIS, lw=0.6))
+                 fontsize=9, bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none"), zorder=5,
+                 arrowprops=dict(arrowstyle="-", color=GRIS, lw=0.6))
 
     # 4. fenetre suspecte
     a_s.add_patch(Rectangle((0.5, 0.15), 0.5, 0.6, fc=GRIS, ec="black", lw=0.6))
-    a_s.text(1.03, 0.45, "fenêtre $m$ suspecte", ha="left", va="center", fontsize=9)
+    a_s.text(1.03, 0.45, "fenêtre $m$ suspecte", ha="left", va="center", fontsize=9,
+             bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none"), zorder=5)
 
     # 5. porte, lue en fin de fenetre : fermee pour m, m+1, m+2
     ouverte = [True, False, False, False, True, True]
@@ -345,10 +348,11 @@ def figure_4_3():
             a_p.add_patch(Rectangle((0.5 * i + 0.02, 0.05), 0.46, 0.4, fc="white", ec="black", lw=0.6,
                                     hatch="////"))
             a_p.text(0.5 * i + 0.25, 0.25, "fermée", ha="center", va="center", fontsize=9,
-                     bbox=dict(fc="white", ec="none", pad=0.8), zorder=5)
+                     bbox=dict(boxstyle="square,pad=0.2", fc="white", ec="none"), zorder=5)
     a_p.annotate("", xy=(2.5, 0.62), xytext=(1.0, 0.62),
                  arrowprops=dict(arrowstyle="<->,head_length=0.35,head_width=0.15", color="black", lw=0.7))
-    a_p.text(1.75, 0.68, "réouverture 1,5 ms après la fin de $m$", ha="center", va="bottom", fontsize=9)
+    a_p.text(1.75, 0.68, "réouverture 1,5 ms après la fin de $m$", ha="center", va="bottom", fontsize=9,
+             bbox=dict(boxstyle="square,pad=0.15", fc="white", ec="none"), zorder=5)
 
     # 6. decision en fin de fenetre
     textes = ["zone\nmorte", "porte\nfermée", "porte\nfermée", "porte\nfermée", "gains\nmodifiés", "zone\nmorte"]

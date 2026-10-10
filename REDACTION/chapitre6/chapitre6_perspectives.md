@@ -24,7 +24,7 @@ Au démarrage, l'ELM-PID ne gagne que 0,05 % sur Ziegler-Nichols (section 5.3.1)
 
 ### 6.3.2. Une boucle plus rapide que les perturbations
 
-Sur S2 et S3, les gains restent immobiles pendant les perturbations (section 5.3.2). La boucle travaille par fenêtres de 0,5 ms ; quand elle se rouvre, 1,5 ms après l'événement, l'erreur est déjà sous la zone morte de 0,1 V. Pour agir pendant la perturbation, elle devrait être plus rapide que le PID qu'elle règle. Des fenêtres plus courtes moyennent l'erreur sur moins d'échantillons et la rapprochent du bruit ; la largeur des fenêtres et la zone morte sont donc à choisir ensemble, avant le calcul. Il faudrait compter les pas d'adaptation pendant F1 et F2, puis mesurer l'IAE de S2 et S3 et le coût de calcul (section 6.4).
+Sur S2 et S3, les gains restent immobiles pendant les perturbations (section 5.3.2). La boucle travaille par fenêtres de 0,5 ms ; quand elle se rouvre, 1,5 ms après la fin de la fenêtre saturée, soit 1,5 à 2 ms après l'événement, l'erreur moyenne est déjà sous la zone morte de 0,1 V. Pour agir pendant la perturbation, elle devrait être plus rapide que le PID qu'elle règle. Des fenêtres plus courtes moyennent l'erreur sur moins d'échantillons et la rapprochent du bruit ; la largeur des fenêtres et la zone morte sont donc à choisir ensemble, avant le calcul. Il faudrait compter les pas d'adaptation pendant F1 et F2, puis mesurer l'IAE de S2 et S3 et le coût de calcul (section 6.4).
 
 ### 6.3.3. Partir des gains du PSO-PID
 
@@ -32,7 +32,7 @@ Le PSO-PID a la plus petite IAE sur les cinq scénarios (section 5.5.1). Sur S10
 
 ### 6.3.4. Donner un rôle réel au réseau, ou s'en passer
 
-Le réseau ELM pèse peu dans le résultat (section 5.5.3). Sur S10, un jacobien constant fait aussi bien que lui (écart non séparé), la mise à jour en ligne OS-ELM [Liang et al., 2006] n'apporte rien de mesurable, et la corrélation entre les logarithmes du jacobien du réseau et du jacobien vrai vaut −0,04. On peut chercher un identificateur qui suive vraiment ∂*v*o/∂*d*. Le réseau actuel ne voit que des moyennes par fenêtre : la tension de sortie sur les deux fenêtres précédentes, le rapport cyclique sur la fenêtre courante et les deux précédentes ; une entrée de plus, le courant de l'inductance par exemple, est une piste à tester, pas un résultat acquis. Son jacobien serait comparé au jacobien vrai sur les mêmes 4 615 fenêtres de contrôle, puis l'ablation de la section 5.5.3 serait refaite. L'autre option est d'assumer une loi à jacobien constant, sans réseau à apprendre, et de la juger contre l'ELM-PID actuel sur les cinq scénarios.
+Le réseau ELM pèse peu dans le résultat (section 5.5.3). Sur S10, un jacobien constant fait aussi bien que lui (écart non séparé), la mise à jour en ligne OS-ELM [Liang et al., 2006] n'apporte rien de mesurable, et la corrélation entre les logarithmes du jacobien du réseau et du jacobien vrai vaut −0,04. On peut chercher un identificateur dont le jacobien ∂ŷ/∂d̄ (équation (4.5)) suive vraiment le jacobien vrai. Le réseau actuel ne voit que des moyennes par fenêtre : la tension mesurée sur les deux fenêtres précédentes, le rapport cyclique sur la fenêtre courante et les deux précédentes ; une entrée de plus, le courant de l'inductance par exemple, est une piste à tester, pas un résultat acquis. Son jacobien serait comparé au jacobien vrai sur les mêmes 4 615 fenêtres de contrôle, puis l'ablation de la section 5.5.3 serait refaite. L'autre option est d'assumer une loi à jacobien constant, sans réseau à apprendre, et de la juger contre l'ELM-PID actuel sur les cinq scénarios.
 
 ## 6.4. Vers une mise en œuvre embarquée
 
@@ -67,7 +67,7 @@ Tableau 6.1 : Limites constatées au chapitre 5 et perspectives.
 | *R*on = 0,1 Ω ; *T*c = 1/220 000 s = 4,545 µs | `ELM_PID/banc_commun.py`, lignes 120 et 124-125 ; chapitre 5, tableau 5.1 |
 | Scénario P2 : conduction discontinue, *V*in 150 à 240 V, sauts de consigne, non fait | `ETAT_DE_REPRISE.md` §3.3, P2 ; `REDACTION/plan_depart_contre_realise.md`, chapitre 6 |
 | S1 : 0,05 % ; porte fermée pendant la saturation (trois fenêtres) | chapitre 5, section 5.3.1 et tableau 5.4 ; `separation_resultats.json` (0,053 à 0,055 %) ; `ELM_PID/criteres_elm_pid.txt` §4, M1 |
-| Fenêtres de 0,5 ms ; réouverture 1,5 ms plus tard ; zone morte 0,1 V ; gains immobiles pendant F1 et F2 | `ELM_PID/criteres_elm_pid.txt` §2, §8 (« Ce que l'adaptation fait pendant une perturbation ») et §9 point 3 (« il faudrait une boucle plus rapide que le régulateur qu'elle règle ») |
+| Fenêtres de 0,5 ms ; réouverture 1,5 ms après la fin de la fenêtre saturée, soit 1,5 à 2 ms après l'événement (chapitre 4, section 4.4.2 et figure 4.3) ; zone morte 0,1 V ; gains immobiles pendant F1 et F2 | `ELM_PID/criteres_elm_pid.txt` §2, §8 (« Ce que l'adaptation fait pendant une perturbation ») et §9 point 3 (« il faudrait une boucle plus rapide que le régulateur qu'elle règle ») |
 | PSO-PID meilleure IAE sur les cinq scénarios | chapitre 5, tableau 5.8 ; `COMPARAISON/metriques/metriques_banc.md`, résumé |
 | Adaptation sur S10 : 61 % (PINN-PID, 0,6146) et 41 % (ELM-PID, 0,4089), même arrondi à l'unité que le tableau 5.6 depuis le 10 octobre (qui donnait 61,5 et 40,9 %) | `COMPARAISON/S10/resultats_S10.json`, clé `gain_adaptation` ; chapitre 5, tableau 5.6 (section 5.4.1) |
 | Ensemble admissible construit autour du départ de Ziegler-Nichols (marge nominale au moins celle du départ, 24,93°) | `ELM_PID/criteres_elm_pid.txt` §2 et M2 ; `ELM_PID/ensemble_gains_elm_sortie_console.txt`, ligne 3 |
@@ -97,3 +97,9 @@ Tableau 6.1 : Limites constatées au chapitre 5 et perspectives.
 ### Repères
 
 - Aucune figure. Un tableau (6.1). Aucune équation.
+
+### Alignement sur le chapitre 4 (10 octobre 2026)
+
+- 6.3.2 : la porte se rouvre 1,5 ms après la fin de la fenêtre saturée, soit 1,5 à 2 ms après l'événement (section 4.4.2, figure 4.3), et non « 1,5 ms après l'événement » ; « l'erreur » devient « l'erreur moyenne » (la zone morte porte sur ē).
+- 6.3.4 : « ∂*v*o/∂*d* » remplacé par le jacobien ∂ŷ/∂d̄ du réseau (équation (4.5)), comparé au jacobien vrai ; « la tension de sortie » devient « la tension mesurée » (entrées ȳ(*n* − 1), ȳ(*n* − 2) du réseau, section 4.3.1).
+- Tableau 6.1 : aucune mention de ∂*v*o/∂*d* ni de la tension de sortie ; rien à changer.

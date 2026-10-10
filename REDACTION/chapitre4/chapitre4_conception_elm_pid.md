@@ -2,9 +2,13 @@
 
 ## 4.1. Introduction
 
-L'ELM-PID de ce travail reprend la méthode de [Lu et al., 2021] : un réseau ELM identifie le convertisseur, et son jacobien guide l'ajustement en ligne des gains d'un PID. Nous l'avons adaptée au convertisseur dimensionné au chapitre 3 et à une comparaison équitable avec quatre autres régulateurs ; chaque modification s'appuie sur une référence ou sur un calcul publié sur le dépôt du travail.
+L'ELM-PID de ce travail reprend la méthode de [Lu et al., 2021] : un réseau ELM identifie le convertisseur, et son jacobien guide l'ajustement en ligne des gains d'un PID (figure 4.1). Nous l'avons adaptée au convertisseur dimensionné au chapitre 3 et à une comparaison équitable avec quatre autres régulateurs ; chaque modification s'appuie sur une référence ou sur un calcul publié sur le dépôt du travail.
 
 La section 4.2 justifie le remplacement du PID incrémental de l'article par le bloc PID commun aux cinq méthodes. Les sections 4.3 et 4.4 décrivent le réseau ELM et la loi d'adaptation des gains, la section 4.5 la mise en œuvre sous Simulink. La section 4.6 présente la mise en œuvre des trois méthodes de comparaison. Les gains de Ziegler-Nichols (ZN), point de départ commun, ont été calculés au chapitre 3.
+
+[FIGURE À INSÉRER : REDACTION/chapitre4/figures/Fig4_1_boucle_ELM_PID.png]
+
+Figure 4.1 : Structure de l'ELM-PID : boucle de régulation commune cadencée à *T*c = 1/220 000 s (bas) et boucle d'adaptation des gains, exécutée en fin de chaque fenêtre de 0,5 ms (haut).
 
 ## 4.2. Du PID incrémental de Lu au bloc PID commun
 
@@ -86,10 +90,6 @@ où *σ*3 est l'écart type de d̄ dans les données d'apprentissage et *β*L,3 
 ### 4.4.1. Fenêtres et gradient normalisé
 
 L'adaptation suit la boucle par fenêtres de [Lu et al., 2021] (figure 4.1). À chaque période *T*c, l'adaptateur cumule l'erreur, la tension mesurée, le rapport cyclique et la sensibilité de la commande aux gains. En fin de fenêtre, il calcule les moyennes ē(*n*), ȳ(*n*), d̄(*n*), la prédiction et le jacobien, puis décide s'il change les gains.
-
-[FIGURE À INSÉRER : REDACTION/chapitre4/figures/Fig4_1_boucle_ELM_PID.png]
-
-Figure 4.1 : Structure de l'ELM-PID : boucle de régulation commune cadencée à *T*c = 1/220 000 s (bas) et boucle d'adaptation des gains, exécutée en fin de chaque fenêtre de 0,5 ms (haut).
 
 Les gains sont exprimés en multiplicateurs de ceux de Ziegler-Nichols : *K* = *K*ZN ⊙ *x*, avec *K* = [*P*, *I*, *D*], *K*ZN = [0,093910 ; 301,089 ; 7,3227·10⁻⁶] et ⊙ le produit terme à terme. Avec *x* = (1, 1, 1), l'ELM-PID est exactement le PID de Ziegler-Nichols. La sensibilité de la commande aux gains est la dérivée exacte de la loi (5.1), prise depuis le début de la fenêtre :
 
@@ -234,11 +234,12 @@ Le PSO-PID, le Fuzzy-PID et le PINN-PID partagent ce bloc PID et ne diffèrent q
 
 ### Points à trancher et cohérence avec les chapitres 5 et 6
 
-- Équation (5.4) : elle écrit *φ* = *J* *s* et omet l'inertie. Le code utilise *φ* = *J* (*s* ⊙ *K*ZN) et ajoute *α* (*x*(*n*) − *x*(*n* − 1)), *α* = 0,001. Le chapitre 5 devrait renvoyer à (4.7) ou en reprendre la forme exacte.
-- Chapitres 5 et 6 parlent de « ∂*v*o/∂*d* » et de « moyennes de la tension de sortie » ; le réseau voit la tension mesurée (ȳ) et sa sortie est ∂ŷ/∂d̄ par fenêtre. Sans bruit ni quantification, les deux coïncident à peu près ; à préciser d'un mot au chapitre 5 si Jean-Riche le souhaite.
+- Équation (5.4) : réglé le 10 octobre 2026. Elle écrivait *φ* = *J* *s* et omettait l'inertie ; elle est retirée du chapitre 5, dont la section 5.5.3 renvoie à la loi (4.7).
+- Tension mesurée : réglé le 10 octobre 2026. Les chapitres 5 (5.5.3) et 6 (6.3.4) écrivent maintenant *J*(*n*) = ∂ŷ/∂d̄ et « tension mesurée », comme (4.5) et 4.3.1.
 - Vocabulaire des essais : ce chapitre suit le chapitre 5 (« onze essais de développement », « essais de mise au point E1 à E4 », « essais de réglage » pour le PSO-PID). E1 à E4 sont les mêmes quatre essais pour l'ELM-PID, le PSO-PID et le PINN-PID. Le chapitre 1 doit définir ces catégories.
 - Honnêteté sur l'option B : le diagnostic qui l'a motivée a été mesuré sur les onze essais (dont S2 et S3). Le texte le dit (4.2.2).
-- La figure 4.3 montre la réouverture de la porte 1,5 ms après la fin de la fenêtre saturée ; le chapitre 5 (5.3.2) dit « 1,5 ms plus tard » à partir de l'événement. Le texte de 4.4.2 donne « 1,5 à 2 ms après l'événement ».
-- Figures 4.1 à 4.3 : quelques textes se chevauchent dans les PNG actuels (fig. 4.1 : « φ = J(s ⊙ K_ZN) » et « butée en n… » ; « Bloc PID parallèle commun » déborde ; fig. 4.2 : légende de droite coupée ; fig. 4.3 : « non » superposé à « zone morte »/« porte fermée »). À corriger dans `schemas_chapitre4.py`.
+- Réouverture de la porte : réglé le 10 octobre 2026. Les chapitres 5 (5.3.2, 5.5.3) et 6 (6.3.2) disent « 1,5 ms après la fin de la fenêtre saturée, soit 1,5 à 2 ms après l'événement », comme 4.4.2 et la figure 4.3.
+- Figures 4.1 à 4.3 : les chevauchements relevés au premier tirage ont été corrigés dans `schemas_chapitre4.py`. Le 10 octobre 2026, figure 4.3 : les étiquettes « fermée » ont un fond blanc (les hachures ne traversent plus le texte), et « réouverture 1,5 ms après la fin de *m* », « *d* en butée », « fenêtre *m* suspecte » et « points : *e*(*k*) ; traits : ē(*n*) » ont un fond blanc qui masque les pointillés.
+- Ordre des figures : la figure 4.1 (structure de l'ELM-PID) venait après la figure 4.2 dans le texte. Elle est déplacée à la fin de 4.1, annoncée par « (figure 4.1) » dans le premier paragraphe ; le renvoi de 4.4.1 reste valable.
 - Symboles : *α* (inertie de l'ELM-PID) et *α*F (Fuzzy-PID) sont distincts ; le coût du PINN-PID est noté *E*(*x*) en (4.10) pour ne pas le confondre avec l'inductance *L* ni avec le jacobien *J*.
 - Milliers : espaces fines insécables dans Word.
