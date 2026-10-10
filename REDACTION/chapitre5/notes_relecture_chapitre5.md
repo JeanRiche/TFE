@@ -11,7 +11,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 | *L* = 10 mH, *C* = 47 µF, *f*s = 22 kHz, *T*c = 1/220 000 s, *v*ref = 100 V, *d* dans [0,01 ; 0,99], *R*on = 0,1 Ω, *V*f = 0,8 V, *h* = 1/(22 000 × 1 200) s = 37,88 ns | `ELM_PID/banc_commun.py`, étape 0 (constantes) et en-tête |
 | *R* = 5 Ω, *V*in = 200 V, durée 0,2 s | `ELM_PID/scenarios_communs.json` (`R0`, `Vin_nominale`, `duree`) ; `ETAT_DE_REPRISE.md`, ligne 5 |
 | *T*c = période du régulateur, dix échantillons par période de découpage ; *v*ref = consigne de sortie (« consigne = 100 + dvref ») | `banc_commun.py`, en-tête ; `Determination_gains_PID_Ziegler_Nichols.docx`, tableau 1 et section 6 |
-| Forme (5.1), Euler explicite, clamping, *N* = 64 122,9 rad/s | `banc_commun.py` (classe `PIDClassique`, `PID_N`) ; docx ZN, sections 7.2, 7.3 et tableau 12 |
+| Forme (5.1), Euler explicite, intégration conditionnelle (« clamping » dans le code), *N* = 64 122,9 rad/s | `banc_commun.py` (classe `PIDClassique`, `PID_N`) ; docx ZN, sections 7.2, 7.3 et tableau 12 |
 | *P* = 0,093910, *I* = 301,089, *D* = 7,3227·10⁻⁶ | `banc_commun.py` ; `ELM_PID/criteres_elm_pid.txt`, ligne 37 ; docx ZN, tableau 12 |
 | Méthode de la réponse indicielle (table 1 de Mudry) | docx ZN, sections 3.3 et 5 |
 | Amortissement 1,46 à 5 Ω ; 0,29 à 25 Ω | docx ZN, tableau 2 (1,459) ; `COMPARAISON/S10/criteres_S10.txt`, « Pourquoi ce scénario » (1,46 et 0,29) |
@@ -20,7 +20,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 | S10 (définition, 50 ms de réajustement, mesure à partir de 100 ms, ajouté après coup) | `COMPARAISON/S10/criteres_S10.txt` |
 | Fenêtres de classement, définitions des grandeurs (bande ±1 V, 5 ms et 10 ms, ITAE depuis le début de la fenêtre, temps de calcul) | `COMPARAISON/metriques/definitions_metriques.txt` §1 à 7 |
 | Règle de séparation (cinq variantes, *L* et *C* à ±0,1 %) | `COMPARAISON/separation/criteres_separation.txt` §2 |
-| J : moyenne de 13 rapports sur les onze essais | `ETAT_DE_REPRISE.md`, ligne 5 |
+| Indice global (appelé J dans le dépôt) : moyenne de 13 rapports sur les onze essais | `ETAT_DE_REPRISE.md`, ligne 5 |
 | Règle de sélection écrite le 7 oct. avant les classements ; S8a désigné à sa réapplication du 8 oct. (ELM-PID option B, C3 = 0,567) ; aucun scénario désigné avec les versions finales | `COMPARAISON/criteres_comparaison.txt` (en-tête, « Mise à jour du 8 octobre », « Versions finales ») ; `ETAT_DE_REPRISE.md` §3.1 et §4.3 |
 | S1, S2, S3 = trois cas du plan initial (régime normal, perturbation sur la commande, perturbation sur la charge) | proposition du TFE (`proposition_corrigee.md`, chapitre 5, 5.2 à 5.4, dans le dossier de travail) ; `REDACTION/plan_depart_contre_realise.md` §1.7 |
 | F1 appliqué au terminal de commande chez Lu | `ETAT_DE_REPRISE.md` §4bis |
@@ -116,7 +116,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 | S2 : PSO 2,042 contre ELM 2,406 (−15,1 %) | `separation_resultats.json`, IAE nominales |
 | S3 : écart max. 5,52 V pour tous à 50 ms ; à 70 ms PSO 5,43 V, ELM/Fuzzy/PINN 5,66 V | `metriques_banc.md`, S3 par événement |
 | S8a : écart max. PSO 0,60, PINN 0,94, ELM 0,97 V | `metriques_banc.md`, tableau S8a |
-| Tableau 5.6 (14,60 / 8,63 ; 17,19 / 6,63 ; 40,9 / 61,5 % ; multiplicateurs à 50 ms, 100 ms, fin) | `COMPARAISON/S10/scenario_S10_sortie_console.txt`, lignes 37, 39, 48 à 51, 90 à 93 ; `resultats_S10.json` |
+| Tableau 5.6 (14,60 / 8,63 ; 17,19 / 6,63 ; 41 / 61 %, arrondis de `gain_adaptation` = 0,4089 et 0,6146 ; multiplicateurs à 50 ms, 100 ms, fin) | `COMPARAISON/S10/scenario_S10_sortie_console.txt`, lignes 37, 39, 48 à 51, 90 à 93 ; `resultats_S10.json` |
 | I du PINN-PID : 0,296 (banc, fin) ; 0,250 (minimum Simulink) ; borne de la boîte 0,25 à 1 | `scenario_S10_sortie_console.txt`, ligne 39 ; sortie MATLAB ; `PINN_PID/criteres_pinn_pid.txt` §2.4 |
 | I de l'ELM-PID : 2,067 (banc) ; 2,066 (maximum Simulink) | idem |
 | Gains du PSO-PID ×(2,551 ; 1,369 ; 2,613) | `PSO_PID/criteres_pso_pid.txt` §6 ; sortie MATLAB |
@@ -163,9 +163,9 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 | Hypothèses H1 à H4 (citations) | `REDACTION/proposition_resultats_en_hypotheses.md` §1.1 à 1.3 ; commit 4cb68ec du 8 octobre 2026 à 05:25, avant ceux de S10 (09:42) et des métriques (13:23) |
 | S3, retours 0,87 / 1,05 et 1,49 ms | `metriques_banc.md`, S3 par événement |
 | Ablations : +1,09 / +1,82 / +2,64 % ; S10 −9,76 (−9,76 à +4,01) ; sans OS-ELM 0 / 0 / −0,04 (−0,38 à −0,04) / −0,90 (−9,46 à +8,81) ; ELM 7,88 à 8,63 ; prévisions justes et fausses | `COMPARAISON/ablation_S10/criteres_ablation.txt` §3 et §5 ; `ablation_sortie_console.txt` |
-| Jacobien : 4 615 fenêtres ; vrai 11,2 (4-6 Ω) à 15,8 (50-99 Ω) ; réseau 11,06 à 11,44 (médianes) ; corrélation −0,04 ; charge non observable | `ELM_PID/criteres_elm_pid.txt` §5 ; `ELM_PID/entrainement_elm_sortie_console.txt`, étape 5 (lignes 65 à 69) |
+| Jacobien : 4 615 fenêtres ; vrai 11,2 (4-6 Ω) à 15,8 (50-99 Ω) ; réseau 11,06 à 11,44 (médianes) ; corrélation de ln *J* (réseau) et ln *J* vrai −0,043 ; entrées du réseau ȳ(n−1), ȳ(n−2), d̄(n), d̄(n−1), d̄(n−2) (moyennes par fenêtre, `criteres_elm_pid.txt` §2) ; charge non observable | `ELM_PID/criteres_elm_pid.txt` §5 ; `ELM_PID/entrainement_elm_sortie_console.txt`, étape 5 (lignes 65 à 69) |
 | Gradient normalisé (NLMS), porte de saturation (M1), projection (M2, M3) ; équation (5.4), *η* = 0,5, *ε* = 1e-3, *φ* = *J* (*s* .* *K*_ZN) | `criteres_elm_pid.txt` §2, §4 (M4) ; explication du rôle de *J* (30 %) : `ELM_PID_INCREMENTAL/criteres_elm_pid.txt` §9, point 3 (même loi de gradient, gardée telle quelle en option B) |
-| Facteurs 2,6 et 28 : 3,59/1,43 et 38,93/1,43 | `metriques_banc.md`, coût de calcul |
+| Facteurs 2,5 et 27 par rapport au PSO-PID : 3,59/1,43 = 2,51 et 38,93/1,43 = 27,2 (l'ancienne version donnait 2,6 et 28, qui sont les rapports à Ziegler-Nichols : 3,59/1,39 = 2,58 et 38,93/1,39 = 28,0) | `metriques_banc.md`, coût de calcul |
 | 1,5 ms | `criteres_elm_pid.txt` §8 et §9, point 3 |
 | « 15 à 26 % », « 75 à 88 % », « 41 % », « dix fois » | sections 5.3 et 5.4 (`metriques_banc.md`, `resultats_S10.json`) |
 
@@ -176,7 +176,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 ### Corrections et précisions par rapport à la commande
 
 - Plage du jacobien du réseau « 9,6 à 13,9 V par unité » : ce chiffre se trouve seulement dans `ELM_PID_INCREMENTAL/criteres_elm_pid.txt` (ligne 283), mesuré avec la version incrémentale, pas avec l'option B. Il n'est pas repris. Le texte utilise les médianes du réseau par classe de charge (11,06 à 11,44 V), tirées de l'entraînement, qui ne dépendent pas de la version. Les valeurs 11,2 à 15,8 et la corrélation −0,04 sont confirmées.
-- Datation des hypothèses : la réécriture date du 8 octobre 2026, avant les résultats de ce chapitre, mais le coût J des versions de mise au point (dont le PSO-PID à 0,714) était déjà connu. Le texte le dit.
+- Datation des hypothèses : la réécriture date du 8 octobre 2026, avant les résultats de ce chapitre, mais l'indice global (J dans le dépôt) des versions de mise au point (dont le PSO-PID à 0,714) était déjà connu. Le texte le dit.
 - H2 : le PSO-PID ne domine pas sur toutes les grandeurs du tableau 5.8. Il est moins bon que Ziegler-Nichols et le Fuzzy-PID sur le temps en butée de S10 (0,4 % contre 0,0 %), et l'ELM-PID a la même erreur statique maximale que lui. Le verdict « non vérifiée » vaut pour les grandeurs de l'hypothèse elle-même (précision, rapidité, adaptabilité).
 - H3 : sur S2, le Fuzzy-PID est au niveau de l'ELM-PID et du PINN-PID, et il devance Ziegler-Nichols partout sauf sur S1. Le verdict « non vérifiée » est relatif aux autres méthodes avancées.
 - H4 : la proposition prévoyait de mesurer le coût par le nombre de simulations ; seul le temps total (35 minutes) est publié. La population (50) et le nombre d'itérations (100) sont connus, mais le nombre exact de simulations n'est pas relevé dans le dépôt.
@@ -185,3 +185,13 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 ### Repères
 
 - Aucune figure. Tableaux 5.8 et 5.9. Équation (5.4) ajoutée (la numérotation suit (5.1) à (5.3) de 5.2). Dans (5.4), *s* inclut la mise à l'échelle par les gains de ZN : à simplifier ou à détailler avec le chapitre 4.
+
+### Harmonisation du 10 octobre 2026 (cohérence chapitres 5 et 6)
+
+- Notations : le dépassement n'a plus de symbole (*D* reste le gain dérivé) ; l'indice global de mise au point n'est plus noté J (5.2.3, 5.5.2), pour ne pas le confondre avec le jacobien *J* de (5.4). Dans le dépôt, il s'appelle toujours J.
+- Anti-emballement : « intégration conditionnelle (blocage de l'intégrateur en butée) » en 5.2.1, puis « intégration conditionnelle », comme au chapitre 6. Le code (`banc_commun.py`) parle de « clamping ».
+- PINN-PID : « boîte de gains » partout (5.4.1 disait « ensemble de gains admissibles ») ; « ensemble admissible » est réservé à l'ELM-PID.
+- « Porte » définie à sa première occurrence (5.3.1).
+- 5.5.1 : « facteur 2,6 et 28 par rapport au PSO-PID » remplacé par « 2,5 fois et 27 fois celui du PSO-PID » (3,59/1,43 = 2,51 ; 38,93/1,43 = 27,2 ; 2,6 et 28 étaient les rapports à Ziegler-Nichols, 1,39 µs).
+- Tableau 5.6 : réductions arrondies à l'unité, 41 % et 61 % (`resultats_S10.json`, `gain_adaptation` = 0,4089 et 0,6146 ; la console affiche +40,9 et +61,5 %), comme dans le texte des chapitres 5 et 6.
+- 5.5.3 : entrées exactes du réseau (`criteres_elm_pid.txt` §2 : ȳ(n−1), ȳ(n−2), d̄(n), d̄(n−1), d̄(n−2), moyennes par fenêtre) ; −0,04 est la corrélation de ln *J* du réseau et ln *J* vrai (`entrainement_elm_sortie_console.txt`, étape 5 : −0,043). Même formulation en 6.3.4.

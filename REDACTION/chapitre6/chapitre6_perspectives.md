@@ -28,11 +28,11 @@ Sur S2 et S3, les gains restent immobiles pendant les perturbations (section 5.3
 
 ### 6.3.3. Partir des gains du PSO-PID
 
-Le PSO-PID a la plus petite IAE sur les cinq scénarios (section 5.5.1). Sur S10, l'adaptation poursuivie réduit pourtant l'IAE de 61 % pour le PINN-PID et de 41 % pour l'ELM-PID (section 5.4.1). L'expérience qui découle directement du chapitre 5 est d'associer les deux : des gains de départ réglés hors ligne par essaim particulaire [Gaing, 2004], puis adaptés en ligne. L'ensemble des gains admissibles de l'ELM-PID, construit autour du départ de Ziegler-Nichols, devrait être recalculé autour du nouveau départ. La version hybride serait comparée au PSO-PID seul sur les cinq scénarios, avec la règle de séparation. Si l'écart n'est pas séparé, la conclusion sera que l'adaptation n'apporte rien à un PID fixe bien réglé sur ces scénarios.
+Le PSO-PID a la plus petite IAE sur les cinq scénarios (section 5.5.1). Sur S10, l'adaptation poursuivie réduit pourtant l'IAE de 61 % pour le PINN-PID et de 41 % pour l'ELM-PID (section 5.4.1). L'expérience qui découle directement du chapitre 5 est d'associer les deux : des gains de départ réglés hors ligne par essaim particulaire [Gaing, 2004], puis adaptés en ligne. L'ensemble admissible des gains de l'ELM-PID, construit autour du départ de Ziegler-Nichols, devrait être recalculé autour du nouveau départ. La version hybride serait comparée au PSO-PID seul sur les cinq scénarios, avec la règle de séparation. Si l'écart n'est pas séparé, la conclusion sera que l'adaptation n'apporte rien à un PID fixe bien réglé sur ces scénarios.
 
 ### 6.3.4. Donner un rôle réel au réseau, ou s'en passer
 
-Le réseau ELM pèse peu dans le résultat (section 5.5.3). Sur S10, un jacobien constant fait aussi bien que lui (écart non séparé), la mise à jour en ligne OS-ELM [Liang et al., 2006] n'apporte rien de mesurable, et la corrélation du jacobien du réseau avec le jacobien vrai vaut −0,04. On peut chercher un identificateur qui suive vraiment ∂*v*o/∂*d*. Le réseau actuel ne voit que les moyennes passées de la tension et du rapport cyclique ; une entrée de plus, le courant de l'inductance par exemple, est une piste à tester, pas un résultat acquis. Son jacobien serait comparé au jacobien vrai sur les mêmes 4 615 fenêtres de contrôle, puis l'ablation de la section 5.5.3 serait refaite. L'autre option est d'assumer une loi à jacobien constant, sans réseau à apprendre, et de la juger contre l'ELM-PID actuel sur les cinq scénarios.
+Le réseau ELM pèse peu dans le résultat (section 5.5.3). Sur S10, un jacobien constant fait aussi bien que lui (écart non séparé), la mise à jour en ligne OS-ELM [Liang et al., 2006] n'apporte rien de mesurable, et la corrélation entre les logarithmes du jacobien du réseau et du jacobien vrai vaut −0,04. On peut chercher un identificateur qui suive vraiment ∂*v*o/∂*d*. Le réseau actuel ne voit que des moyennes par fenêtre : la tension de sortie sur les deux fenêtres précédentes, le rapport cyclique sur la fenêtre courante et les deux précédentes ; une entrée de plus, le courant de l'inductance par exemple, est une piste à tester, pas un résultat acquis. Son jacobien serait comparé au jacobien vrai sur les mêmes 4 615 fenêtres de contrôle, puis l'ablation de la section 5.5.3 serait refaite. L'autre option est d'assumer une loi à jacobien constant, sans réseau à apprendre, et de la juger contre l'ELM-PID actuel sur les cinq scénarios.
 
 ## 6.4. Vers une mise en œuvre embarquée
 
@@ -47,11 +47,11 @@ Tableau 6.1 : Limites constatées au chapitre 5 et perspectives.
 | **Limite constatée (section du chapitre 5)** | **Perspective** | **Grandeur à mesurer** |
 | --- | --- | --- |
 | Séparation limitée à ±0,1 % de *L* et *C* ; IAE de l'ELM-PID de 7,88 à 8,63 mV·s sur S10 (5.3.3) | Étude de Monte-Carlo sur *L*, *C* et *R*on | Distribution des écarts d'IAE ; part des tirages où l'ordre se maintient |
-| Aucun scénario conçu pour traverser la conduction discontinue (5.2.2) | Scénario de dynamique non linéaire | IAE, retour dans ±1 V, temps en butée, séparation |
+| Aucun scénario conçu pour traverser la conduction discontinue (non traité au chapitre 5 ; section 6.2.2) | Scénario de dynamique non linéaire | IAE, retour dans ±1 V, temps en butée, séparation |
 | Gain de 0,05 % au démarrage (5.3.1) | Réduire la saturation pour les cinq méthodes | Temps en butée, dépassement, IAE de S1 |
 | Gains immobiles pendant F1 et F2 (5.3.2) | Boucle d'adaptation plus rapide | Pas d'adaptation pendant F1 et F2 ; IAE de S2 et S3 ; coût |
 | PSO-PID meilleur partout ; adaptation −41 et −61 % sur S10 (5.4.1, 5.5.1) | Départ des gains du PSO-PID, puis adaptation | Écart d'IAE avec le PSO-PID seul, séparé ou non |
-| Corrélation de −0,04 avec le jacobien vrai ; OS-ELM sans effet (5.5.3) | Identificateur avec une entrée de plus, ou jacobien constant | Corrélation avec le jacobien vrai ; IAE des cinq scénarios |
+| Corrélation de −0,04 (en logarithme) avec le jacobien vrai ; OS-ELM sans effet (5.5.3) | Identificateur avec une entrée de plus, ou jacobien constant | Corrélation avec le jacobien vrai ; IAE des cinq scénarios |
 | Pas d'adaptation de 0,84 ms pour une fenêtre de 0,5 ms (5.4.2) | Code compilé en virgule fixe sur cible | Temps d'exécution au pire cas ; écart d'IAE dû à la virgule fixe |
 
 ---
@@ -69,10 +69,10 @@ Tableau 6.1 : Limites constatées au chapitre 5 et perspectives.
 | S1 : 0,05 % ; porte fermée pendant la saturation (trois fenêtres) | chapitre 5, section 5.3.1 et tableau 5.4 ; `separation_resultats.json` (0,053 à 0,055 %) ; `ELM_PID/criteres_elm_pid.txt` §4, M1 |
 | Fenêtres de 0,5 ms ; réouverture 1,5 ms plus tard ; zone morte 0,1 V ; gains immobiles pendant F1 et F2 | `ELM_PID/criteres_elm_pid.txt` §2, §8 (« Ce que l'adaptation fait pendant une perturbation ») et §9 point 3 (« il faudrait une boucle plus rapide que le régulateur qu'elle règle ») |
 | PSO-PID meilleure IAE sur les cinq scénarios | chapitre 5, tableau 5.8 ; `COMPARAISON/metriques/metriques_banc.md`, résumé |
-| Adaptation sur S10 : 61 % (PINN-PID, 0,6146) et 41 % (ELM-PID, 0,4089) | `COMPARAISON/S10/resultats_S10.json`, clé `gain_adaptation` ; chapitre 5, tableau 5.6 (section 5.4.1) |
+| Adaptation sur S10 : 61 % (PINN-PID, 0,6146) et 41 % (ELM-PID, 0,4089), même arrondi à l'unité que le tableau 5.6 depuis le 10 octobre (qui donnait 61,5 et 40,9 %) | `COMPARAISON/S10/resultats_S10.json`, clé `gain_adaptation` ; chapitre 5, tableau 5.6 (section 5.4.1) |
 | Ensemble admissible construit autour du départ de Ziegler-Nichols (marge nominale au moins celle du départ, 24,93°) | `ELM_PID/criteres_elm_pid.txt` §2 et M2 ; `ELM_PID/ensemble_gains_elm_sortie_console.txt`, ligne 3 |
 | Jacobien constant sur S10 : −9,76 %, non séparé (−9,76 à +4,01) ; OS-ELM : rien de mesurable | `criteres_ablation.txt` §5 |
-| Corrélation −0,04 (−0,043, en logarithme) ; 4 615 fenêtres | `ELM_PID/entrainement_elm_sortie_console.txt`, étape 5 (lignes 65 à 69 : 1 212 + 625 + 40 + 2 738 = 4 615) ; `criteres_elm_pid.txt` §5 |
+| Corrélation −0,04 (−0,043 : corrélation de ln *J* du réseau et ln *J* vrai, « Correlation de ln J (modele) et ln J_vrai ») ; 4 615 fenêtres | `ELM_PID/entrainement_elm_sortie_console.txt`, étape 5 (lignes 65 à 69 : 1 212 + 625 + 40 + 2 738 = 4 615) ; `criteres_elm_pid.txt` §5 |
 | Pas d'adaptation : ELM 840,38 µs (0,84 ms), PINN 16 618,37 µs (16,6 ms) | `COMPARAISON/metriques/metriques_banc.md`, « Coût de calcul », lignes 163-164 |
 | Prototype exclu par la proposition | `REDACTION/plan_depart_contre_realise.md` (« ce TFE ne prévoit pas de prototypage ») ; `REDACTION/proposition_resultats_en_hypotheses.md`, note de la ligne 106 |
 
@@ -89,7 +89,9 @@ Tableau 6.1 : Limites constatées au chapitre 5 et perspectives.
 - « Adapter aussi pendant la saturation » : en butée, le rapport cyclique ne dépend pas des gains et le gradient est nul (`criteres_elm_pid.txt` M1). Rouvrir la porte n'aurait pas de sens ; le texte propose plutôt de réduire la saturation (consigne en rampe), appliquée aux cinq méthodes, ce qui change S1 et doit être décidé avant le calcul.
 - « Les gains ne bougent pas sur S2, S3 » : ils changent une fois à 4 ms (fin du démarrage) et, sur S3, une seconde fois à 72 ms (fin de F2). Le texte dit « immobiles pendant les perturbations », ce qui est exact.
 - Point à trancher pour P2 : avec *L* = 10 mH et *f*s = 22 kHz, la limite de la conduction continue en régime établi est *R* = 2*L f*s/(1 − *D*), soit environ 880 Ω à 200 V et 1 170 Ω à 160 V (calcul de relecture, non commité). Traverser la conduction discontinue suppose donc une charge presque à vide : la définition physique de P2 est à écrire avec cette contrainte.
-- 6.3.4 (demande du coordinateur) : la phrase « la charge n'est pas observable sur une fenêtre de 0,5 ms : il lui faudrait une entrée de plus » a été remplacée. L'affirmation n'était pas démontrée (`criteres_elm_pid.txt` §5 la donne comme lecture, sans preuve). Le texte s'en tient à ce qui est établi : les entrées du réseau sont les moyennes passées de la tension et du rapport cyclique (`criteres_elm_pid.txt` §2). Le courant de l'inductance y est présenté comme une piste à tester.
+- 6.3.4 (demande du coordinateur) : la phrase « la charge n'est pas observable sur une fenêtre de 0,5 ms : il lui faudrait une entrée de plus » a été remplacée. L'affirmation n'était pas démontrée (`criteres_elm_pid.txt` §5 la donne comme lecture, sans preuve). Le texte s'en tient à ce qui est établi : les entrées du réseau sont des moyennes par fenêtre, ȳ(n−1), ȳ(n−2) pour la tension et d̄(n), d̄(n−1), d̄(n−2) pour le rapport cyclique (`criteres_elm_pid.txt` §2), formulation reprise mot pour mot en 5.5.3 depuis le 10 octobre. Le courant de l'inductance y est présenté comme une piste à tester.
+- Tableau 6.1 : la limite « aucun scénario conçu pour traverser la conduction discontinue » était attribuée à 5.2.2, qui n'en parle pas ; elle renvoie maintenant à 6.2.2 (« non traité au chapitre 5 »).
+- Vocabulaire aligné sur le chapitre 5 (10 octobre) : « intégration conditionnelle », « ensemble admissible » pour l'ELM-PID, corrélation « entre les logarithmes », réductions arrondies à 41 et 61 %.
 - Les tolérances des composants ne sont pas chiffrées, faute de source (« plages des fiches techniques des composants retenus »).
 
 ### Repères

@@ -83,3 +83,13 @@ Renvois explicites relevés : « chapitre 3 » (5.2.1, trois fois : dimensionnem
 | Réduction PINN : 61,5 % (tableau 5.6) contre 61 % (6.3.3) ; avec les valeurs arrondies, 1 − 6,63/17,19 = 61,4 % | 5.4.1 / 6.3.3 | Vérifier dans le dépôt, sans gravité |
 | Option B, loi incrémentale de Lu, itération temps réel, base v2.1, *C* = 0,1, codes E1 à E4 : jamais nommés au ch. 5/6 | – | Pas une incohérence, mais le ch. 4 doit les nommer pour que 5.5.3 (« reprise de Lu et modifiée ») soit compréhensible |
 | [Fleming et Wallace, 1986] encore marquée « À VÉRIFIER » | 5.2.3 | Vérifier avant livraison |
+
+## Suivi des incohérences (10 octobre 2026)
+
+Toutes les incohérences listées ci-dessus entre les chapitres 5 et 6 ont été
+corrigées le 10 octobre 2026 : dépassement sans symbole, indice global sans
+la lettre J (réservée au jacobien), « boîte de gains » pour le PINN-PID,
+« intégration conditionnelle » partout, définition de la porte en 5.3.1,
+ligne du tableau 6.1 rattachée au chapitre 6, entrées du réseau et
+corrélation des logarithmes (−0,04) décrites de la même façon, facteurs de
+coût 2,5 et 27 par rapport au PSO-PID, 41 % et 61 % sur S10.
