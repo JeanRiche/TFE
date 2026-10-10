@@ -28,9 +28,10 @@ Avant le dépôt du mémoire, il faut relire sur Crossref (depuis un poste qui y
 a accès) les entrées « avec réserve » et « non vérifiées ». Une requête suffit
 par DOI : `https://api.crossref.org/works/<DOI>`.
 
-Étiquettes : règle de `REDACTION/guide_de_forme.md` §7 (deux auteurs reliés
-par « et », trois et plus : « et al. »). Elle diffère de l'exemple
-« [Ziegler J.G., 1942] » de la consigne ; à trancher avec Jean-Riche.
+Étiquettes : forme courte sans initiales, décidée par Jean-Riche le
+10 octobre 2026 (`REDACTION/guide_de_forme.md` §7) : « [Ziegler et Nichols,
+1942] », « [Lu et al., 2021] ». Les entrées de la bibliographie gardent tous
+les auteurs avec leurs initiales.
 
 ---
 
@@ -86,19 +87,19 @@ fort dépassement attendu.
 
 **Forme de citation proposée** (gabarit « livre/rapport » du guide) :
 
-- Étiquette : [Mudry F., 2006]
+- Étiquette : [Mudry, 2006]
 - Entrée : Mudry F., 2006. *Ajustage des paramètres des régulateurs PID*.
   Note d'application, Institut d'Automatisation Industrielle, Laboratoire
   d'automatique, eivd, version de mars 2006 (première version avril 2002).
 - Statut : vérifiée sur le document lui-même (auteur, titre, institution,
   dates lus dans le PDF). Document de cours non publié : à citer en
-  complément, jamais à la place de [Ziegler J.G. et Nichols N.B., 1942].
+  complément, jamais à la place de [Ziegler et Nichols, 1942].
 
 ---
 
 ## 2. Références de base du chapitre 5
 
-### [Ziegler J.G. et Nichols N.B., 1942]
+### [Ziegler et Nichols, 1942]
 Ziegler J.G., Nichols N.B., 1942. *Optimum settings for automatic
 controllers*. Transactions of the ASME, 64(8), 759-765.
 doi:10.1115/1.4019264.
@@ -109,7 +110,7 @@ doi:10.1115/1.4019264.
 - Appui : origine des règles du point critique (Kcr, Tcr) qui donnent les
   gains de la référence ZN.
 
-### [Åström K.J. et Hägglund T., 1995]
+### [Åström et Hägglund, 1995]
 Åström K.J., Hägglund T., 1995. *PID Controllers: Theory, Design, and
 Tuning*. 2e éd., Instrument Society of America. ISBN 1-55617-516-7.
 - **Statut : vérifiée** (ISBN, édition, année, éditeur). Notice de catalogue :
@@ -120,7 +121,7 @@ Tuning*. 2e éd., Instrument Society of America. ISBN 1-55617-516-7.
   critères intégraux IAE/ISE. Livre non consulté : citer des pages
   seulement après lecture.
 
-### [Åström K.J. et Hägglund T., 2006]
+### [Åström et Hägglund, 2006]
 Åström K.J., Hägglund T., 2006. *Advanced PID Control*. ISA – The
 Instrumentation, Systems, and Automation Society. ISBN 978-1-55617-942-6.
 - **Statut : vérifiée.** Lund University Publications :
@@ -130,7 +131,7 @@ Instrumentation, Systems, and Automation Society. ISBN 978-1-55617-942-6.
   conditionnelle, filtre de la dérivée, IAE). Déjà cité dans
   `ELM_PID/criteres_elm_pid.txt` [13].
 
-### [Graham D. et Lathrop R.C., 1953]
+### [Graham et Lathrop, 1953]
 Graham D., Lathrop R.C., 1953. *The synthesis of "optimum" transient
 response: criteria and standard forms*. Transactions of the American
 Institute of Electrical Engineers, Part II: Applications and Industry, 72,
@@ -144,7 +145,7 @@ Institute of Electrical Engineers, Part II: Applications and Industry, 72,
   TR 53-66 (DTIC) donne « Frank D. » ; l'initiale D. reste sûre.
 - Appui : définition et origine du critère ITAE.
 
-### [Ogata K., 2010]
+### [Ogata, 2010]
 Ogata K., 2010. *Modern Control Engineering*. 5e éd., Prentice Hall, Boston.
 ISBN 978-0-13-615673-4.
 - **Statut : vérifiée.** Notice de la bibliothèque universitaire de Paderborn :
@@ -153,7 +154,7 @@ ISBN 978-0-13-615673-4.
 - Appui : définitions du dépassement, du temps de montée, du temps de réglage
   (bande de 2 %) et de l'erreur statique. Pages à relever sur l'ouvrage.
 
-### [Dorf R.C. et Bishop R.H., 2017]
+### [Dorf et Bishop, 2017]
 Dorf R.C., Bishop R.H. *Modern Control Systems*. 13e éd., Pearson.
 ISBN 978-0-13-440762-3.
 - **Statut : non vérifiée.** L'ISBN correspond bien à la 13e édition, mais
@@ -161,7 +162,7 @@ ISBN 978-0-13-440762-3.
   libraires ont été trouvées. Alternative à Ogata, inutile si Ogata est
   retenu.
 
-### [Erickson R.W. et Maksimović D., 2020]
+### [Erickson et Maksimović, 2020]
 Erickson R.W., Maksimović D., 2020. *Fundamentals of Power Electronics*.
 3e éd., Springer. ISBN 978-3-030-43879-1 (relié), 978-3-030-43881-4
 (livre électronique). doi:10.1007/978-3-030-43881-4.
@@ -179,7 +180,7 @@ vérifiées portent le principe d'un indice en rapport à une référence ; elle
 peuvent être citées pour ce principe, sans laisser croire qu'elles
 définissent J :
 
-#### [Harris T.J., 1989]
+#### [Harris, 1989]
 Harris T.J., 1989. *Assessment of control loop performance*. The Canadian
 Journal of Chemical Engineering, 67(5), 856-861. doi:10.1002/cjce.5450670519.
 - **Statut : vérifiée.** Wiley : https://onlinelibrary.wiley.com/doi/abs/10.1002/cjce.5450670519
@@ -187,7 +188,7 @@ Journal of Chemical Engineering, 67(5), 856-861. doi:10.1002/cjce.5450670519.
   sur variance minimale), origine de l'évaluation des boucles par rapport à
   une référence. Référence = régulateur à variance minimale, pas un PID.
 
-#### [Huang H.-P. et Jeng J.-C., 2002]
+#### [Huang et Jeng, 2002]
 Huang H.-P., Jeng J.-C., 2002. *Monitoring and assessment of control
 performance for single loop systems*. Industrial & Engineering Chemistry
 Research, 41(5), 1297-1309. doi:10.1021/ie0101285.
@@ -204,7 +205,7 @@ en l'état.
 
 ## 3. Références des méthodes
 
-### [Liang N.-Y. et al., 2006]
+### [Liang et al., 2006]
 Liang N.-Y., Huang G.-B., Saratchandran P., Sundararajan N., 2006. *A fast
 and accurate online sequential learning algorithm for feedforward networks*.
 IEEE Transactions on Neural Networks, 17(6), 1411-1423.
@@ -213,7 +214,7 @@ doi:10.1109/TNN.2006.880583.
   et notice IEEE Xplore https://ieeexplore.ieee.org/document/4012031/
 - Appui : OS-ELM, mise à jour en ligne des poids de sortie de l'ELM-PID.
 
-### [Huang G.-B. et al., 2006]
+### [Huang et al., 2006]
 Huang G.-B., Zhu Q.-Y., Siew C.-K., 2006. *Extreme learning machine: theory
 and applications*. Neurocomputing, 70(1-3), 489-501.
 doi:10.1016/j.neucom.2005.12.126.
@@ -224,7 +225,7 @@ doi:10.1016/j.neucom.2005.12.126.
 - Appui : principe de l'ELM (poids d'entrée aléatoires, poids de sortie par
   pseudo-inverse).
 
-### [Lu Y. et al., 2021]
+### [Lu et al., 2021]
 Lu Y., Yu W., Wang J., Jiang D., Li R., 2021. *Design of PID controller
 based on ELM and its implementation for Buck converters*. International
 Journal of Control, Automation and Systems, 19, 2479-2490.
@@ -237,7 +238,7 @@ doi:10.1007/s12555-019-0989-1.
   l'année).
 - Appui : article de référence de l'ELM-PID (Buck, modèle moyen en CCM).
 
-### [Ito J. et Wasa Y., 2025]
+### [Ito et Wasa, 2025]
 Ito J., Wasa Y., 2025. *Data-driven adaptive PID control based on
 physics-informed neural networks*. Prépublication arXiv:2510.04591 (v1 du
 6 octobre 2025, v2 du 8 octobre 2025).
@@ -249,7 +250,7 @@ physics-informed neural networks*. Prépublication arXiv:2510.04591 (v1 du
   l'ajouter.
 - Appui : coût et optimisation des gains du PINN-PID.
 
-### [Zhao Z.-Y. et al., 1993]
+### [Zhao et al., 1993]
 Zhao Z.-Y., Tomizuka M., Isaka S., 1993. *Fuzzy gain scheduling of PID
 controllers*. IEEE Transactions on Systems, Man, and Cybernetics, 23(5),
 1392-1398.
@@ -261,7 +262,7 @@ controllers*. IEEE Transactions on Systems, Man, and Cybernetics, 23(5),
   portent le même titre (260670 et 269762) : à éclaircir.
 - Appui : méthode du Fuzzy-PID (ordonnancement flou des gains).
 
-### [Gaing Z.-L., 2004]
+### [Gaing, 2004]
 Gaing Z.-L., 2004. *A particle swarm optimization approach for optimum
 design of PID controller in AVR system*. IEEE Transactions on Energy
 Conversion, 19(2), 384-391. doi:10.1109/TEC.2003.821821.
@@ -269,7 +270,7 @@ Conversion, 19(2), 384-391. doi:10.1109/TEC.2003.821821.
 - Appui : essaim particulaire du PSO-PID (le coût W d'origine a été remplacé,
   voir `PSO_PID/criteres_pso_pid.txt`).
 
-### [Diehl M. et al., 2005]
+### [Diehl et al., 2005]
 Diehl M., Bock H.G., Schlöder J.P., 2005. *A real-time iteration scheme for
 nonlinear optimization in optimal feedback control*. SIAM Journal on Control
 and Optimization, 43(5), 1714-1736. doi:10.1137/S0363012902400713.
@@ -281,7 +282,7 @@ and Optimization, 43(5), 1714-1736. doi:10.1137/S0363012902400713.
 - Appui : itération en temps réel (une itération d'optimisation par pas) du
   PINN-PID.
 
-### [Peterson B.B. et Narendra K.S., 1982]
+### [Peterson et Narendra, 1982]
 Peterson B.B., Narendra K.S., 1982. *Bounded error adaptive control*. IEEE
 Transactions on Automatic Control, 27(6), 1161-1168.
 doi:10.1109/TAC.1982.1103112.

@@ -258,11 +258,16 @@ L'appel se place en fin de phrase avant le point, ou juste après le nom cité
 (« La norme CEI 62305-01 [Commission … , 2006] donne… »). Pas de notes de bas
 de page, pas de numéros [1].
 
-Règles retenues pour le TFE : jusqu'à deux auteurs, les deux noms reliés par
-« et » ; trois et plus, premier auteur suivi de « et al. » (« [Nom I. et al.,
-année] ») ; deux références du même auteur et de la même année
-distinguées par une lettre (2006a, 2006b). L'étiquette de l'appel et celle de
-la bibliographie sont identiques caractère pour caractère.
+Règles retenues pour le TFE (forme courte, décision de Jean-Riche du
+10 octobre 2026) : nom sans initiales, virgule, année ; jusqu'à deux auteurs,
+les deux noms reliés par « et » (« [Ziegler et Nichols, 1942] ») ; trois et
+plus, premier auteur suivi de « et al. » (« [Lu et al., 2021] ») ; page
+éventuelle après l'année (« [Mudry, 2006, p. 1] ») ; plusieurs références
+dans un seul crochet, séparées par « ; » (« [Lu et al., 2021 ; Liang et al.,
+2006] ») ; deux références du même auteur et de la même année distinguées
+par une lettre (2006a, 2006b). L'étiquette de l'appel et celle qui ouvre
+l'entrée de la bibliographie sont identiques caractère pour caractère ;
+l'entrée donne ensuite tous les auteurs avec leurs initiales.
 
 **Bibliographie.** Titre « Références », placée après les annexes, classée par
 ordre alphabétique du nom du premier auteur (ou de l'organisme). Chaque entrée
@@ -295,11 +300,11 @@ est en romain, sans gras. Exemples réels de la référence :
 
 Gabarit harmonisé pour le TFE (la référence varie d'une entrée à l'autre) :
 
-- article : [Nom I., année] *Titre*, Revue, vol. X, n° Y, mois année,
-  pp. a-b, doi:… .
-- livre : [Nom I., année] *Titre*, éd., Éditeur, Ville, année.
-- thèse ou mémoire : [Nom I., année] *Titre*, thèse de doctorat (ou mémoire de
-  master), Université, année.
+- article : [Nom, année] Nom1 I., Nom2 I., *Titre*, Revue, vol. X, n° Y,
+  mois année, pp. a-b, doi:… .
+- livre : [Nom, année] Nom I., *Titre*, éd., Éditeur, Ville, année.
+- thèse ou mémoire : [Nom, année] Nom I., *Titre*, thèse de doctorat (ou
+  mémoire de master), Université, année.
 - page web (forme ajoutée, sur le même modèle) : [Organisme, année] *Titre de
   la page*, URL, consulté le jj mois aaaa.
 
