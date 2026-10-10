@@ -115,3 +115,178 @@ S10 construit comme scenario_S10.py ; identique a l'essai complementaire du banc
   [ 90/125] S2   PSO-PID          C + 0.1 %  IAE    2.04046 mV.s (  0.3 s)
   [ 91/125] S2   Fuzzy-PID        L - 0.1 %  IAE    2.43279 mV.s (  0.8 s)
   [ 92/125] S2   Fuzzy-PID        nominal    IAE    2.43252 mV.s (  1.1 s)
+  [ 93/125] S2   Fuzzy-PID        L + 0.1 %  IAE    2.42960 mV.s (  1.0 s)
+  [ 94/125] S2   Fuzzy-PID        C - 0.1 %  IAE    2.43304 mV.s (  1.0 s)
+  [ 95/125] S3   Ziegler-Nichols  nominal    IAE    8.66535 mV.s (  0.4 s)
+  [ 96/125] S2   Fuzzy-PID        C + 0.1 %  IAE    2.42919 mV.s (  0.9 s)
+  [ 97/125] S3   Ziegler-Nichols  L - 0.1 %  IAE    8.65958 mV.s (  0.5 s)
+  [ 98/125] S3   Ziegler-Nichols  L + 0.1 %  IAE    8.67982 mV.s (  0.4 s)
+  [ 99/125] S3   Ziegler-Nichols  C - 0.1 %  IAE    8.66533 mV.s (  0.5 s)
+  [100/125] S3   Ziegler-Nichols  C + 0.1 %  IAE    8.67240 mV.s (  0.4 s)
+  [101/125] S3   PSO-PID          L - 0.1 %  IAE    5.45775 mV.s (  0.4 s)
+  [102/125] S3   PSO-PID          nominal    IAE    5.46261 mV.s (  0.5 s)
+  [103/125] S3   PSO-PID          L + 0.1 %  IAE    5.46797 mV.s (  0.4 s)
+  [104/125] S3   PSO-PID          C - 0.1 %  IAE    5.46420 mV.s (  0.4 s)
+  [105/125] S3   PSO-PID          C + 0.1 %  IAE    5.46020 mV.s (  0.4 s)
+  [106/125] S3   Fuzzy-PID        nominal    IAE    7.94130 mV.s (  0.9 s)
+  [107/125] S3   Fuzzy-PID        L - 0.1 %  IAE    7.93555 mV.s (  1.0 s)
+  [108/125] S3   Fuzzy-PID        L + 0.1 %  IAE    7.95125 mV.s (  1.0 s)
+  [109/125] S3   Fuzzy-PID        C - 0.1 %  IAE    7.94228 mV.s (  1.0 s)
+  [110/125] S8a  Ziegler-Nichols  nominal    IAE   12.07192 mV.s (  0.5 s)
+  [111/125] S8a  Ziegler-Nichols  L - 0.1 %  IAE   11.97542 mV.s (  0.4 s)
+  [112/125] S8a  Ziegler-Nichols  L + 0.1 %  IAE   12.14142 mV.s (  0.3 s)
+  [113/125] S8a  Ziegler-Nichols  C - 0.1 %  IAE   12.11281 mV.s (  0.4 s)
+  [114/125] S3   Fuzzy-PID        C + 0.1 %  IAE    7.94205 mV.s (  1.1 s)
+  [115/125] S8a  PSO-PID          nominal    IAE    2.45761 mV.s (  0.3 s)
+  [116/125] S8a  Ziegler-Nichols  C + 0.1 %  IAE   12.21686 mV.s (  0.4 s)
+  [117/125] S8a  PSO-PID          L - 0.1 %  IAE    2.45953 mV.s (  0.4 s)
+  [118/125] S8a  PSO-PID          L + 0.1 %  IAE    2.45651 mV.s (  0.3 s)
+  [119/125] S8a  PSO-PID          C - 0.1 %  IAE    2.45916 mV.s (  0.4 s)
+  [120/125] S8a  PSO-PID          C + 0.1 %  IAE    2.45628 mV.s (  0.4 s)
+  [121/125] S8a  Fuzzy-PID        L - 0.1 %  IAE    4.11762 mV.s (  1.0 s)
+  [122/125] S8a  Fuzzy-PID        C - 0.1 %  IAE    4.12546 mV.s (  0.9 s)
+  [123/125] S8a  Fuzzy-PID        nominal    IAE    4.12122 mV.s (  1.0 s)
+  [124/125] S8a  Fuzzy-PID        L + 0.1 %  IAE    4.12637 mV.s (  1.0 s)
+  [125/125] S8a  Fuzzy-PID        C + 0.1 %  IAE    4.12882 mV.s (  0.9 s)
+Simulations terminees en 34 s.
+
+Controle : IAE nominale contre metriques_banc.csv (tolerance 1e-9 relatif)
+  ecart relatif maximal 2.66e-10
+
+====================================================================================================
+ S1 : IAE de classement (mV.s) par variante
+====================================================================================================
+                       nominal   L - 0.1 %   L + 0.1 %   C - 0.1 %   C + 0.1 %
+  PSO-PID              87.6250     87.5632     87.6868     87.6091     87.6410
+  PINN-PID             92.0553     91.9824     92.1355     92.0348     92.0817
+  ELM-PID              93.7158     93.6150     93.7993     93.6899     93.7403
+  Ziegler-Nichols      93.7653     93.6652     93.8507     93.7394     93.7921
+  Fuzzy-PID           110.9066    110.7975    110.9045    110.9060    110.9263
+
+  Paires (A meilleure au nominal ; ecart = IAE_B / IAE_A - 1, en %)
+    PSO-PID          / PINN-PID         SEPAREE      nominal   +5.056 %   min   +5.047 %   max   +5.073 %
+    PSO-PID          / ELM-PID          SEPAREE      nominal   +6.951 %   min   +6.911 %   max   +6.971 %
+    PSO-PID          / Ziegler-Nichols  SEPAREE      nominal   +7.007 %   min   +6.969 %   max   +7.029 %
+    PSO-PID          / Fuzzy-PID        SEPAREE      nominal  +26.570 %   min  +26.478 %   max  +26.592 %
+    PINN-PID         / ELM-PID          SEPAREE      nominal   +1.804 %   min   +1.775 %   max   +1.806 %
+    PINN-PID         / Ziegler-Nichols  SEPAREE      nominal   +1.858 %   min   +1.829 %   max   +1.862 %
+    PINN-PID         / Fuzzy-PID        SEPAREE      nominal  +20.478 %   min  +20.371 %   max  +20.504 %
+    ELM-PID          / Ziegler-Nichols  SEPAREE      nominal   +0.053 %   min   +0.053 %   max   +0.055 %
+    ELM-PID          / Fuzzy-PID        SEPAREE      nominal  +18.344 %   min  +18.236 %   max  +18.376 %
+    Ziegler-Nichols  / Fuzzy-PID        SEPAREE      nominal  +18.281 %   min  +18.171 %   max  +18.313 %
+
+  Groupes ordonnes : {PSO-PID} < {PINN-PID} < {ELM-PID} < {Ziegler-Nichols} < {Fuzzy-PID}
+
+====================================================================================================
+ S2 : IAE de classement (mV.s) par variante
+====================================================================================================
+                       nominal   L - 0.1 %   L + 0.1 %   C - 0.1 %   C + 0.1 %
+  PSO-PID               2.0416      2.0425      2.0400      2.0424      2.0405
+  ELM-PID               2.4062      2.4145      2.3966      2.4084      2.4068
+  Fuzzy-PID             2.4325      2.4328      2.4296      2.4330      2.4292
+  PINN-PID              2.4392      2.4387      2.4420      2.4392      2.4015
+  Ziegler-Nichols       2.8415      2.8431      2.8400      2.8407      2.8410
+
+  Paires (A meilleure au nominal ; ecart = IAE_B / IAE_A - 1, en %)
+    PSO-PID          / ELM-PID          SEPAREE      nominal  +17.855 %   min  +17.477 %   max  +18.210 %
+    PSO-PID          / Fuzzy-PID        SEPAREE      nominal  +19.146 %   min  +19.051 %   max  +19.146 %
+    PSO-PID          / PINN-PID         SEPAREE      nominal  +19.475 %   min  +17.694 %   max  +19.703 %
+    PSO-PID          / Ziegler-Nichols  SEPAREE      nominal  +39.176 %   min  +39.090 %   max  +39.232 %
+    ELM-PID          / Fuzzy-PID        SEPAREE      nominal   +1.095 %   min   +0.759 %   max   +1.378 %
+    ELM-PID          / PINN-PID         NON SEPAREE  nominal   +1.374 %   min   -0.219 %   max   +1.895 %
+    ELM-PID          / Ziegler-Nichols  SEPAREE      nominal  +18.090 %   min  +17.754 %   max  +18.502 %
+    Fuzzy-PID        / PINN-PID         NON SEPAREE  nominal   +0.276 %   min   -1.140 %   max   +0.509 %
+    Fuzzy-PID        / Ziegler-Nichols  SEPAREE      nominal  +16.811 %   min  +16.756 %   max  +16.952 %
+    PINN-PID         / Ziegler-Nichols  SEPAREE      nominal  +16.489 %   min  +16.299 %   max  +18.300 %
+
+  Relation non transitive (ELM-PID ~ PINN-PID ~ Fuzzy-PID)
+  Matrice des paires (S = separee, - = non separee) :
+                      PSO-PID    ELM-PID  Fuzzy-PID   PINN-PID Ziegler-Ni
+  PSO-PID                              S          S          S          S
+  ELM-PID                   S                     S          -          S
+  Fuzzy-PID                 S          S                     -          S
+  PINN-PID                  S          -          -                     S
+  Ziegler-Nichols           S          S          S          S           
+
+====================================================================================================
+ S3 : IAE de classement (mV.s) par variante
+====================================================================================================
+                       nominal   L - 0.1 %   L + 0.1 %   C - 0.1 %   C + 0.1 %
+  PSO-PID               5.4626      5.4578      5.4680      5.4642      5.4602
+  PINN-PID              6.4040      6.3904      6.4135      6.4016      6.4158
+  ELM-PID               6.4057      6.4256      6.3968      6.4127      6.4086
+  Fuzzy-PID             7.9413      7.9356      7.9513      7.9423      7.9421
+  Ziegler-Nichols       8.6653      8.6596      8.6798      8.6653      8.6724
+
+  Paires (A meilleure au nominal ; ecart = IAE_B / IAE_A - 1, en %)
+    PSO-PID          / PINN-PID         SEPAREE      nominal  +17.234 %   min  +17.088 %   max  +17.500 %
+    PSO-PID          / ELM-PID          SEPAREE      nominal  +17.265 %   min  +16.987 %   max  +17.734 %
+    PSO-PID          / Fuzzy-PID        SEPAREE      nominal  +45.376 %   min  +45.351 %   max  +45.453 %
+    PSO-PID          / Ziegler-Nichols  SEPAREE      nominal  +58.630 %   min  +58.584 %   max  +58.829 %
+    PINN-PID         / ELM-PID          NON SEPAREE  nominal   +0.027 %   min   -0.260 %   max   +0.551 %
+    PINN-PID         / Fuzzy-PID        SEPAREE      nominal  +24.005 %   min  +23.790 %   max  +24.179 %
+    PINN-PID         / Ziegler-Nichols  SEPAREE      nominal  +35.311 %   min  +35.173 %   max  +35.509 %
+    ELM-PID          / Fuzzy-PID        SEPAREE      nominal  +23.972 %   min  +23.499 %   max  +24.300 %
+    ELM-PID          / Ziegler-Nichols  SEPAREE      nominal  +35.275 %   min  +34.767 %   max  +35.690 %
+    Fuzzy-PID        / Ziegler-Nichols  SEPAREE      nominal   +9.117 %   min   +9.104 %   max   +9.196 %
+
+  Groupes ordonnes : {PSO-PID} < {PINN-PID, ELM-PID} < {Fuzzy-PID} < {Ziegler-Nichols}
+
+====================================================================================================
+ S8a : IAE de classement (mV.s) par variante
+====================================================================================================
+                       nominal   L - 0.1 %   L + 0.1 %   C - 0.1 %   C + 0.1 %
+  PSO-PID               2.4576      2.4595      2.4565      2.4592      2.4563
+  PINN-PID              2.9523      2.9497      2.9464      2.9509      2.9479
+  ELM-PID               2.9650      2.9798      2.9502      2.9875      2.9596
+  Fuzzy-PID             4.1212      4.1176      4.1264      4.1255      4.1288
+  Ziegler-Nichols      12.0719     11.9754     12.1414     12.1128     12.2169
+
+  Paires (A meilleure au nominal ; ecart = IAE_B / IAE_A - 1, en %)
+    PSO-PID          / PINN-PID         SEPAREE      nominal  +20.128 %   min  +19.929 %   max  +20.128 %
+    PSO-PID          / ELM-PID          SEPAREE      nominal  +20.644 %   min  +20.098 %   max  +21.483 %
+    PSO-PID          / Fuzzy-PID        SEPAREE      nominal  +67.693 %   min  +67.415 %   max  +68.092 %
+    PSO-PID          / Ziegler-Nichols  SEPAREE      nominal +391.206 %   min +386.899 %   max +397.372 %
+    PINN-PID         / ELM-PID          SEPAREE      nominal   +0.430 %   min   +0.129 %   max   +1.240 %
+    PINN-PID         / Fuzzy-PID        SEPAREE      nominal  +39.595 %   min  +39.595 %   max  +40.058 %
+    PINN-PID         / Ziegler-Nichols  SEPAREE      nominal +308.902 %   min +305.990 %   max +314.420 %
+    ELM-PID          / Fuzzy-PID        SEPAREE      nominal  +38.997 %   min  +38.092 %   max  +39.866 %
+    ELM-PID          / Ziegler-Nichols  SEPAREE      nominal +307.152 %   min +301.883 %   max +312.783 %
+    Fuzzy-PID        / Ziegler-Nichols  SEPAREE      nominal +192.921 %   min +190.834 %   max +195.892 %
+
+  Groupes ordonnes : {PSO-PID} < {PINN-PID} < {ELM-PID} < {Fuzzy-PID} < {Ziegler-Nichols}
+
+====================================================================================================
+ S10 : IAE de classement (mV.s) par variante
+====================================================================================================
+                       nominal   L - 0.1 %   L + 0.1 %   C - 0.1 %   C + 0.1 %
+  PSO-PID               3.9792      3.9731      3.9757      3.9762      3.9779
+  PINN-PID              6.6264      6.6396      6.7528      6.7108      6.7000
+  ELM-PID               8.6322      8.6236      7.8773      8.6290      8.6276
+  Fuzzy-PID             9.1787      9.1686      9.1918      9.1724      9.1898
+  Ziegler-Nichols      70.4807     69.7777     71.0365     69.8033     71.1251
+
+  Paires (A meilleure au nominal ; ecart = IAE_B / IAE_A - 1, en %)
+    PSO-PID          / PINN-PID         SEPAREE      nominal  +66.526 %   min  +66.526 %   max  +69.854 %
+    PSO-PID          / ELM-PID          SEPAREE      nominal +116.933 %   min  +98.137 %   max +117.050 %
+    PSO-PID          / Fuzzy-PID        SEPAREE      nominal +130.668 %   min +130.668 %   max +131.202 %
+    PSO-PID          / Ziegler-Nichols  SEPAREE      nominal +1671.230 %   min +1655.506 %   max +1688.025 %
+    PINN-PID         / ELM-PID          SEPAREE      nominal  +30.270 %   min  +16.651 %   max  +30.270 %
+    PINN-PID         / Fuzzy-PID        SEPAREE      nominal  +38.517 %   min  +36.118 %   max  +38.517 %
+    PINN-PID         / Ziegler-Nichols  SEPAREE      nominal +963.636 %   min +940.168 %   max +963.636 %
+    ELM-PID          / Fuzzy-PID        SEPAREE      nominal   +6.331 %   min   +6.297 %   max  +16.688 %
+    ELM-PID          / Ziegler-Nichols  SEPAREE      nominal +716.487 %   min +708.939 %   max +801.793 %
+    Fuzzy-PID        / Ziegler-Nichols  SEPAREE      nominal +667.871 %   min +661.016 %   max +673.961 %
+
+  Groupes ordonnes : {PSO-PID} < {PINN-PID} < {ELM-PID} < {Fuzzy-PID} < {Ziegler-Nichols}
+
+====================================================================================================
+ Resume
+====================================================================================================
+  S1   : {PSO-PID} < {PINN-PID} < {ELM-PID} < {Ziegler-Nichols} < {Fuzzy-PID}
+  S2   : non transitive ; paires non separees : ELM-PID ~ PINN-PID; Fuzzy-PID ~ PINN-PID
+  S3   : {PSO-PID} < {PINN-PID, ELM-PID} < {Fuzzy-PID} < {Ziegler-Nichols}
+  S8a  : {PSO-PID} < {PINN-PID} < {ELM-PID} < {Fuzzy-PID} < {Ziegler-Nichols}
+  S10  : {PSO-PID} < {PINN-PID} < {ELM-PID} < {Fuzzy-PID} < {Ziegler-Nichols}
+
+separation_resultats.json ecrit. Duree totale 34 s.
