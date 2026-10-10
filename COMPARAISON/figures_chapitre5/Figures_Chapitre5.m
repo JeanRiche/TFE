@@ -9,10 +9,18 @@
 %   Fig5_<code>_A_ZN_ELM.png               Ziegler-Nichols et ELM-PID ;
 %   Fig5_<code>_B_ELM_PSO_Fuzzy_PINN.png   ELM-PID, PSO-PID, Fuzzy-PID,
 %                                          PINN-PID ;
-%   Fig5_S10_gains.png                     gains P, I, D de l'ELM-PID et
-%                                          du PINN-PID divises par ceux de
-%                                          Ziegler-Nichols (S10), avec les
-%                                          gains constants du PSO-PID.
+%   Fig5_S10_gains.png                     gains P, I, D de l'ELM-PID, du
+%                                          Fuzzy-PID et du PINN-PID divises
+%                                          par ceux de Ziegler-Nichols
+%                                          (S10), avec les gains constants
+%                                          du PSO-PID.
+% Gains du Fuzzy-PID : enregistrement cmp_K de la sortie du bloc
+% "Ordonnanceur Flou Zhao" (ordonnanceur_flou_zhao.m), deja les gains
+% P, I, D de la forme parallele du bloc PID commun (P = Kp, D = Kd,
+% I = Kp^2 / (alpha Kd), eq. 11 de Zhao, criteres_fuzzy_pid.txt) : ils
+% sont divises par ceux de ZN comme les autres. Ils changent a chaque pas
+% avec e et De : la courbe brute est tracee, sans filtrage. Le minimum et
+% le maximum de chaque rapport sur l'essai sont affiches dans la console.
 % Chaque figure est aussi enregistree en .fig. Aucune metrique n'est
 % redefinie : le script recalcule seulement l'IAE de la fenetre de
 % classement sur les donnees tracees et la compare a metriques_banc.csv
@@ -84,7 +92,7 @@
 % confondues se lisent donc comme un trait fin dans une bande plus large
 % d'une autre couleur ; la plus fine n'est jamais cachee. Ordre de trace
 % dans la figure B : Fuzzy-PID, PSO-PID, PINN-PID, ELM-PID ; figure A :
-% ZN puis ELM-PID ; figure des gains : ZN (droite y = 1), PSO-PID
+% ZN puis ELM-PID ; figure des gains : Fuzzy-PID, ZN (droite y = 1), PSO-PID
 % (droites), PINN-PID, ELM-PID. Couleur et epaisseur d'une methode sont
 % les memes dans toutes les figures (ELM-PID 0.9 pt partout).
 % Couleurs : les bandes larges sont claires (vert, bleu, gris), les traits
@@ -98,8 +106,11 @@
 % PINN / Fuzzy 82, PSO / Fuzzy 29 (vision normale : 58, 36, 41, 28, 70,
 % 83, 29) ; tous au-dessus de 15, l'epaisseur s'y ajoute.
 % Legende : une seule ligne au-dessus de la grille, ordre ELM-PID, PSO-PID,
-% Fuzzy-PID, PINN-PID, consigne (figure A : ZN, ELM-PID, consigne),
-% echantillons de trait allonges pour montrer l'epaisseur.
+% Fuzzy-PID, PINN-PID, consigne (figure A : ZN, ELM-PID, consigne ;
+% figure des gains : ELM-PID, PSO-PID, Fuzzy-PID, PINN-PID, ZN (= 1)),
+% echantillons de trait de 30 points (LONGUEUR_ECHANTILLON) : assez pour
+% voir l'epaisseur ; plus longs, cinq entrees ne tiennent plus sur une
+% ligne de 16 cm.
 % Mise en page : 16 cm de large (bloc de texte de 15.5 cm), hauteur selon
 % le nombre de rangees ; Times New Roman, etiquettes 11 pt, graduations
 % 10 pt ; pas de titre (la legende de la figure est dans le memoire) ;
@@ -162,7 +173,7 @@ ZOOM_AVANT_MS = 1;                           % fenetre [te - 1 ; te + 9] ms
 ZOOM_APRES_MS = 9;
 NB_ZOOMS_MAX  = 4;                           % au plus 4 zooms (grille 2 x 2)
 MARGE_ORDONNEES = 0.08;                      % 8 % de l'etendue de chaque cote
-LONGUEUR_ECHANTILLON = 40;                   % longueur des traits de la legende (points)
+LONGUEUR_ECHANTILLON = 30;                   % longueur des traits de la legende (points)
 
 % Evenements de reference (scenarios_communs.json, criteres_S10.txt), en s
 EVENEMENTS_REF = struct('S1', zeros(1, 0), 'S2', [0.05, 0.07], 'S3', [0.05, 0.07], ...
@@ -600,8 +611,10 @@ end
 
 function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
     % S10 : gains / gains de ZN, un panneau par gain (P, I, D), toute la
-    % duree. ELM-PID et PINN-PID (courbes), PSO-PID (droite constante),
-    % Ziegler-Nichols (droite y = 1, si demande).
+    % duree. ELM-PID, Fuzzy-PID et PINN-PID (courbes, enregistrement
+    % cmp_K brut, sans filtrage), PSO-PID (droite constante),
+    % Ziegler-Nichols (droite y = 1, si demande). Affiche dans la console le
+    % minimum et le maximum de chaque rapport sur tout l'essai.
     hauteur = 14;
     fig = figure('Name', 'Fig5_S10_gains', 'Color', 'w', 'Units', 'centimeters', 'Visible', F.visible);
     pos = get(fig, 'Position');
@@ -610,7 +623,8 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
         'PaperPosition', [0, 0, F.largeur, hauteur]);
     tl = tiledlayout(fig, 3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
     noms_g = {'P', 'I', 'D'};
-    adapt = {'ELM', 'PINN'};
+    adapt = {'ELM', 'FUZZY', 'PINN'};
+    pos_leg = [1, 3, 4];                           % ordre de la legende : ELM, PSO, Fuzzy, PINN, ZN
     ia = cellfun(@(c) find(strcmp({METH.cle}, c)), adapt);
     ip = find(strcmp({METH.cle}, 'PSO'));
     iz = find(strcmp({METH.cle}, 'ZN'));
@@ -623,7 +637,7 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
         y_tout = [];
         t0 = [];
         t1 = [];
-        hs = gobjects(1, 4);                       % ordre de la legende : ELM, PSO, PINN, ZN
+        hs = gobjects(1, 5);
         courbes = struct('i', {}, 'pos', {}, 't', {}, 'y', {});
         for q = 1:numel(ia)
             i = ia(q);
@@ -633,7 +647,7 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
                 continue;
             end
             tm = r.t * 1e3;
-            courbes(end + 1) = struct('i', i, 'pos', 1 + 2 * (q - 1), 't', tm, 'y', r.K(:, g) / K_ZN(g)); %#ok<AGROW>
+            courbes(end + 1) = struct('i', i, 'pos', pos_leg(q), 't', tm, 'y', r.K(:, g) / K_ZN(g)); %#ok<AGROW>
             t0 = min([t0, tm(1)]);
             t1 = max([t1, tm(end)]);
         end
@@ -645,13 +659,17 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
             courbes(end + 1) = struct('i', ip, 'pos', 2, 't', [t0; t1], 'y', [y; y]); %#ok<AGROW>
         end
         if avec_zn
-            courbes(end + 1) = struct('i', iz, 'pos', 4, 't', [t0; t1], 'y', [1; 1]); %#ok<AGROW>
+            courbes(end + 1) = struct('i', iz, 'pos', 5, 't', [t0; t1], 'y', [1; 1]); %#ok<AGROW>
         end
         % la plus epaisse d'abord, la plus fine par-dessus
         [~, o_] = sort(arrayfun(@(c) METH(c.i).epaisseur, courbes), 'descend');
         for c = courbes(o_)
             hs(c.pos) = tracer(ax, c.t, c.y, METH(c.i));
             y_tout = [y_tout; c.y(:)]; %#ok<AGROW>
+        end
+        for c = courbes
+            fprintf('  S10, %s / %s ZN : %-16s min %8.3f  max %8.3f\n', noms_g{g}, noms_g{g}, METH(c.i).nom, ...
+                    min(c.y), max(c.y));
         end
         xlim(ax, [t0, t1]);
         fixer_ordonnees(ax, y_tout, F.marge);
@@ -665,8 +683,8 @@ function fig = figure_gains(Dc, METH, K_ZN, g_pso, avec_zn, F)
             xlabel(ax, 'temps (ms)', 'FontName', F.police, 'FontSize', F.etiq);
         end
         if g == 1
-            noms4 = {METH(ia(1)).nom, [METH(ip).nom ' (constant)'], METH(ia(2)).nom, ...
-                     [METH(iz).nom ' (r' lettre(233) 'f' lettre(233) 'rence)']};
+            % libelles courts : cinq entrees sur une ligne de 16 cm
+            noms4 = {METH(ia(1)).nom, METH(ip).nom, METH(ia(2)).nom, METH(ia(3)).nom, 'ZN (= 1)'};
             ok = arrayfun(@(h) isgraphics(h), hs);
             h_leg = hs(ok);
             noms_leg = noms4(ok);
@@ -686,8 +704,7 @@ end
 
 function reglages_legende(lg, n, F)
     % Une seule ligne de n entrees, au-dessus de toute la grille, traits
-    % d'echantillon allonges (F.echantillon points) pour montrer
-    % l'epaisseur. Proprietes absentes (Octave) : ignorees.
+    % d'echantillon de F.echantillon points pour montrer l'epaisseur. Proprietes absentes (Octave) : ignorees.
     try
         lg.NumColumns = n;
     catch

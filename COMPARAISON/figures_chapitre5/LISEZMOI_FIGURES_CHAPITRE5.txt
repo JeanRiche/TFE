@@ -44,11 +44,17 @@ Ce qui sort
     Fig5_<code>_A_ZN_ELM.png               Ziegler-Nichols et ELM-PID
     Fig5_<code>_B_ELM_PSO_Fuzzy_PINN.png   ELM-PID, PSO-PID, Fuzzy-PID,
                                            PINN-PID
-    Fig5_S10_gains.png                     gains P, I, D de l'ELM-PID et
-                                           du PINN-PID divises par ceux de
-                                           ZN ; PSO-PID (constant) et
-                                           ZN (= 1) en droites
+    Fig5_S10_gains.png                     gains P, I, D de l'ELM-PID, du
+                                           Fuzzy-PID et du PINN-PID
+                                           divises par ceux de ZN ;
+                                           PSO-PID (constant) et ZN (= 1)
+                                           en droites
   pour <code> = S1, S2, S3, S8a, S10 (11 figures).
+  Gains du Fuzzy-PID : sortie brute du bloc de Zhao (P, I, D du bloc PID
+  commun, I = Kp^2 / (alpha Kd)), recalculee a chaque pas avec e et De,
+  tracee sans filtrage ; la bande verte large est dessinee en premier, les
+  courbes du PINN-PID (noir) et de l'ELM-PID (rouge fin) par-dessus. La
+  console donne le minimum et le maximum de chaque rapport sur l'essai.
   Dans la console : l'IAE de la fenetre de classement recalculee sur les
   donnees tracees, comparee a metriques_banc.csv (voir "Controle").
 
@@ -90,7 +96,9 @@ Styles (identiques dans toutes les figures ; regle du 10 octobre 2026)
   script).
   Legende : une seule ligne au-dessus de la grille, ordre ELM-PID,
   PSO-PID, Fuzzy-PID, PINN-PID, consigne (figure A : ZN, ELM-PID,
-  consigne), traits d'echantillon allonges pour montrer l'epaisseur.
+  consigne ; figure des gains : ELM-PID, PSO-PID, Fuzzy-PID, PINN-PID,
+  ZN (= 1)), traits d'echantillon de 30 points (assez pour voir
+  l'epaisseur ; plus longs, cinq entrees ne tiennent plus sur 16 cm).
   Times New Roman, 16 cm de large, pas de titre dans la figure : la
   legende est dans le memoire. Panneaux reperes (a), (b), ... pour la
   citer.
