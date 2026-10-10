@@ -1,0 +1,44 @@
+Sortie console MATLAB de Figures_Chapitre5.m, transmise par Jean-Riche le
+10 octobre 2026 (extrait : controle des IAE et gains de S10 ; chemins
+abreges ; dossier ELM = ELM_PID_B). Source des donnees : enregistres.
+
+IAE de la fenetre de classement recalculee sur les donnees tracees (mV.s) :
+  essai methode          fenetre            figure       banc  ecart %  tol %  etat
+  S1    Ziegler-Nichols  0 a 30 ms          93.762     93.765    -0.00    1.0  ok
+  S1    ELM-PID          0 a 30 ms          93.710     93.716    -0.01    1.0  ok
+  S1    PSO-PID          0 a 30 ms          87.622     87.625    -0.00    1.0  ok
+  S1    Fuzzy-PID        0 a 30 ms         110.996    110.907    +0.08    1.0  ok
+  S1    PINN-PID         0 a 30 ms          92.052     92.055    -0.00    1.0  ok
+  S2    Ziegler-Nichols  30 ms a fin         2.840      2.841    -0.04    1.0  ok
+  S2    ELM-PID          30 ms a fin         2.404      2.406    -0.10    1.0  ok
+  S2    PSO-PID          30 ms a fin         2.041      2.042    -0.01    1.0  ok
+  S2    Fuzzy-PID        30 ms a fin         2.433      2.433    +0.00    1.0  ok
+  S2    PINN-PID         30 ms a fin         2.437      2.439    -0.09    1.0  ok
+  S3    Ziegler-Nichols  30 ms a fin         8.668      8.665    +0.03    1.0  ok
+  S3    ELM-PID          30 ms a fin         6.408      6.406    +0.03    1.0  ok
+  S3    PSO-PID          30 ms a fin         5.461      5.463    -0.03    1.0  ok
+  S3    Fuzzy-PID        30 ms a fin         7.942      7.941    +0.01    1.0  ok
+  S3    PINN-PID         30 ms a fin         6.403      6.404    -0.01    1.0  ok
+  S8a   Ziegler-Nichols  30 ms a fin        12.116     12.072    +0.36    1.0  ok
+  S8a   ELM-PID          30 ms a fin         2.966      2.965    +0.02    1.0  ok
+  S8a   PSO-PID          30 ms a fin         2.458      2.458    +0.01    1.0  ok
+  S8a   Fuzzy-PID        30 ms a fin         4.125      4.121    +0.09    1.0  ok
+  S8a   PINN-PID         30 ms a fin         2.951      2.952    -0.05    1.0  ok
+  S10   Ziegler-Nichols  100 ms a fin       70.661     70.481    +0.26    1.0  ok
+  S10   ELM-PID          100 ms a fin        8.640      8.632    +0.09    3.0  ok
+  S10   PSO-PID          100 ms a fin        3.978      3.979    -0.02    1.0  ok
+  S10   Fuzzy-PID        100 ms a fin        9.183      9.179    +0.05    1.0  ok
+  S10   PINN-PID         100 ms a fin        6.626      6.626    -0.01    3.0  ok
+
+Rapport cyclique en butee (0.01 ou 0.99), temps total / dernier instant :
+  S1  : ZN 1.791 / 2.077 ms ; ELM 1.791 / 2.077 ; PSO 1.595 / 1.741 ;
+        Fuzzy 2.250 / 2.605 ; PINN 1.773 / 2.018
+  S10 : ZN 4.277 / 53.532 ms ; ELM 5.105 / 175.450 ; PSO 4.641 / 160.205 ;
+        Fuzzy 4.277 / 52.268 ; PINN 4.595 / 160.141
+
+Gains constants du PSO-PID : P = 0.23958, I = 412.06, D = 1.9132e-05
+(2.551 / 1.369 / 2.613 x ZN).
+S10, rapports aux gains de ZN (min / max) :
+  P : ELM 1.000 / 3.373 ; Fuzzy 0.542 / 0.991 ; PINN 1.000 / 1.851
+  I : ELM 1.000 / 2.066 ; Fuzzy 0.131 / 1.814 ; PINN 0.250 / 1.000
+  D : ELM 1.000 / 1.352 ; Fuzzy 1.084 / 1.983 ; PINN 1.000 / 1.492
