@@ -39,7 +39,9 @@
 %   exact ne depend ni d'un pas d'integration ni de la phase de la
 %   porteuse MLI a l'instant de l'echelon. Le document compare ce
 %   releve a celui de la reponse commutee (section 4.3) : La differe de
-%   11,9 us (pres d'un quart de periode de decoupage) et Kp de 7,4 %.
+%   11,9 us (pres d'un quart de periode de decoupage) et Kp de 8,9 %
+%   (tableau 6 ; K0 = 197,2 V pour la reponse commutee. Les 7,4 %
+%   annonces auparavant gardaient K0 = 200 V pour cette reponse).
 %
 % SORTIES
 %   figures_zn/releve_Ziegler_Nichols.png  (affichage a l'ecran)
@@ -229,8 +231,9 @@ text(5.95, 0.63*yinf + 5, sprintf('63 %% de y(\\infty) = %.0f V', 0.63*yinf), ..
 
 xlabel('Temps (ms)');
 ylabel('Tension de sortie V_{out} (V)');
-title({'Releve de Ziegler-Nichols sur la reponse indicielle en boucle ouverte', ...
-       sprintf('(modele moyen, L = 10 mH, C = 47 \\muF, R = 5 \\Omega, echelon E = %g)', E)});
+% Titre retire : la legende de la figure est dans le memoire (figure 3.2).
+% title({'Releve de Ziegler-Nichols sur la reponse indicielle en boucle ouverte', ...
+%        sprintf('(modele moyen, L = 10 mH, C = 47 \\muF, R = 5 \\Omega, echelon E = %g)', E)});
 legend([h1 h2 h3 h4 h5 h6], ...
        {'Reponse indicielle du convertisseur', ...
         'Tangente au point d''inflexion', ...
