@@ -4,29 +4,29 @@ L'ELM-PID part des gains de Ziegler-Nichols et les modifie ensuite en ligne. La 
 
 ### 5.3.1. Démarrage nominal (S1)
 
-Au démarrage, les deux régulateurs donnent la même réponse : dépassement de 13,99 % et établissement dans la bande de ±1 V en 3,40 ms. Sur la fenêtre de 0 à 30 ms, l'IAE vaut 93,72 mV·s pour l'ELM-PID et 93,77 mV·s pour Ziegler-Nichols. L'ordre des deux méthodes est le même dans les cinq versions du circuit, et la règle de la section 5.2.3 les déclare donc séparées, mais l'écart de 0,05 % n'a pas de portée pratique. La figure 5.2 montre les deux tensions de sortie, presque superposées.
+Au démarrage, les deux régulateurs donnent la même réponse : dépassement de 13,99 % et établissement dans la bande de ±1 V en 3,40 ms. Sur la fenêtre de 0 à 30 ms, l'IAE vaut 93,72 mV·s pour l'ELM-PID et 93,77 mV·s pour Ziegler-Nichols. L'ordre des deux méthodes est le même dans les cinq versions du circuit, et la règle de la section 5.2.3 les déclare donc séparées, mais l'écart de 0,05 % n'a pas de portée pratique. La figure 5.1 montre les deux tensions de sortie, presque superposées.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S1_A_ZN_ELM.png]
 
-Figure 5.2 : Tension de sortie dans le scénario S1 (démarrage nominal) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) agrandissement de 0 à 10 ms.
+Figure 5.1 : Tension de sortie dans le scénario S1 (démarrage nominal) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) agrandissement de 0 à 10 ms.
 
-L'explication tient au rapport cyclique (figure 5.3). Pendant la montée en tension, il est en butée pendant 1,791 ms au total, la dernière fois à 2,077 ms, pour les deux régulateurs. Or la boucle d'adaptation, reprise de [Lu et al., 2021], travaille par fenêtres de 0,5 ms et passe par une porte, qui suspend l'adaptation tant que la commande est en butée dans la fenêtre courante ou dans l'une des deux précédentes (section 4.4.2) : en saturation, le rapport cyclique ne dépend plus des gains, et le gradient calculé n'aurait pas de sens. Les gains ne changent donc qu'après la fin de la saturation. Sur S1, ils changent une seule fois, à 4 ms, et passent à 1,47 fois le gain proportionnel, 1,06 fois le gain intégral et 1,15 fois le gain dérivé de Ziegler-Nichols. Ils ne bougent plus ensuite. La montée elle-même s'est faite avec les gains de Ziegler-Nichols, d'où la même réponse.
+L'explication tient au rapport cyclique (figure 5.2). Pendant la montée en tension, il est en butée pendant 1,791 ms au total, la dernière fois à 2,077 ms, pour les deux régulateurs. Or la boucle d'adaptation, reprise de [Lu et al., 2021], travaille par fenêtres de 0,5 ms et passe par une porte, qui suspend l'adaptation tant que la commande est en butée dans la fenêtre courante ou dans l'une des deux précédentes (section 4.4.2) : en saturation, le rapport cyclique ne dépend plus des gains, et le gradient calculé n'aurait pas de sens. Les gains ne changent donc qu'après la fin de la saturation. Sur S1, ils changent une seule fois, à 4 ms, et passent à 1,47 fois le gain proportionnel, 1,06 fois le gain intégral et 1,15 fois le gain dérivé de Ziegler-Nichols. Ils ne bougent plus ensuite. La montée elle-même s'est faite avec les gains de Ziegler-Nichols, d'où la même réponse.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S1_A_d_ZN_ELM.png]
 
-Figure 5.3 : Rapport cyclique dans le scénario S1 : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) agrandissement de 0 à 10 ms.
+Figure 5.2 : Rapport cyclique dans le scénario S1 : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) agrandissement de 0 à 10 ms.
 
 ### 5.3.2. Perturbations brèves (S2, S3)
 
-Sur les perturbations brèves, l'ELM-PID fait mieux que Ziegler-Nichols. Sur S2, son IAE vaut 2,41 mV·s contre 2,84 mV·s, soit 15 % de moins ; sur S3, 6,41 mV·s contre 8,67 mV·s, soit 26 % de moins. Les deux paires sont séparées : l'IAE de Ziegler-Nichols dépasse celle de l'ELM-PID de 17,8 à 18,5 % sur S2 et de 34,8 à 35,7 % sur S3 selon la version du circuit. Les figures 5.4 et 5.5 donnent les tensions de sortie.
+Sur les perturbations brèves, l'ELM-PID fait mieux que Ziegler-Nichols. Sur S2, son IAE vaut 2,41 mV·s contre 2,84 mV·s, soit 15 % de moins ; sur S3, 6,41 mV·s contre 8,67 mV·s, soit 26 % de moins. Les deux paires sont séparées : l'IAE de Ziegler-Nichols dépasse celle de l'ELM-PID de 17,8 à 18,5 % sur S2 et de 34,8 à 35,7 % sur S3 selon la version du circuit. Les figures 5.3 et 5.4 donnent les tensions de sortie.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S2_A_ZN_ELM.png]
 
-Figure 5.4 : Tension de sortie dans le scénario S2 (perturbation F1 sur la consigne) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) agrandissement autour de 50 ms ; (c) agrandissement autour de 70 ms.
+Figure 5.3 : Tension de sortie dans le scénario S2 (perturbation F1 sur la consigne) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) agrandissement autour de 50 ms ; (c) agrandissement autour de 70 ms.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S3_A_ZN_ELM.png]
 
-Figure 5.5 : Tension de sortie dans le scénario S3 (perturbation de charge F2) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) agrandissement autour de 50 ms ; (c) agrandissement autour de 70 ms.
+Figure 5.4 : Tension de sortie dans le scénario S3 (perturbation de charge F2) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) agrandissement autour de 50 ms ; (c) agrandissement autour de 70 ms.
 
 L'écart maximal, lui, change à peine : 2,01 V pour les deux régulateurs sur S2, 5,66 V pour l'ELM-PID contre 5,73 V pour Ziegler-Nichols sur S3. La différence porte sur le retour. Sur S3, l'ELM-PID revient dans la bande de ±1 V en 0,87 ms aux deux échelons de charge, contre 1,05 et 1,49 ms pour Ziegler-Nichols.
 
@@ -34,17 +34,17 @@ Les gains ne changent pas pendant les 20 ms de perturbation. À chaque événeme
 
 ### 5.3.3. Changement du point de fonctionnement (S8a, S10)
 
-À 25 Ω, l'amortissement apporté par la charge tombe de 1,46 à 0,29 (section 5.2.1). Les gains de Ziegler-Nichols, calculés au point nominal, ne conviennent plus. Sur S8a, l'IAE de Ziegler-Nichols vaut 12,07 mV·s contre 2,96 mV·s pour l'ELM-PID, soit 75 % de moins pour ce dernier. Juste avant le retour de la tension d'entrée à 200 V (5 ms avant 70 ms), l'ondulation de la tension de sortie atteint 252 mV crête à crête avec Ziegler-Nichols, contre 23 mV avec l'ELM-PID (figure 5.6). Les deux régulateurs ramènent cependant la tension dans la bande de ±1 V après chaque événement.
+À 25 Ω, l'amortissement apporté par la charge tombe de 1,46 à 0,29 (section 3.3). Les gains de Ziegler-Nichols, calculés au point nominal, ne conviennent plus. Sur S8a, l'IAE de Ziegler-Nichols vaut 12,07 mV·s contre 2,96 mV·s pour l'ELM-PID, soit 75 % de moins pour ce dernier. Juste avant le retour de la tension d'entrée à 200 V (5 ms avant 70 ms), l'ondulation de la tension de sortie atteint 252 mV crête à crête avec Ziegler-Nichols, contre 23 mV avec l'ELM-PID (figure 5.5). Les deux régulateurs ramènent cependant la tension dans la bande de ±1 V après chaque événement.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S8a_A_ZN_ELM.png]
 
-Figure 5.6 : Tension de sortie dans le scénario S8a (charge de 25 Ω, variations de *V*in) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 70, 100 et 120 ms.
+Figure 5.5 : Tension de sortie dans le scénario S8a (charge de 25 Ω, variations de *V*in) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 70, 100 et 120 ms.
 
-S10 accentue cet écart (figure 5.7). Au nouveau point de fonctionnement (160 V, 25 Ω), Ziegler-Nichols oscille vers 1,4 kHz et la tension ne revient pas dans la bande de ±1 V avant l'événement suivant pour quatre des six échelons de charge. Son IAE de 100 ms à la fin vaut 70,48 mV·s, et son erreur moyenne sur les 10 dernières millisecondes est encore de 9,23 mV. L'ELM-PID obtient 8,63 mV·s, soit 88 % de moins, et revient dans la bande après chaque échelon, en 0,16 à 1,22 ms.
+S10 accentue cet écart (figure 5.6). Au nouveau point de fonctionnement (160 V, 25 Ω), Ziegler-Nichols oscille vers 1,4 kHz et la tension ne revient pas dans la bande de ±1 V avant l'événement suivant pour quatre des six échelons de charge. Son IAE de 100 ms à la fin vaut 70,48 mV·s, et son erreur moyenne sur les 10 dernières millisecondes est encore de 9,23 mV. L'ELM-PID obtient 8,63 mV·s, soit 88 % de moins, et revient dans la bande après chaque échelon, en 0,16 à 1,22 ms.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S10_A_ZN_ELM.png]
 
-Figure 5.7 : Tension de sortie dans le scénario S10 (changement durable du point de fonctionnement) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 100, 115 et 130 ms. Les événements à 145, 160 et 175 ms ne figurent que dans le panneau (a).
+Figure 5.6 : Tension de sortie dans le scénario S10 (changement durable du point de fonctionnement) : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 100, 115 et 130 ms. Les événements à 145, 160 et 175 ms ne figurent que dans le panneau (a).
 
 Une part de cet écart ne doit rien à l'adaptation au nouveau point. S10 a été conçu pour la mesurer : la même simulation est refaite en figeant les gains de l'ELM-PID à 50 ms, juste avant le changement de point de fonctionnement. Le tableau 5.3 compare les deux versions.
 
@@ -60,17 +60,17 @@ Tableau 5.3 : ELM-PID adaptatif et ELM-PID à gains figés à 50 ms dans le scé
 
 Figés à 50 ms, les gains de l'ELM-PID donnent déjà 14,60 mV·s, contre 70,48 mV·s pour Ziegler-Nichols : la plus grande part de l'écart vient du réglage trouvé à la fin du démarrage. L'adaptation poursuivie après 50 ms réduit encore l'IAE de 41 %, de 14,60 à 8,63 mV·s. Elle n'agit pas pendant le réajustement de 50 à 100 ms (129,89 contre 129,97 mV·s), dominé par la surtension qui suit la chute du courant de charge, mais ensuite, d'un échelon de charge à l'autre. Sur S8a, une analyse faite après le calcul, et non prévue, donne un résultat de même sens : un PID aux gains fixes de 1,47, 1,06 et 1,15 fois ceux de Ziegler-Nichols obtient 3,87 mV·s, contre 2,96 mV·s pour l'ELM-PID adaptatif.
 
-La figure 5.8 montre comment les gains évoluent. Ceux de l'ELM-PID passent de 1,47, 1,06 et 1,15 fois ceux de Ziegler-Nichols à 50 ms, à 2,48, 1,83 et 1,22 fois à 100 ms, puis à 3,37, 2,07 et 1,35 fois en fin d'essai. L'ELM-PID monte surtout les gains proportionnel et intégral, et presque pas le gain dérivé. La figure donne aussi les gains des autres méthodes, discutés à la section 5.4.
+La figure 5.7 montre comment les gains évoluent. Ceux de l'ELM-PID passent de 1,47, 1,06 et 1,15 fois ceux de Ziegler-Nichols à 50 ms, à 2,48, 1,83 et 1,22 fois à 100 ms, puis à 3,37, 2,07 et 1,35 fois en fin d'essai. L'ELM-PID monte surtout les gains proportionnel et intégral, et presque pas le gain dérivé. La figure donne aussi les gains des autres méthodes, discutés à la section 5.4.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S10_gains.png]
 
-Figure 5.8 : Gains *P* (a), *I* (b) et *D* (c) rapportés à ceux de Ziegler-Nichols dans le scénario S10, pour les cinq méthodes.
+Figure 5.7 : Gains *P* (a), *I* (b) et *D* (c) rapportés à ceux de Ziegler-Nichols dans le scénario S10, pour les cinq méthodes.
 
-L'adaptation a un coût sur la commande (figure 5.9). Sur la fenêtre de classement de S10, l'ELM-PID est la méthode qui passe le plus de temps avec le rapport cyclique en butée (0,6 % des instants), et la seule qui y touche encore à 175 ms (dernier instant à 175,45 ms, contre environ 160 ms pour le PSO-PID et le PINN-PID, et 53,5 et 52,3 ms pour Ziegler-Nichols et le Fuzzy-PID). Sa variation moyenne du rapport cyclique d'une période à l'autre (0,0041) reste en revanche inférieure à celle du PSO-PID (0,0062). Son résultat est enfin sensible à de très petits écarts du circuit : avec *L* augmentée de 0,1 %, son IAE sur S10 passe de 8,63 à 7,88 mV·s, alors que celle des autres méthodes bouge de moins de 2 %. Cette sensibilité ne change pas le verdict face à Ziegler-Nichols, dont l'IAE reste de 709 à 802 % plus élevée selon la version du circuit.
+L'adaptation a un coût sur la commande (figure 5.8). Sur la fenêtre de classement de S10, l'ELM-PID est la méthode qui passe le plus de temps avec le rapport cyclique en butée (0,6 % des instants), et la seule qui y touche encore à 175 ms (dernier instant à 175,45 ms, contre environ 160 ms pour le PSO-PID et le PINN-PID, et 53,5 et 52,3 ms pour Ziegler-Nichols et le Fuzzy-PID). Sa variation moyenne du rapport cyclique d'une période à l'autre (0,0041) reste en revanche inférieure à celle du PSO-PID (0,0062). Son résultat est enfin sensible à de très petits écarts du circuit : avec *L* augmentée de 0,1 %, son IAE sur S10 passe de 8,63 à 7,88 mV·s, alors que celle des autres méthodes bouge de moins de 2 %. Cette sensibilité ne change pas le verdict face à Ziegler-Nichols, dont l'IAE reste de 709 à 802 % plus élevée selon la version du circuit.
 
 [FIGURE À INSÉRER : COMPARAISON/figures_chapitre5/Fig5_S10_A_d_ZN_ELM.png]
 
-Figure 5.9 : Rapport cyclique dans le scénario S10 : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 100, 115 et 130 ms.
+Figure 5.8 : Rapport cyclique dans le scénario S10 : PID de Ziegler-Nichols et ELM-PID. (a) Essai complet ; (b) à (e) agrandissements autour de 50, 100, 115 et 130 ms.
 
 ### 5.3.4. Synthèse
 
@@ -133,4 +133,4 @@ La section 5.4 compare l'ELM-PID aux trois méthodes avancées, dont le PSO-PID,
 
 ### Repères
 
-- Huit figures (5.2 à 5.9) à insérer depuis `COMPARAISON/figures_chapitre5/`. Lettres des panneaux d'après la règle de `Figures_Chapitre5.m` (S1 : un agrandissement ; S2 et S3 : deux ; S8a et S10 : quatre, et pour S10 les événements à 145, 160 et 175 ms seulement en (a)). La figure des gains a trois panneaux titrés « (a) gain P », « (b) gain I », « (c) gain D » (vérifié sur le PNG par le coordinateur).
+- Huit figures (5.1 à 5.8) à insérer depuis `COMPARAISON/figures_chapitre5/`. Lettres des panneaux d'après la règle de `Figures_Chapitre5.m` (S1 : un agrandissement ; S2 et S3 : deux ; S8a et S10 : quatre, et pour S10 les événements à 145, 160 et 175 ms seulement en (a)). La figure des gains a trois panneaux titrés « (a) gain P », « (b) gain I », « (c) gain D » (vérifié sur le PNG par le coordinateur).

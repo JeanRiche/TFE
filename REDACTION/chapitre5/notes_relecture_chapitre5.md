@@ -11,7 +11,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 | *L* = 10 mH, *C* = 47 µF, *f*s = 22 kHz, *T*c = 1/220 000 s, *v*ref = 100 V, *d* dans [0,01 ; 0,99], *R*on = 0,1 Ω, *V*f = 0,8 V, *h* = 1/(22 000 × 1 200) s = 37,88 ns | `ELM_PID/banc_commun.py`, étape 0 (constantes) et en-tête |
 | *R* = 5 Ω, *V*in = 200 V, durée 0,2 s | `ELM_PID/scenarios_communs.json` (`R0`, `Vin_nominale`, `duree`) ; `ETAT_DE_REPRISE.md`, ligne 5 |
 | *T*c = période du régulateur, dix échantillons par période de découpage ; *v*ref = consigne de sortie (« consigne = 100 + dvref ») | `banc_commun.py`, en-tête ; `Determination_gains_PID_Ziegler_Nichols.docx`, tableau 1 et section 6 |
-| Forme (5.1), Euler explicite, intégration conditionnelle (« clamping » dans le code), *N* = 64 122,9 rad/s | `banc_commun.py` (classe `PIDClassique`, `PID_N`) ; docx ZN, sections 7.2, 7.3 et tableau 12 |
+| Bloc PID commun : renvoi à l'équation (3.4) et à la section 3.4.1 (forme parallèle, Euler explicite, intégration conditionnelle, « clamping » dans le code), *N* = 64 122,9 rad/s | `banc_commun.py` (classe `PIDClassique`, `PID_N`) ; docx ZN, sections 7.2, 7.3 et tableau 12 ; chapitre 3, section 3.4 |
 | *P* = 0,093910, *I* = 301,089, *D* = 7,3227·10⁻⁶ | `banc_commun.py` ; `ELM_PID/criteres_elm_pid.txt`, ligne 37 ; docx ZN, tableau 12 |
 | Méthode de la réponse indicielle (table 1 de Mudry) | docx ZN, sections 3.3 et 5 |
 | Amortissement 1,46 à 5 Ω ; 0,29 à 25 Ω | docx ZN, tableau 2 (1,459) ; `COMPARAISON/S10/criteres_S10.txt`, « Pourquoi ce scénario » (1,46 et 0,29) |
@@ -47,10 +47,10 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 
 ### Repères à placer et points à trancher
 
-- [FIGURE À INSÉRER] figure 5.1, à exporter depuis `ELM_PID/Buck_Commun.slx`.
+- Déplacements du 11 octobre 2026 vers le chapitre 3 : l'ancienne figure 5.1 (modèle Simulink commun) devient la figure 3.3 ; l'ancienne équation (5.1) du bloc PID et sa description deviennent l'équation (3.4) et la section 3.4.1 ; la validation banc/Simulink sur les onze essais passe en 3.5.3 (5.2.1 ne garde que le contrôle des cinq scénarios, 0,10 % et 0,36 %). Figures renumérotées 5.2 → 5.1 … 5.16 → 5.15 ; équations IAE et ITAE renumérotées (5.1) et (5.2).
 - [URL DU DÉPÔT À INSÉRER] adresse du dépôt GitHub (annexe).
 - [RÉF. À VÉRIFIER : Fleming et Wallace, 1986].
-- Renvois de chapitre provisoires : modèle du convertisseur, calcul des gains de Ziegler-Nichols et validation du banc placés au « chapitre 3 », ELM-PID au « chapitre 4 ». L'endroit où sont décrites les mises en œuvre du PSO-PID, du Fuzzy-PID et du PINN-PID n'est pas fixé.
+- Renvois au chapitre 3 précisés le 11 octobre 2026 : dimensionnement en 3.2, amortissement en 3.3, bloc PID (3.4) en 3.4.1, gains de Ziegler-Nichols en 3.4.2, échantillonnage et MLI en 3.5.1, validation du banc en 3.5.3. ELM-PID au chapitre 4 ; mises en œuvre du PSO-PID, du Fuzzy-PID et du PINN-PID en 4.6.
 - La première consigne demandait « IAE à 0,13 % près » : ce chiffre est l'écart sur les **gains** de l'ELM-PID (S1 à S6), pas sur l'IAE. Le texte donne l'écart d'IAE réel (au plus 0,3 %, S7a excepté).
 - Le dossier des références attribue les gains de Ziegler-Nichols à la méthode du point critique : c'est faux, le docx ZN écarte cette méthode et retient la réponse indicielle. Il dit aussi que le Buck est un processus oscillant : faux au point nominal (amortissement 1,46), vrai à 25 Ω (0,29). Le texte suit le docx.
 - S10 n'a pas encore été simulé sous Simulink, et les modèles de comparaison des figures (`Figures_Chapitre5.m`) n'ont pas tous été lancés : la phrase « les figures sont tracées à partir des simulations Simulink » suppose ce travail fait.
@@ -61,7 +61,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 - Proposition du TFE (`proposition_corrigee.md`, plan du chapitre 5, rédigé avant tout résultat ; voir aussi `plan_depart_contre_realise.md` §1.7) : « 5.2 Étude en régime normal (sans perturbation) : Réponse temporelle, temps de montée, overshoot, régulation en régime établi. » ; « 5.3 Étude avec perturbation sur la commande : Injection de bruit ou d'un signal sinusoïdal sur la consigne, analyse de la robustesse. » ; « 5.4 Étude avec perturbation sur la charge : Simulation de variations rapides de résistance de charge, test de stabilité. » La proposition place elle-même la perturbation « sur la consigne », ce qui rejoint S2. Elle ne cite pas Lu et al. dans ce plan : le lien avec F1 et F2 vient des essais, pas du texte de la proposition.
 - 5.1 annonce 5.3 à 5.6 selon le plan approuvé ; S10 est traité dans 5.3 et 5.4.
 - Milliers : remplacer les espaces par des espaces fines insécables dans Word (guide §8).
-- Vocabulaire des essais (décision de l'auteur, 10 octobre 2026) : « essais de développement » pour les onze essais S1 à S9, « essais de réglage » pour E1 à E4. Remplacements : 5.2.1, « distincts des essais de jugement » devient « distincts des essais de développement » ; 5.2.2, « onze essais du banc commun » devient « onze essais de développement » ; 5.4.1, « distincts des essais de jugement » devient « distincts des essais de développement ». Le chapitre 3 doit définir les deux catégories.
+- Vocabulaire des essais (décision de l'auteur, 10 octobre 2026) : « essais de développement » pour les onze essais S1 à S9, « essais de réglage » pour E1 à E4. Remplacements : 5.2.1, « distincts des essais de jugement » devient « distincts des essais de développement » ; 5.2.2, « onze essais du banc commun » devient « onze essais de développement » ; 5.4.1, « distincts des essais de jugement » devient « distincts des essais de développement ». Les deux catégories sont définies au chapitre 3, section 3.6.
 
 ## Source : `chapitre5_section_5_3.md`
 
@@ -102,7 +102,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 
 ### Repères
 
-- Huit figures (5.2 à 5.9) à insérer depuis `COMPARAISON/figures_chapitre5/`. Lettres des panneaux d'après la règle de `Figures_Chapitre5.m` (S1 : un agrandissement ; S2 et S3 : deux ; S8a et S10 : quatre, et pour S10 les événements à 145, 160 et 175 ms seulement en (a)). La figure des gains a trois panneaux titrés « (a) gain P », « (b) gain I », « (c) gain D » (vérifié sur le PNG par le coordinateur).
+- Huit figures (5.1 à 5.8) à insérer depuis `COMPARAISON/figures_chapitre5/`. Lettres des panneaux d'après la règle de `Figures_Chapitre5.m` (S1 : un agrandissement ; S2 et S3 : deux ; S8a et S10 : quatre, et pour S10 les événements à 145, 160 et 175 ms seulement en (a)). La figure des gains a trois panneaux titrés « (a) gain P », « (b) gain I », « (c) gain D » (vérifié sur le PNG par le coordinateur).
 
 ## Source : `chapitre5_section_5_4.md`
 
@@ -136,7 +136,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 ### Corrections et précisions par rapport à la commande
 
 - S3, « PSO e max 5,52 V » : 5,52 V est le premier pic, identique pour les cinq méthodes. La différence porte sur le pic de 70 ms (5,43 contre 5,66 V). Le texte le dit ainsi.
-- S1, Fuzzy-PID « qui oscille entre les butées jusqu'à 2,6 ms » : les fichiers donnent seulement le temps total en butée (2,250 ms) et le dernier instant en butée (2,605 ms), pas une oscillation entre les deux butées. Le texte s'en tient à ces chiffres ; Jean-Riche peut ajouter « entre les deux butées » s'il le voit sur la figure 5.11.
+- S1, Fuzzy-PID « qui oscille entre les butées jusqu'à 2,6 ms » : les fichiers donnent seulement le temps total en butée (2,250 ms) et le dernier instant en butée (2,605 ms), pas une oscillation entre les deux butées. Le texte s'en tient à ces chiffres ; Jean-Riche peut ajouter « entre les deux butées » s'il le voit sur la figure 5.10.
 - Essais de réglage du PSO-PID : quatre familles (charge, *V*in, consigne, bruit et quantification), pas seulement charge et *V*in. Ce qui couvre le point de S10, c'est la contrainte de marge à 25 Ω et 160 V, pas un essai de réglage.
 - « L'ELM-PID part de ZN sans réglage hors ligne » : c'est vrai pour les gains, mais son réseau est appris hors ligne (moindres carrés régularisés, C = 0,1, puis mise à jour OS-ELM en ligne ; `ELM_PID/entrainement_elm.py`, lignes 284-285). Il ne s'agit pas d'une pseudo-inverse de Moore-Penrose simple. Le texte le précise.
 - Le temps Simulink d'environ 1 ms par période pour le PINN-PID (`criteres_pinn_pid.txt` §9) n'est pas utilisé : le PSO-PID, à gains fixes, prend environ 2 ms par période sous Simulink (`criteres_pso_pid.txt` §8). Ce temps est donc dominé par le circuit et l'exécution interprétée, pas par le régulateur (`definitions_metriques.txt` §6b).
@@ -147,7 +147,7 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 
 - Numérotation des tableaux : la commande donnait 5.7 au tableau de S10 et 5.6 au coût de calcul ; le tableau de S10 venant en premier dans le texte, il devient 5.6 et le coût 5.7.
 
-- Figures 5.10 à 5.16 à insérer depuis `COMPARAISON/figures_chapitre5/`. Lettres des panneaux selon la règle de `Figures_Chapitre5.m` (même mise en page pour les figures « B » que pour les figures « A »).
+- Figures 5.9 à 5.15 à insérer depuis `COMPARAISON/figures_chapitre5/`. Lettres des panneaux selon la règle de `Figures_Chapitre5.m` (même mise en page pour les figures « B » que pour les figures « A »).
 
 ## Source : `chapitre5_sections_5_5_5_6.md`
 
@@ -185,12 +185,12 @@ Notes retirées du fichier Word du chapitre 5, rassemblées dans l'ordre des fic
 
 ### Repères
 
-- Aucune figure. Tableaux 5.8 et 5.9. Aucune équation dans 5.5 depuis le 10 octobre : l'ancienne (5.4) est remplacée par un renvoi à la loi (4.7). Le chapitre 5 garde les équations (5.1) à (5.3).
+- Aucune figure. Tableaux 5.8 et 5.9. Aucune équation dans 5.5 depuis le 10 octobre : l'ancienne (5.4) est remplacée par un renvoi à la loi (4.7). Le chapitre 5 garde deux équations, (5.1) pour l'IAE et (5.2) pour l'ITAE, depuis que l'équation du bloc PID est passée au chapitre 3 (3.4) le 11 octobre 2026.
 
 ### Harmonisation du 10 octobre 2026 (cohérence chapitres 5 et 6)
 
 - Notations : le dépassement n'a plus de symbole (*D* reste le gain dérivé) ; l'indice global de mise au point n'est plus noté J (5.2.3, 5.5.2), pour ne pas le confondre avec le jacobien *J* de (4.5). Dans le dépôt, il s'appelle toujours J.
-- Anti-emballement : « intégration conditionnelle (blocage de l'intégrateur en butée) » en 5.2.1, puis « intégration conditionnelle », comme au chapitre 6. Le code (`banc_commun.py`) parle de « clamping ».
+- Anti-emballement : « intégration conditionnelle » en 5.2.1 (définie en 3.4.1 depuis le 11 octobre 2026), puis « intégration conditionnelle », comme au chapitre 6. Le code (`banc_commun.py`) parle de « clamping ».
 - PINN-PID : « boîte de gains » partout (5.4.1 disait « ensemble de gains admissibles ») ; « ensemble admissible » est réservé à l'ELM-PID.
 - « Porte » définie à sa première occurrence (5.3.1).
 - 5.5.1 : « facteur 2,6 et 28 par rapport au PSO-PID » remplacé par « 2,5 fois et 27 fois celui du PSO-PID » (3,59/1,43 = 2,51 ; 38,93/1,43 = 27,2 ; 2,6 et 28 étaient les rapports à Ziegler-Nichols, 1,39 µs).

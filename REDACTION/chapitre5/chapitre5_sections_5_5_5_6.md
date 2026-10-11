@@ -98,12 +98,12 @@ Plusieurs questions restent ouvertes : la tenue des méthodes face aux toléranc
 
 ### Repères
 
-- Aucune figure. Tableaux 5.8 et 5.9. Aucune équation dans 5.5 depuis le 10 octobre : l'ancienne (5.4) est remplacée par un renvoi à la loi (4.7). Le chapitre 5 garde les équations (5.1) à (5.3).
+- Aucune figure. Tableaux 5.8 et 5.9. Aucune équation dans 5.5 depuis le 10 octobre : l'ancienne (5.4) est remplacée par un renvoi à la loi (4.7). Le chapitre 5 garde deux équations, (5.1) pour l'IAE et (5.2) pour l'ITAE, depuis que l'équation du bloc PID est passée au chapitre 3 (3.4) le 11 octobre 2026.
 
 ### Harmonisation du 10 octobre 2026 (cohérence chapitres 5 et 6)
 
 - Notations : le dépassement n'a plus de symbole (*D* reste le gain dérivé) ; l'indice global de mise au point n'est plus noté J (5.2.3, 5.5.2), pour ne pas le confondre avec le jacobien *J* de (4.5). Dans le dépôt, il s'appelle toujours J.
-- Anti-emballement : « intégration conditionnelle (blocage de l'intégrateur en butée) » en 5.2.1, puis « intégration conditionnelle », comme au chapitre 6. Le code (`banc_commun.py`) parle de « clamping ».
+- Anti-emballement : « intégration conditionnelle » en 5.2.1 (définie en 3.4.1 depuis le 11 octobre 2026), puis « intégration conditionnelle », comme au chapitre 6. Le code (`banc_commun.py`) parle de « clamping ».
 - PINN-PID : « boîte de gains » partout (5.4.1 disait « ensemble de gains admissibles ») ; « ensemble admissible » est réservé à l'ELM-PID.
 - « Porte » définie à sa première occurrence (5.3.1).
 - 5.5.1 : « facteur 2,6 et 28 par rapport au PSO-PID » remplacé par « 2,5 fois et 27 fois celui du PSO-PID » (3,59/1,43 = 2,51 ; 38,93/1,43 = 27,2 ; 2,6 et 28 étaient les rapports à Ziegler-Nichols, 1,39 µs).

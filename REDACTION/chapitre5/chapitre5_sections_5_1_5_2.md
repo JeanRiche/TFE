@@ -12,7 +12,7 @@ La section 5.2 décrit les conditions de simulation, les scénarios et les crit�
 
 ### 5.2.1. Convertisseur et base commune
 
-Les cinq méthodes sont simulées sur le même convertisseur, dimensionné au chapitre 3. Le tableau 5.1 en rappelle les paramètres.
+Les cinq méthodes sont simulées sur le même convertisseur, dimensionné à la section 3.2. Le tableau 5.1 en rappelle les paramètres.
 
 Tableau 5.1 : Paramètres du convertisseur et de la simulation.
 
@@ -30,23 +30,15 @@ Tableau 5.1 : Paramètres du convertisseur et de la simulation.
 | Pas de calcul du circuit | *h* | 1/(22 000 × 1 200) s (37,88 ns) |
 | Durée d'un essai | | 0,2 s |
 
-Le régulateur est échantillonné dix fois par période de découpage ; à chaque instant *k*·*T*c, il fixe le rapport cyclique appliqué pendant la période suivante. Le circuit est simulé commuté, et non par son modèle moyen.
+Le régulateur est échantillonné dix fois par période de découpage ; le rapport cyclique calculé à l'instant *k*·*T*c est maintenu pendant la période *T*c suivante (section 3.5.1). Le circuit est simulé commuté, et non par son modèle moyen.
 
-Les cinq méthodes utilisent le même bloc PID discret, de forme parallèle, dont la sortie avant saturation s'écrit :
+Les cinq méthodes utilisent le bloc PID discret commun défini par l'équation (3.4) : forme parallèle, terme dérivé filtré (*N* = 64 122,9 rad/s), sortie bornée à [0,01 ; 0,99] et anti-emballement par intégration conditionnelle (section 3.4.1).
 
-*u*(*z*) = [ *P* + *I* *T*c/(*z* − 1) + *D* *N* (*z* − 1)/(*z* − 1 + *N* *T*c) ] *e*(*z*),        (5.1)
+Les gains initiaux sont ceux de Ziegler-Nichols : *P* = 0,093910, *I* = 301,089 et *D* = 7,3227·10⁻⁶. Ils ont été calculés à la section 3.4.2 par la méthode de la réponse indicielle [Ziegler et Nichols, 1942], dans la présentation qu'en donne [Mudry, 2006]. Ce réglage sert ici de référence commune et de point de départ, pas de réglage optimal. Les règles de Ziegler-Nichols ne visent que des processus non oscillants [Mudry, 2006, p. 1]. Au point nominal, le convertisseur en fait partie (amortissement de 1,46 à 5 Ω), mais plus à charge légère : l'amortissement tombe à 0,29 à 25 Ω (section 3.3). La même note signale en outre que ces gains sont en général trop élevés et donnent un dépassement supérieur à 20 % [Mudry, 2006, p. 10].
 
-où *e* est l'erreur entre la consigne et la tension mesurée, *P*, *I* et *D* sont les gains proportionnel, intégral et dérivé, et *N* = 64 122,9 rad/s est le coefficient du filtre du terme dérivé. L'intégrateur et le filtre sont discrétisés par la méthode d'Euler explicite. La sortie est bornée à [0,01 ; 0,99]. Quand elle est en butée et que l'erreur pousse dans le même sens, l'intégration s'arrête : c'est un anti-emballement par intégration conditionnelle (blocage de l'intégrateur en butée) [Åström et Hägglund, 2006].
+Seule la manière de fixer les gains *P*, *I* et *D* du bloc (3.4) distingue les cinq méthodes. Le PID de Ziegler-Nichols garde ses gains fixes. Le PSO-PID garde aussi des gains fixes, réglés hors ligne par essaim particulaire [Gaing, 2004] sur des essais de réglage distincts des essais de développement. Le Fuzzy-PID modifie ses gains en ligne par l'ordonnancement flou de [Zhao et al., 1993]. L'ELM-PID les adapte à partir d'un réseau ELM mis à jour en ligne [Lu et al., 2021 ; Liang et al., 2006] (chapitre 4). Le PINN-PID les adapte en minimisant le coût de [Ito et Wasa, 2025]. Le modèle du convertisseur, les bornes, l'intégration conditionnelle et les conditions de simulation sont identiques pour tous.
 
-Les gains initiaux sont ceux de Ziegler-Nichols : *P* = 0,093910, *I* = 301,089 et *D* = 7,3227·10⁻⁶. Ils ont été calculés au chapitre 3 par la méthode de la réponse indicielle [Ziegler et Nichols, 1942], dans la présentation qu'en donne [Mudry, 2006]. Ce réglage sert ici de référence commune et de point de départ, pas de réglage optimal. Les règles de Ziegler-Nichols ne visent que des processus non oscillants [Mudry, 2006, p. 1]. Au point nominal, le convertisseur en fait partie (amortissement de 1,46 à 5 Ω), mais plus à charge légère : l'amortissement tombe à 0,29 à 25 Ω. La même note signale en outre que ces gains sont en général trop élevés et donnent un dépassement supérieur à 20 % [Mudry, 2006, p. 10].
-
-Seule la manière de fixer les gains *P*, *I* et *D* du bloc (5.1) distingue les cinq méthodes. Le PID de Ziegler-Nichols garde ses gains fixes. Le PSO-PID garde aussi des gains fixes, réglés hors ligne par essaim particulaire [Gaing, 2004] sur des essais de réglage distincts des essais de développement. Le Fuzzy-PID modifie ses gains en ligne par l'ordonnancement flou de [Zhao et al., 1993]. L'ELM-PID les adapte à partir d'un réseau ELM mis à jour en ligne [Lu et al., 2021 ; Liang et al., 2006] (chapitre 4). Le PINN-PID les adapte en minimisant le coût de [Ito et Wasa, 2025]. Le modèle du convertisseur, les bornes, l'intégration conditionnelle et les conditions de simulation sont identiques pour tous.
-
-Les résultats chiffrés de ce chapitre viennent d'un banc de simulation écrit en Python, qui résout le même circuit commuté que le modèle Simulink commun. Ce banc a été validé contre Simulink sur les onze essais de développement (chapitre 3) : pour le PSO-PID, le Fuzzy-PID, l'ELM-PID et le PINN-PID, l'écart sur l'IAE est au plus de 0,3 % sur les onze essais, S7a excepté ; sur cet essai à mesure quantifiée, un arrondi du convertisseur analogique-numérique suffit à décaler les décisions du régulateur. Sur les cinq scénarios de ce chapitre, le script qui trace les figures compare les IAE des modèles Simulink à celles du banc, avec une tolérance de 1 % (3 % sur S10 pour l'ELM-PID et le PINN-PID) ; l'écart le plus grand est de 0,10 % pour les quatre méthodes (ELM-PID sur S2) et de 0,36 % pour Ziegler-Nichols (S8a). Les figures sont tracées à partir des simulations Simulink. La figure 5.1 donne le schéma de simulation commun.
-
-[FIGURE À INSÉRER : schéma du modèle de simulation commun (source de tension commandée, MOSFET, diode, filtre LC, charge, générateur MLI, bloc PID discret et bloc d'adaptation des gains) — source : modèle `ELM_PID/Buck_Commun.slx`, à exporter proprement depuis Simulink ou à redessiner (pas de capture d'écran à fond gris)]
-
-Figure 5.1 : Schéma de simulation commun aux cinq méthodes.
+Les résultats chiffrés de ce chapitre viennent du banc de simulation Python, validé contre le modèle Simulink commun (figure 3.3) sur les onze essais de développement (section 3.5.3). Sur les cinq scénarios de ce chapitre, le script qui trace les figures compare en outre les IAE des modèles Simulink à celles du banc, avec une tolérance de 1 % (3 % sur S10 pour l'ELM-PID et le PINN-PID). L'écart le plus grand est de 0,10 % pour les quatre méthodes (ELM-PID sur S2) et de 0,36 % pour Ziegler-Nichols (S8a). Les figures sont tracées à partir des simulations Simulink.
 
 ### 5.2.2. Scénarios retenus
 
@@ -72,7 +64,7 @@ S1, S2 et S3 correspondent aux trois cas prévus dans la proposition du travail,
 
 Toutes les grandeurs sont calculées aux instants *k*·*T*c sur l'erreur *e*(*k*) = *v*ref(*k*) − *v*o(*k*), où *v*o est la tension de sortie vraie et non la mesure. La grandeur de classement est l'intégrale de la valeur absolue de l'erreur (IAE) [Åström et Hägglund, 1995], calculée sur la fenêtre de classement du tableau 5.2 :
 
-IAE = Σ |*e*(*k*)| *T*c,  pour *k*a ≤ *k* < *k*b,        (5.2)
+IAE = Σ |*e*(*k*)| *T*c,  pour *k*a ≤ *k* < *k*b,        (5.1)
 
 où *k*a et *k*b sont les instants de début et de fin de la fenêtre. Elle s'exprime en mV·s. Cette grandeur et ses fenêtres ont été fixées avant le calcul. Dans les tableaux, le rapport IAE/IAE de Ziegler-Nichols est donné à côté pour faciliter la lecture ; il n'est jamais moyenné.
 
@@ -80,7 +72,7 @@ D'autres grandeurs sont publiées à côté, sans changer le classement. Le dép
 
 L'erreur en régime permanent est la valeur absolue de la moyenne de *e* sur les 5 ms qui précèdent chaque événement et sur les 10 dernières millisecondes de l'essai. Elle mesure un biais statique ; l'ondulation de la tension est donnée à part. L'ITAE [Graham et Lathrop, 1953] est publiée à titre descriptif :
 
-ITAE = Σ *τ*(*k*) |*e*(*k*)| *T*c,  pour *k*a ≤ *k* < *k*b,        (5.3)
+ITAE = Σ *τ*(*k*) |*e*(*k*)| *T*c,  pour *k*a ≤ *k* < *k*b,        (5.2)
 
 où *τ*(*k*) = (*k* − *k*a) *T*c est le temps compté depuis le début de la fenêtre de classement. Enfin, le temps de calcul d'un appel au régulateur, mesuré sur le banc Python, ne donne qu'un ordre de grandeur relatif entre méthodes, pas un temps d'exécution sur une cible embarquée.
 
@@ -99,7 +91,7 @@ Pendant la mise au point des méthodes, nous avons suivi un indice global, moyen
 | *L* = 10 mH, *C* = 47 µF, *f*s = 22 kHz, *T*c = 1/220 000 s, *v*ref = 100 V, *d* dans [0,01 ; 0,99], *R*on = 0,1 Ω, *V*f = 0,8 V, *h* = 1/(22 000 × 1 200) s = 37,88 ns | `ELM_PID/banc_commun.py`, étape 0 (constantes) et en-tête |
 | *R* = 5 Ω, *V*in = 200 V, durée 0,2 s | `ELM_PID/scenarios_communs.json` (`R0`, `Vin_nominale`, `duree`) ; `ETAT_DE_REPRISE.md`, ligne 5 |
 | *T*c = période du régulateur, dix échantillons par période de découpage ; *v*ref = consigne de sortie (« consigne = 100 + dvref ») | `banc_commun.py`, en-tête ; `Determination_gains_PID_Ziegler_Nichols.docx`, tableau 1 et section 6 |
-| Forme (5.1), Euler explicite, intégration conditionnelle (« clamping » dans le code), *N* = 64 122,9 rad/s | `banc_commun.py` (classe `PIDClassique`, `PID_N`) ; docx ZN, sections 7.2, 7.3 et tableau 12 |
+| Bloc PID commun : renvoi à l'équation (3.4) et à la section 3.4.1 (forme parallèle, Euler explicite, intégration conditionnelle, « clamping » dans le code), *N* = 64 122,9 rad/s | `banc_commun.py` (classe `PIDClassique`, `PID_N`) ; docx ZN, sections 7.2, 7.3 et tableau 12 ; chapitre 3, section 3.4 |
 | *P* = 0,093910, *I* = 301,089, *D* = 7,3227·10⁻⁶ | `banc_commun.py` ; `ELM_PID/criteres_elm_pid.txt`, ligne 37 ; docx ZN, tableau 12 |
 | Méthode de la réponse indicielle (table 1 de Mudry) | docx ZN, sections 3.3 et 5 |
 | Amortissement 1,46 à 5 Ω ; 0,29 à 25 Ω | docx ZN, tableau 2 (1,459) ; `COMPARAISON/S10/criteres_S10.txt`, « Pourquoi ce scénario » (1,46 et 0,29) |
@@ -135,10 +127,10 @@ Pendant la mise au point des méthodes, nous avons suivi un indice global, moyen
 
 ### Repères à placer et points à trancher
 
-- [FIGURE À INSÉRER] figure 5.1, à exporter depuis `ELM_PID/Buck_Commun.slx`.
+- Déplacements du 11 octobre 2026 vers le chapitre 3 : l'ancienne figure 5.1 (modèle Simulink commun) devient la figure 3.3 ; l'ancienne équation (5.1) du bloc PID et sa description deviennent l'équation (3.4) et la section 3.4.1 ; la validation banc/Simulink sur les onze essais passe en 3.5.3 (5.2.1 ne garde que le contrôle des cinq scénarios, 0,10 % et 0,36 %). Figures renumérotées 5.2 → 5.1 … 5.16 → 5.15 ; équations IAE et ITAE renumérotées (5.1) et (5.2).
 - [URL DU DÉPÔT À INSÉRER] adresse du dépôt GitHub (annexe).
 - [RÉF. À VÉRIFIER : Fleming et Wallace, 1986].
-- Renvois de chapitre provisoires : modèle du convertisseur, calcul des gains de Ziegler-Nichols et validation du banc placés au « chapitre 3 », ELM-PID au « chapitre 4 ». L'endroit où sont décrites les mises en œuvre du PSO-PID, du Fuzzy-PID et du PINN-PID n'est pas fixé.
+- Renvois au chapitre 3 précisés le 11 octobre 2026 : dimensionnement en 3.2, amortissement en 3.3, bloc PID (3.4) en 3.4.1, gains de Ziegler-Nichols en 3.4.2, échantillonnage et MLI en 3.5.1, validation du banc en 3.5.3. ELM-PID au chapitre 4 ; mises en œuvre du PSO-PID, du Fuzzy-PID et du PINN-PID en 4.6.
 - La première consigne demandait « IAE à 0,13 % près » : ce chiffre est l'écart sur les **gains** de l'ELM-PID (S1 à S6), pas sur l'IAE. Le texte donne l'écart d'IAE réel (au plus 0,3 %, S7a excepté).
 - Le dossier des références attribue les gains de Ziegler-Nichols à la méthode du point critique : c'est faux, le docx ZN écarte cette méthode et retient la réponse indicielle. Il dit aussi que le Buck est un processus oscillant : faux au point nominal (amortissement 1,46), vrai à 25 Ω (0,29). Le texte suit le docx.
 - S10 n'a pas encore été simulé sous Simulink, et les modèles de comparaison des figures (`Figures_Chapitre5.m`) n'ont pas tous été lancés : la phrase « les figures sont tracées à partir des simulations Simulink » suppose ce travail fait.
@@ -149,4 +141,4 @@ Pendant la mise au point des méthodes, nous avons suivi un indice global, moyen
 - Proposition du TFE (`proposition_corrigee.md`, plan du chapitre 5, rédigé avant tout résultat ; voir aussi `plan_depart_contre_realise.md` §1.7) : « 5.2 Étude en régime normal (sans perturbation) : Réponse temporelle, temps de montée, overshoot, régulation en régime établi. » ; « 5.3 Étude avec perturbation sur la commande : Injection de bruit ou d'un signal sinusoïdal sur la consigne, analyse de la robustesse. » ; « 5.4 Étude avec perturbation sur la charge : Simulation de variations rapides de résistance de charge, test de stabilité. » La proposition place elle-même la perturbation « sur la consigne », ce qui rejoint S2. Elle ne cite pas Lu et al. dans ce plan : le lien avec F1 et F2 vient des essais, pas du texte de la proposition.
 - 5.1 annonce 5.3 à 5.6 selon le plan approuvé ; S10 est traité dans 5.3 et 5.4.
 - Milliers : remplacer les espaces par des espaces fines insécables dans Word (guide §8).
-- Vocabulaire des essais (décision de l'auteur, 10 octobre 2026) : « essais de développement » pour les onze essais S1 à S9, « essais de réglage » pour E1 à E4. Remplacements : 5.2.1, « distincts des essais de jugement » devient « distincts des essais de développement » ; 5.2.2, « onze essais du banc commun » devient « onze essais de développement » ; 5.4.1, « distincts des essais de jugement » devient « distincts des essais de développement ». Le chapitre 3 doit définir les deux catégories.
+- Vocabulaire des essais (décision de l'auteur, 10 octobre 2026) : « essais de développement » pour les onze essais S1 à S9, « essais de réglage » pour E1 à E4. Remplacements : 5.2.1, « distincts des essais de jugement » devient « distincts des essais de développement » ; 5.2.2, « onze essais du banc commun » devient « onze essais de développement » ; 5.4.1, « distincts des essais de jugement » devient « distincts des essais de développement ». Les deux catégories sont définies au chapitre 3, section 3.6.

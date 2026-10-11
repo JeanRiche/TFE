@@ -39,22 +39,24 @@ Renvois explicites relevés : « chapitre 3 » (5.2.1, trois fois : dimensionnem
 
 ## Chapitre 3 : modélisation et base commune
 
-| Élément supposé | Utilisé dans | Ce que le ch. 3 doit fournir |
-| --- | --- | --- |
-| Dimensionnement du convertisseur : *L*, *C*, *R*, *V*in, *v*ref, *f*s, *R*on, *V*f | 5.2.1 (tableau 5.1, « dimensionné au chapitre 3 »), 6.2.1 | Choix et justification des valeurs |
-| Symboles *v*o (tension vraie), *d* (rapport cyclique, bornes 0,01 à 0,99), *e* = *v*ref − *v*o, *k*, *T*c | 5.2.1, 5.2.3, 5.5.3, 6.3.4 | Notations fixées une fois pour toutes |
-| Modèle moyen, fonction de transfert, facteur d'amortissement : 1,46 à 5 Ω, 0,29 à 25 Ω | 5.2.1, 5.3.3 | Calcul de l'amortissement et dépendance à *R* |
-| Conduction continue / discontinue | 6.2.2, tableau 6.1 | Frontière de conduction et domaine couvert par les essais |
-| Simulation commutée (pas *h* = 37,88 ns), régulateur échantillonné 10 fois par période (*T*c = 4,545 µs), rapport cyclique appliqué à la période suivante, MLI | 5.2.1, 6.4 | Schéma temporel commande / MLI |
-| Chaîne de mesure : différence entre *v*o vraie et mesure, quantification CAN, bruit (essai S7a) | 5.2.1, 5.2.3 | Modèle de mesure |
-| Bloc PID discret commun, équation (5.1), discrétisation d'Euler explicite, *N* = 64 122,9 rad/s, saturation, clamping | 5.2.1 | Dérivation et justification de *N* (le ch. 5 ne fait que rappeler) |
-| Gains ZN *P* = 0,093910, *I* = 301,089, *D* = 7,3227·10⁻⁶, obtenus par réponse indicielle du modèle moyen | 5.2.1, 5.5.1 (tableau 5.8 : « règle appliquée au modèle moyen ») | Calcul complet (paramètres de la réponse indicielle, formules de Mudry) |
-| « Base commune » (v2.1) : ce qui est identique pour toutes les méthodes | 5.2.1 | Définition et version de la base |
-| Modèle Simulink `Buck_Commun` (figure 5.1) et banc Python ; validation croisée sur les onze essais (écart ≤ 0,3 % hors S7a) | 5.2.1 (« chapitre 3 »), 5.4.2, 6.4 | Description des deux outils et de la validation |
-| Les onze essais de développement (dont S1, S2, S3, S7a, S8a) | 5.2.1, 5.2.2 | Liste et description des onze essais |
-| Les quatre essais de réglage E1 à E4 (E1, charge de 7 à 4,5 Ω ; E2, *V*in de 210 V à 175 puis 235 V sous 15 Ω ; E3, échelon de consigne de 10 V à 60 Ω ; E4, bruit de mesure et quantification à 9 Ω), distincts des onze essais de développement | 4.4.4, 4.6, 5.2.1, 5.4.1 | Définition des deux catégories d'essais et de leur rôle (décision du 10 octobre 2026) |
-| Règle de sélection écrite avant le calcul, qui a désigné S8a | 5.2.2 | Énoncé de la règle (ou renvoi au ch. 1) |
-| Coût J : moyenne de treize rapports d'IAE à ZN sur les onze essais | 5.2.3, 5.5.2 | Mention et usage pendant la mise au point (définition détaillée sur GitHub) |
+| Élément supposé | Utilisé dans | Ce que le ch. 3 doit fournir | Fourni (11 octobre 2026) |
+| --- | --- | --- | --- |
+| Dimensionnement du convertisseur : *L*, *C*, *R*, *V*in, *v*ref, *f*s, *R*on, *V*f | 5.2.1 (tableau 5.1, « dimensionné au chapitre 3 »), 6.2.1 | Choix et justification des valeurs | ✔ 3.2, tableau 3.1 |
+| Symboles *v*o (tension vraie), *d* (rapport cyclique, bornes 0,01 à 0,99), *e* = *v*ref − *v*o, *k*, *T*c | 5.2.1, 5.2.3, 5.5.3, 6.3.4 | Notations fixées une fois pour toutes | ✔ 3.2, 3.4.1, 3.5.1 (*e* = *v*ref − *y* pour le régulateur ; le ch. 5 calcule ses grandeurs sur *v*ref − *v*o) |
+| Modèle moyen, fonction de transfert, facteur d'amortissement : 1,46 à 5 Ω, 0,29 à 25 Ω | 5.2.1, 5.3.3 | Calcul de l'amortissement et dépendance à *R* | ✔ 3.3, (3.2) et (3.3) |
+| Conduction continue / discontinue | 6.2.2, tableau 6.1 | Frontière de conduction et domaine couvert par les essais | ✔ 3.2, (3.1) |
+| Simulation commutée (pas *h* = 37,88 ns), régulateur échantillonné 10 fois par période (*T*c = 4,545 µs), rapport cyclique appliqué à la période suivante, MLI | 5.2.1, 6.4 | Schéma temporel commande / MLI | ✔ 3.2 (pas *h*), 3.4.1, 3.5.1 (*d* maintenu pendant la période *T*c suivante, pas pendant la période de découpage suivante) |
+| Chaîne de mesure : différence entre *v*o vraie et mesure, quantification CAN, bruit (essai S7a) | 5.2.1, 5.2.3 | Modèle de mesure | ✔ 3.5.1 |
+| Bloc PID discret commun, équation (5.1), discrétisation d'Euler explicite, *N* = 64 122,9 rad/s, saturation, clamping | 5.2.1 | Dérivation et justification de *N* (le ch. 5 ne fait que rappeler) | ✔ 3.4.1, équation (3.4) (ancienne (5.1)) ; *N* en 3.4.2 |
+| Gains ZN *P* = 0,093910, *I* = 301,089, *D* = 7,3227·10⁻⁶, obtenus par réponse indicielle du modèle moyen | 5.2.1, 5.5.1 (tableau 5.8 : « règle appliquée au modèle moyen ») | Calcul complet (paramètres de la réponse indicielle, formules de Mudry) | ✔ 3.4.2, (3.5), figure 3.2 |
+| « Base commune » (v2.1) : ce qui est identique pour toutes les méthodes | 5.2.1 | Définition et version de la base | ✔ 3.1, 3.4.1 |
+| Modèle Simulink `Buck_Commun` (figure 5.1) et banc Python ; validation croisée sur les onze essais (écart ≤ 0,3 % hors S7a) | 5.2.1 (« chapitre 3 »), 5.4.2, 6.4 | Description des deux outils et de la validation | ✔ 3.5, figure 3.3 (ancienne figure 5.1), validation en 3.5.3 |
+| Les onze essais de développement (dont S1, S2, S3, S7a, S8a) | 5.2.1, 5.2.2 | Liste et description des onze essais | ✔ 3.6.1, tableau 3.2 |
+| Les quatre essais de réglage E1 à E4 (E1, charge de 7 à 4,5 Ω ; E2, *V*in de 210 V à 175 puis 235 V sous 15 Ω ; E3, échelon de consigne de 10 V à 60 Ω ; E4, bruit de mesure et quantification à 9 Ω), distincts des onze essais de développement | 4.4.4, 4.6, 5.2.1, 5.4.1 | Définition des deux catégories d'essais et de leur rôle (décision du 10 octobre 2026) | ✔ 3.6.2, tableau 3.3 |
+| Règle de sélection écrite avant le calcul, qui a désigné S8a | 5.2.2 | Énoncé de la règle (ou renvoi au ch. 1) | ✔ 3.6.1 (une phrase, renvoi à 5.2.2) |
+| Coût J : moyenne de treize rapports d'IAE à ZN sur les onze essais | 5.2.3, 5.5.2 | Mention et usage pendant la mise au point (définition détaillée sur GitHub) | ✔ 3.6.1 (« indice global », renvoi au dépôt) |
+
+Chapitre 3 rédigé le 11 octobre 2026 (`chapitre3/chapitre3_modelisation_base_commune.md`). Déplacements du chapitre 5 vers le chapitre 3 : figure 5.1 (modèle Simulink) devenue figure 3.3 (le relevé de Ziegler-Nichols, qui vient avant dans le texte, est la figure 3.2), figures du chapitre 5 renumérotées 5.1 à 5.15 ; équation (5.1) du bloc PID et sa description devenues l'équation (3.4) et la section 3.4.1, équations IAE et ITAE renumérotées (5.1) et (5.2) ; validation banc/Simulink sur les onze essais passée en 3.5.3 (5.2.1 ne garde que le contrôle des cinq scénarios). Renvois des chapitres 4, 5 et 6 au chapitre 3 précisés par section. Réserve : la phrase « aucun réglage sur les essais de développement » ne vaut que pour les valeurs numériques ; des changements de structure ont été décidés en connaissant leurs résultats (3.6.1).
 
 ## Chapitre 4 : conception de l'ELM-PID et mise en œuvre des méthodes de comparaison
 

@@ -2,9 +2,9 @@
 
 ## 4.1. Introduction
 
-L'ELM-PID de ce travail reprend la méthode de [Lu et al., 2021] : un réseau ELM identifie le convertisseur, et son jacobien guide l'ajustement en ligne des gains d'un PID (figure 4.1). Nous l'avons adaptée au convertisseur dimensionné au chapitre 3 et à une comparaison équitable avec quatre autres régulateurs ; chaque modification s'appuie sur une référence ou sur un calcul publié sur le dépôt du travail.
+L'ELM-PID de ce travail reprend la méthode de [Lu et al., 2021] : un réseau ELM identifie le convertisseur, et son jacobien guide l'ajustement en ligne des gains d'un PID (figure 4.1). Nous l'avons adaptée au convertisseur dimensionné au chapitre 3 (section 3.2) et à une comparaison équitable avec quatre autres régulateurs ; chaque modification s'appuie sur une référence ou sur un calcul publié sur le dépôt du travail.
 
-La section 4.2 justifie le remplacement du PID incrémental de l'article par le bloc PID commun aux cinq méthodes. Les sections 4.3 et 4.4 décrivent le réseau ELM et la loi d'adaptation des gains, la section 4.5 la mise en œuvre sous Simulink. La section 4.6 présente la mise en œuvre des trois méthodes de comparaison. Les gains de Ziegler-Nichols (ZN), point de départ commun, ont été calculés au chapitre 3.
+La section 4.2 justifie le remplacement du PID incrémental de l'article par le bloc PID commun aux cinq méthodes. Les sections 4.3 et 4.4 décrivent le réseau ELM et la loi d'adaptation des gains, la section 4.5 la mise en œuvre sous Simulink. La section 4.6 présente la mise en œuvre des trois méthodes de comparaison. Les gains de Ziegler-Nichols (ZN), point de départ commun, ont été calculés à la section 3.4.2.
 
 [FIGURE À INSÉRER : REDACTION/chapitre4/figures/Fig4_1_boucle_ELM_PID.png]
 
@@ -22,7 +22,7 @@ où *u* est le rapport cyclique, borné par sat à [0,01 ; 0,99], *e* l'erreur e
 
 ### 4.2.2. Pourquoi l'option B
 
-La loi (4.1) n'est pas le bloc PID parallèle (5.1) des quatre autres méthodes. Un écart de résultat pouvait donc venir de la loi autant que de l'adaptation. Un diagnostic du 8 octobre 2026 l'a mesuré : avec les mêmes gains fixes (ceux du PSO-PID), la loi incrémentale donne après 30 ms une IAE de 23,50 mV·s contre 16,54 pour le bloc parallèle sur l'essai de charge S4, 7,53 contre 5,46 sur S3 et 6,56 contre 2,04 sur S2. Elle fait mieux au démarrage.
+La loi (4.1) n'est pas le bloc PID parallèle (3.4) des quatre autres méthodes. Un écart de résultat pouvait donc venir de la loi autant que de l'adaptation. Un diagnostic du 8 octobre 2026 l'a mesuré : avec les mêmes gains fixes (ceux du PSO-PID), la loi incrémentale donne après 30 ms une IAE de 23,50 mV·s contre 16,54 pour le bloc parallèle sur l'essai de charge S4, 7,53 contre 5,46 sur S3 et 6,56 contre 2,04 sur S2. Elle fait mieux au démarrage.
 
 La cause est mécanique. La forme incrémentale ne garde des actions proportionnelle et dérivée que leurs incréments ; en saturation, ces incréments sont perdus et la loi repart de la butée [Åström et Hägglund, 2006]. Sur S2, l'à-coup de dérivée dû au saut de consigne est tronqué par la saturation et jamais rendu. Les mêmes propriétés donnent un démarrage presque sans dépassement.
 
@@ -91,7 +91,7 @@ où *σ*3 est l'écart type de d̄ dans les données d'apprentissage et *β*L,3 
 
 L'adaptation suit la boucle par fenêtres de [Lu et al., 2021] (figure 4.1). À chaque période *T*c, l'adaptateur cumule l'erreur, la tension mesurée, le rapport cyclique et la sensibilité de la commande aux gains. En fin de fenêtre, il calcule les moyennes ē(*n*), ȳ(*n*), d̄(*n*), la prédiction et le jacobien, puis décide s'il change les gains.
 
-Les gains sont exprimés en multiplicateurs de ceux de Ziegler-Nichols : *K* = *K*ZN ⊙ *x*, avec *K* = [*P*, *I*, *D*], *K*ZN = [0,093910 ; 301,089 ; 7,3227·10⁻⁶] et ⊙ le produit terme à terme. Avec *x* = (1, 1, 1), l'ELM-PID est exactement le PID de Ziegler-Nichols. La sensibilité de la commande aux gains est la dérivée exacte de la loi (5.1), prise depuis le début de la fenêtre :
+Les gains sont exprimés en multiplicateurs de ceux de Ziegler-Nichols : *K* = *K*ZN ⊙ *x*, avec *K* = [*P*, *I*, *D*], *K*ZN = [0,093910 ; 301,089 ; 7,3227·10⁻⁶] et ⊙ le produit terme à terme. Avec *x* = (1, 1, 1), l'ELM-PID est exactement le PID de Ziegler-Nichols. La sensibilité de la commande aux gains est la dérivée exacte de la loi (3.4), prise depuis le début de la fenêtre :
 
 ∂*u*/∂*P* = *e*(*k*),  ∂*u*/∂*I* = *T*c Σ*j*<*k* *e*(*j*),  ∂*u*/∂*D* = *N* (*e*(*k*) − *ψ*(*k*)),  avec *ψ*(*k* + 1) = *ψ*(*k*) + *T*c *N* (*e*(*k*) − *ψ*(*k*)),        (4.6)
 
@@ -125,7 +125,7 @@ Le départ (1, 1, 1) est sur la frontière de l'ensemble, qui y est localement n
 
 ### 4.4.4. Réglages et variantes
 
-Les réglages viennent de l'article ou des critères écrits avant le calcul : fenêtres de 0,5 ms, *η* = 0,5, *α* = 0,001, *ε* = 10⁻³, zones mortes de 0,1 V, multiplicateurs dans [1/4 ; 4]. Pour l'ELM-PID, les essais de réglage E1 à E4, distincts des onze essais de développement, ont seulement servi à contrôler le code : ils n'ont conduit à changer aucune valeur.
+Les réglages viennent de l'article ou des critères écrits avant le calcul : fenêtres de 0,5 ms, *η* = 0,5, *α* = 0,001, *ε* = 10⁻³, zones mortes de 0,1 V, multiplicateurs dans [1/4 ; 4]. Pour l'ELM-PID, les essais de réglage E1 à E4 (section 3.6.2), distincts des onze essais de développement, ont seulement servi à contrôler le code : ils n'ont conduit à changer aucune valeur.
 
 Deux variantes mesurent le rôle du réseau (section 5.5.3). Dans la variante à jacobien constant, *J*(*n*) est remplacé par 11,07 V par unité, médiane du jacobien d'une régression linéaire d'ordre 2 apprise sur les mêmes données. Dans la variante sans OS-ELM, les poids de sortie restent ceux de l'apprentissage hors ligne. Deux variantes de la projection sont publiées sur le dépôt.
 
@@ -153,7 +153,7 @@ Le Fuzzy-PID applique l'ordonnancement flou des gains de [Zhao et al., 1993]. À
 
 *K*p = *K*p,min + (*K*p,max − *K*p,min) *K*′p,  *K*d = *K*d,min + (*K*d,max − *K*d,min) *K*′d,  *K*i = *K*p² / (*α*F *K*d),        (4.9)
 
-où *K*p varie de 0,32 à 0,6 fois le gain critique *K*u et *K*d de 0,08 à 0,15 fois *K*u *T*u, *T*u étant la période critique. La méthode est appliquée telle que publiée, avec quatre écarts. Le chapitre 3 ayant écarté la méthode du point critique, on prend le *K*u et le *T*u qui redonnent exactement les gains de Ziegler-Nichols : *K*p va alors de 0,533 à 1 fois *P* et *K*d de 1,067 à 2 fois *D*. Les échelles de normalisation, que l'article ne chiffre pas, sont 100 V pour l'erreur et 0,37244 V par période pour sa variation (pente maximale de la réponse indicielle utilisée pour Ziegler-Nichols). Le régulateur est le bloc PID commun, avec un filtre de dérivée et une saturation absents de l'article. Enfin, la variation de l'erreur est prise nulle au premier pas. Rien n'est optimisé. Au repos, les règles donnent 0,991 fois *P*, 1,983 fois *D* et 0,661 fois *I* : le Fuzzy-PID ne revient pas à Ziegler-Nichols.
+où *K*p varie de 0,32 à 0,6 fois le gain critique *K*u et *K*d de 0,08 à 0,15 fois *K*u *T*u, *T*u étant la période critique. La méthode est appliquée telle que publiée, avec quatre écarts. La méthode du point critique ayant été écartée (section 3.4.2), on prend le *K*u et le *T*u qui redonnent exactement les gains de Ziegler-Nichols : *K*p va alors de 0,533 à 1 fois *P* et *K*d de 1,067 à 2 fois *D*. Les échelles de normalisation, que l'article ne chiffre pas, sont 100 V pour l'erreur et 0,37244 V par période pour sa variation (pente maximale de la réponse indicielle utilisée pour Ziegler-Nichols). Le régulateur est le bloc PID commun, avec un filtre de dérivée et une saturation absents de l'article. Enfin, la variation de l'erreur est prise nulle au premier pas. Rien n'est optimisé. Au repos, les règles donnent 0,991 fois *P*, 1,983 fois *D* et 0,661 fois *I* : le Fuzzy-PID ne revient pas à Ziegler-Nichols.
 
 ### 4.6.3. PINN-PID
 
@@ -236,7 +236,8 @@ Le PSO-PID, le Fuzzy-PID et le PINN-PID partagent ce bloc PID et ne diffèrent q
 
 - Équation (5.4) : réglé le 10 octobre 2026. Elle écrivait *φ* = *J* *s* et omettait l'inertie ; elle est retirée du chapitre 5, dont la section 5.5.3 renvoie à la loi (4.7).
 - Tension mesurée : réglé le 10 octobre 2026. Les chapitres 5 (5.5.3) et 6 (6.3.4) écrivent maintenant *J*(*n*) = ∂ŷ/∂d̄ et « tension mesurée », comme (4.5) et 4.3.1.
-- Vocabulaire des essais (décision du 10 octobre 2026) : « essais de développement » pour les onze essais S1 à S9 de la base commune, « essais de réglage » pour E1 à E4, dans tous les chapitres. E1 à E4 sont les mêmes quatre essais pour l'ELM-PID, le PSO-PID et le PINN-PID ; pour l'ELM-PID ils n'ont servi qu'au contrôle du code (4.4.4). Le chapitre 3 doit définir ces deux catégories.
+- Vocabulaire des essais (décision du 10 octobre 2026) : « essais de développement » pour les onze essais S1 à S9 de la base commune, « essais de réglage » pour E1 à E4, dans tous les chapitres. E1 à E4 sont les mêmes quatre essais pour l'ELM-PID, le PSO-PID et le PINN-PID ; pour l'ELM-PID ils n'ont servi qu'au contrôle du code (4.4.4). Les deux catégories sont définies au chapitre 3 (section 3.6).
+- Renvois au chapitre 3 précisés le 11 octobre 2026 : 4.1 (sections 3.2 et 3.4.2), 4.2.2 et 4.4.1 (le bloc PID commun est désormais l'équation (3.4), ancienne (5.1)), 4.4.4 (section 3.6.2), 4.6.2 (point critique écarté en 3.4.2).
 - Remplacements du 10 octobre 2026. 4.4.4 : « Les essais de mise au point E1 à E4, distincts des onze essais de développement, ont servi à contrôler le code et n'ont conduit à changer aucun réglage » devient « Pour l'ELM-PID, les essais de réglage E1 à E4, distincts des onze essais de développement, ont seulement servi à contrôler le code : ils n'ont conduit à changer aucune valeur ». La précision « pour l'ELM-PID » évite de laisser croire que les essais de réglage n'ont rien réglé du tout (ils ont réglé le PSO-PID et choisi la zone morte du PINN-PID). 4.6.3 : « essais de mise au point E1 à E4 » devient « essais de réglage E1 à E4 ». Tableau des sources : « E1 à E4 de mise au point » devient « Essais de réglage E1 à E4 ».
 - Honnêteté sur l'option B : le diagnostic qui l'a motivée a été mesuré sur les onze essais (dont S2 et S3). Le texte le dit (4.2.2).
 - Réouverture de la porte : réglé le 10 octobre 2026. Les chapitres 5 (5.3.2, 5.5.3) et 6 (6.3.2) disent « 1,5 ms après la fin de la fenêtre saturée, soit 1,5 à 2 ms après l'événement », comme 4.4.2 et la figure 4.3.
